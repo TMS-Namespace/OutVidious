@@ -4,6 +4,12 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <!-- Plugins -->
+    <PackageVersion Include="System.Composition" Version="9.0.10" />
+    <PackageVersion Include="System.Composition.AttributedModel" Version="9.0.10" />
+    <PackageVersion Include="System.Composition.Hosting" Version="9.0.10" />
+    <PackageVersion Include="McMaster.NETCore.Plugins" Version="2.0.0" />
+
     <!-- Icons -->
     <PackageVersion Include="MimeTypeCore" Version="2.0.4" />
 
