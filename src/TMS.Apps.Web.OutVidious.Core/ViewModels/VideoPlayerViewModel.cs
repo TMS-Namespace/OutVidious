@@ -67,9 +67,19 @@ public sealed class VideoPlayerViewModel : IDisposable
     public string? EmbedUrl { get; private set; }
 
     /// <summary>
+    /// Gets the DASH manifest URL for adaptive streaming with Shaka Player.
+    /// </summary>
+    public string? DashManifestUrl { get; private set; }
+
+    /// <summary>
     /// Gets the available quality options.
     /// </summary>
     public IReadOnlyList<string> AvailableQualities { get; private set; } = [];
+
+    /// <summary>
+    /// Gets the available DASH quality options (higher quality, separate audio/video).
+    /// </summary>
+    public IReadOnlyList<string> AvailableDashQualities { get; private set; } = [];
 
     /// <summary>
     /// Loads a video by its ID.
@@ -100,8 +110,10 @@ public sealed class VideoPlayerViewModel : IDisposable
             if (VideoDetails != null)
             {
                 UpdateAvailableQualities();
+                UpdateDashQualities();
                 UpdateStreamUrl();
                 UpdateEmbedUrl();
+                UpdateDashManifestUrl();
                 LoadState = VideoLoadState.Loaded;
                 _logger.LogInformation("Successfully loaded video: {Title}", VideoDetails.Title);
             }
@@ -201,6 +213,45 @@ public sealed class VideoPlayerViewModel : IDisposable
 
         EmbedUrl = _apiService.GetEmbedUrl(VideoId);
         _logger.LogDebug("Embed URL updated: {EmbedUrl}", EmbedUrl);
+    }
+
+    private void UpdateDashManifestUrl()
+    {
+        if (string.IsNullOrEmpty(VideoId))
+        {
+            DashManifestUrl = null;
+            return;
+        }
+
+        // Use proxied URL to avoid CORS issues
+        DashManifestUrl = _apiService.GetProxiedDashManifestUrl(VideoId);
+        _logger.LogDebug("DASH manifest URL updated: {DashUrl}", DashManifestUrl);
+    }
+
+    private void UpdateDashQualities()
+    {
+        if (VideoDetails?.AdaptiveFormats == null || VideoDetails.AdaptiveFormats.Count == 0)
+        {
+            AvailableDashQualities = [];
+            return;
+        }
+
+        // Get video-only adaptive formats and extract quality labels
+        AvailableDashQualities = VideoDetails.AdaptiveFormats
+            .Where(f => !string.IsNullOrEmpty(f.QualityLabel) && f.Type.StartsWith("video/", StringComparison.OrdinalIgnoreCase))
+            .Select(f => f.QualityLabel!)
+            .Distinct()
+            .OrderByDescending(ParseQualityHeight)
+            .ToList();
+
+        _logger.LogDebug("Available DASH qualities: {Qualities}", string.Join(", ", AvailableDashQualities));
+    }
+
+    private static int ParseQualityHeight(string qualityLabel)
+    {
+        // Parse quality labels like "1080p", "720p60", "1440p", "2160p60" etc.
+        var numericPart = new string(qualityLabel.TakeWhile(char.IsDigit).ToArray());
+        return int.TryParse(numericPart, out var height) ? height : 0;
     }
 
     private async Task CancelCurrentLoadAsync()

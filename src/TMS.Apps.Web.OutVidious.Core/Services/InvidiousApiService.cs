@@ -95,4 +95,29 @@ public sealed class InvidiousApiService : IInvidiousApiService
 
         return $"{BaseUrl}/watch?v={Uri.EscapeDataString(videoId)}";
     }
+
+    /// <inheritdoc />
+    public string GetDashManifestUrl(string videoId)
+    {
+        if (string.IsNullOrWhiteSpace(videoId))
+        {
+            throw new ArgumentException("Video ID cannot be empty.", nameof(videoId));
+        }
+
+        // Use local=true for proxying through Invidious (avoids CORS issues)
+        // Use unique_res=1 to ensure unique resolutions in the manifest
+        return $"{BaseUrl}/api/manifest/dash/id/{Uri.EscapeDataString(videoId)}?local=true&unique_res=1";
+    }
+
+    /// <inheritdoc />
+    public string GetProxiedDashManifestUrl(string videoId)
+    {
+        if (string.IsNullOrWhiteSpace(videoId))
+        {
+            throw new ArgumentException("Video ID cannot be empty.", nameof(videoId));
+        }
+
+        // Use local proxy endpoint to avoid CORS issues
+        return $"/api/proxy/dash/{Uri.EscapeDataString(videoId)}";
+    }
 }

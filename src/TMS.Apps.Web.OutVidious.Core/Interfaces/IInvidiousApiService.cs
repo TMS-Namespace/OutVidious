@@ -33,4 +33,20 @@ public interface IInvidiousApiService
     /// <param name="videoId">The YouTube video ID.</param>
     /// <returns>The watch URL.</returns>
     string GetWatchUrl(string videoId);
+
+    /// <summary>
+    /// Gets the DASH manifest URL for a video.
+    /// This manifest allows playback of higher quality streams (1080p+) with separate audio and video.
+    /// </summary>
+    /// <param name="videoId">The YouTube video ID.</param>
+    /// <returns>The DASH manifest URL (direct to Invidious).</returns>
+    string GetDashManifestUrl(string videoId);
+
+    /// <summary>
+    /// Gets the proxied DASH manifest URL for a video.
+    /// Uses a local proxy to avoid CORS issues.
+    /// </summary>
+    /// <param name="videoId">The YouTube video ID.</param>
+    /// <returns>The proxied DASH manifest URL.</returns>
+    string GetProxiedDashManifestUrl(string videoId);
 }
