@@ -4,20 +4,6 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <!-- Providers -->
-    <PackageVersion Include="SSH.NET" Version="2025.1.0" />
-    <PackageVersion Include="SMBLibrary" Version="1.5.4.1" />
-    <PackageVersion Include="SMBLibrary.Win32" Version="1.5.4" />
-    <PackageVersion Include="SMBLibrary.Adapters" Version="1.5.4" />
-    <PackageVersion Include="SMBLibraryCore.Client" Version="1.7.4" />
-    <PackageVersion Include="FluentFTP" Version="53.0.2" />
-
-    <!-- Plugins -->
-    <PackageVersion Include="System.Composition" Version="9.0.10" />
-    <PackageVersion Include="System.Composition.AttributedModel" Version="9.0.10" />
-    <PackageVersion Include="System.Composition.Hosting" Version="9.0.10" />
-    <PackageVersion Include="McMaster.NETCore.Plugins" Version="2.0.0" />
-
     <!-- Icons -->
     <PackageVersion Include="MimeTypeCore" Version="2.0.4" />
 
@@ -48,6 +34,10 @@
     
     <!-- Text -->
     <PackageVersion Include="UTF.Unknown" Version="2.6.0" />
+
+    <!-- HTTP -->
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.0" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="8.0.0" />
 
     <!-- Testing -->
     <PackageVersion Include="xunit" Version="2.9.2" />

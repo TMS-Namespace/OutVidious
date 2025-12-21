@@ -1,7 +1,48 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+@using TMS.Apps.Web.OutVidious.WebGUI.Components.Video
 
-<h1>Hello, world!</h1>
+<PageTitle>OutVidious - Home</PageTitle>
 
-Welcome to your new app.
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+    <MudText Typo="Typo.h4" Class="mb-4">OutVidious Video Player</MudText>
+
+    <MudPaper Class="pa-4 mb-4" Elevation="1">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudTextField @bind-Value="_videoIdInput"
+                          Label="Video ID"
+                          Placeholder="Enter YouTube video ID (e.g., JGJON9_uMHI)"
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.VideoLibrary"
+                          Class="flex-grow-1" />
+            
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.PlayArrow"
+                       Size="Size.Large"
+                       OnClick="OnLoadVideoClickedAsync"
+                       Disabled="_isLoading">
+                @if (_isLoading)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Loading</MudText>
+                }
+                else
+                {
+                    <MudText>Load Video</MudText>
+                }
+            </MudButton>
+        </MudStack>
+
+        <MudText Typo="Typo.caption" Color="Color.Default" Class="mt-2">
+            Instance: @InvidiousBaseUrl
+        </MudText>
+    </MudPaper>
+
+    @if (_videoPlayerVm != null)
+    {
+        <InvidiousPlayerComponent ViewModel="_videoPlayerVm" 
+                                   InvidiousBaseUrl="@InvidiousBaseUrl" />
+    }
+</MudContainer>

@@ -1,0 +1,143 @@
+@using TMS.Apps.Web.OutVidious.Core.Enums
+
+@if (ViewModel == null)
+{
+    <MudAlert Severity="Severity.Warning">No video player ViewModel provided.</MudAlert>
+}
+else if (ViewModel.LoadState == VideoLoadState.Loading)
+{
+    <MudPaper Class="pa-8" Elevation="0">
+        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+            <MudText Typo="Typo.h6" Color="Color.Default">Loading video...</MudText>
+        </MudStack>
+    </MudPaper>
+}
+else if (ViewModel.LoadState == VideoLoadState.Error)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        @(ViewModel.ErrorMessage ?? "Failed to load video. Please try again.")
+    </MudAlert>
+}
+else if (ViewModel.LoadState == VideoLoadState.Loaded && ViewModel.VideoDetails != null)
+{
+    <MudPaper Class="pa-4" Elevation="1">
+        @* Player Controls *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudText Typo="Typo.subtitle1">Player Mode:</MudText>
+                <MudToggleGroup T="PlayerMode" 
+                                Value="ViewModel.PlayerMode"
+                                ValueChanged="OnPlayerModeChanged"
+                                Color="Color.Primary"
+                                Size="Size.Small">
+                    <MudToggleItem Value="PlayerMode.Native" Text="Native" />
+                    <MudToggleItem Value="PlayerMode.Embedded" Text="Embedded" />
+                </MudToggleGroup>
+            </MudStack>
+
+            @if (ViewModel.PlayerMode == PlayerMode.Native && ViewModel.AvailableQualities.Count > 0)
+            {
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudText Typo="Typo.subtitle1">Quality:</MudText>
+                    <MudSelect T="string" 
+                               Value="ViewModel.SelectedQuality"
+                               ValueChanged="OnQualityChanged"
+                               Variant="Variant.Outlined"
+                               Dense="true"
+                               Style="width: 120px;">
+                        @foreach (var quality in ViewModel.AvailableQualities)
+                        {
+                            <MudSelectItem Value="@quality">@quality</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudStack>
+            }
+        </MudStack>
+
+        @* Video Player *@
+        <MudPaper Class="mb-4" Elevation="0" Style="background-color: black;">
+            @if (ViewModel.PlayerMode == PlayerMode.Native)
+            {
+                @if (!string.IsNullOrEmpty(ViewModel.CurrentStreamUrl))
+                {
+                    <video controls 
+                           style="width: 100%; max-height: 70vh;"
+                           poster="@GetPosterUrl()">
+                        <source src="@ViewModel.CurrentStreamUrl" type="video/mp4" />
+                        Your browser does not support the video tag.
+                    </video>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Warning">
+                        No stream URL available for native playback. Try switching to Embedded mode.
+                    </MudAlert>
+                }
+            }
+            else
+            {
+                @if (!string.IsNullOrEmpty(ViewModel.EmbedUrl))
+                {
+                    <iframe src="@ViewModel.EmbedUrl"
+                            style="width: 100%; min-height: 480px; border: none;"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen>
+                    </iframe>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Warning">
+                        No embed URL available.
+                    </MudAlert>
+                }
+            }
+        </MudPaper>
+
+        @* Video Info *@
+        <MudText Typo="Typo.h5" Class="mb-2">@ViewModel.VideoDetails.Title</MudText>
+        
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudAvatar Size="Size.Medium" Color="Color.Primary">
+                    @(ViewModel.VideoDetails.Author?.FirstOrDefault().ToString().ToUpperInvariant() ?? "?")
+                </MudAvatar>
+                <MudLink Href="@GetAuthorUrl()" Target="_blank" Typo="Typo.subtitle1">
+                    @ViewModel.VideoDetails.Author
+                </MudLink>
+            </MudStack>
+
+            <MudStack Row="true" Spacing="3">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" />
+                    <MudText Typo="Typo.body2">@FormatViewCount(ViewModel.VideoDetails.ViewCount) views</MudText>
+                </MudStack>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.ThumbUp" Size="Size.Small" />
+                    <MudText Typo="Typo.body2">@FormatNumber(ViewModel.VideoDetails.LikeCount)</MudText>
+                </MudStack>
+            </MudStack>
+        </MudStack>
+
+        @* Description *@
+        @if (!string.IsNullOrEmpty(ViewModel.VideoDetails.Description))
+        {
+            <MudExpansionPanels>
+                <MudExpansionPanel Text="Description">
+                    <MudText Typo="Typo.body2" Style="white-space: pre-wrap;">
+                        @ViewModel.VideoDetails.Description
+                    </MudText>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        }
+    </MudPaper>
+}
+else
+{
+    <MudPaper Class="pa-8" Elevation="0">
+        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center">
+            <MudIcon Icon="@Icons.Material.Filled.VideoLibrary" Size="Size.Large" Color="Color.Default" />
+            <MudText Typo="Typo.h6" Color="Color.Default">Enter a video ID to get started</MudText>
+        </MudStack>
+    </MudPaper>
+}
