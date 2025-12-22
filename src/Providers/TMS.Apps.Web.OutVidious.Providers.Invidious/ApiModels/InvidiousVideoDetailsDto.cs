@@ -1,9 +1,9 @@
-namespace TMS.Apps.Web.OutVidious.Core.Models;
+namespace TMS.Apps.Web.OutVidious.Providers.Invidious.ApiModels;
 
 /// <summary>
-/// Represents detailed video information from the Invidious API.
+/// Raw video details DTO from the Invidious API.
 /// </summary>
-public sealed record VideoDetails
+public sealed record InvidiousVideoDetailsDto
 {
     public string Type { get; init; } = string.Empty;
 
@@ -11,7 +11,7 @@ public sealed record VideoDetails
 
     public string VideoId { get; init; } = string.Empty;
 
-    public IReadOnlyList<VideoThumbnail> VideoThumbnails { get; init; } = [];
+    public IReadOnlyList<InvidiousVideoThumbnailDto> VideoThumbnails { get; init; } = [];
 
     public string Description { get; init; } = string.Empty;
 
@@ -47,7 +47,7 @@ public sealed record VideoDetails
 
     public string AuthorUrl { get; init; } = string.Empty;
 
-    public IReadOnlyList<AuthorThumbnail> AuthorThumbnails { get; init; } = [];
+    public IReadOnlyList<InvidiousAuthorThumbnailDto> AuthorThumbnails { get; init; } = [];
 
     public string? SubCountText { get; init; }
 
@@ -71,9 +71,9 @@ public sealed record VideoDetails
 
     public string? HlsUrl { get; init; }
 
-    public IReadOnlyList<AdaptiveFormat> AdaptiveFormats { get; init; } = [];
+    public IReadOnlyList<InvidiousAdaptiveFormatDto> AdaptiveFormats { get; init; } = [];
 
-    public IReadOnlyList<FormatStream> FormatStreams { get; init; } = [];
+    public IReadOnlyList<InvidiousFormatStreamDto> FormatStreams { get; init; } = [];
 
-    public IReadOnlyList<VideoCaption> Captions { get; init; } = [];
+    public IReadOnlyList<InvidiousVideoCaptionDto> Captions { get; init; } = [];
 }

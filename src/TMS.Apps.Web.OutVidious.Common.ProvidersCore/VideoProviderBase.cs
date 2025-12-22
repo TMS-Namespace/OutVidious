@@ -1,0 +1,107 @@
+using Microsoft.Extensions.Logging;
+using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
+using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
+
+namespace TMS.Apps.Web.OutVidious.Common.ProvidersCore;
+
+/// <summary>
+/// Base class for video providers with common functionality.
+/// </summary>
+public abstract class VideoProviderBase : IVideoProvider
+{
+    private bool _disposed;
+
+    protected readonly HttpClient HttpClient;
+    protected readonly ILogger Logger;
+
+    protected VideoProviderBase(HttpClient httpClient, ILogger logger, Uri baseUrl)
+    {
+        HttpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        BaseUrl = baseUrl ?? throw new ArgumentNullException(nameof(baseUrl));
+    }
+
+    /// <inheritdoc />
+    public abstract string ProviderId { get; }
+
+    /// <inheritdoc />
+    public abstract string DisplayName { get; }
+
+    /// <inheritdoc />
+    public abstract string Description { get; }
+
+    /// <inheritdoc />
+    public Uri BaseUrl { get; }
+
+    /// <inheritdoc />
+    public virtual bool IsConfigured => BaseUrl.IsAbsoluteUri;
+
+    /// <inheritdoc />
+    public abstract Task<VideoInfo?> GetVideoInfoAsync(string videoId, CancellationToken cancellationToken);
+
+    /// <inheritdoc />
+    public abstract Uri GetEmbedUrl(string videoId);
+
+    /// <inheritdoc />
+    public abstract Uri GetWatchUrl(string videoId);
+
+    /// <inheritdoc />
+    public abstract Uri? GetDashManifestUrl(string videoId);
+
+    /// <inheritdoc />
+    public abstract Uri? GetHlsManifestUrl(string videoId);
+
+    /// <inheritdoc />
+    public abstract Uri? GetProxiedDashManifestUrl(string videoId);
+
+    /// <inheritdoc />
+    public abstract bool IsValidVideoId(string videoId);
+
+    /// <summary>
+    /// Validates that a video ID is not null or empty.
+    /// </summary>
+    /// <param name="videoId">The video ID to validate.</param>
+    /// <exception cref="ArgumentException">Thrown when video ID is null or empty.</exception>
+    protected static void ValidateVideoIdNotEmpty(string videoId)
+    {
+        if (string.IsNullOrWhiteSpace(videoId))
+        {
+            throw new ArgumentException("Video ID cannot be empty.", nameof(videoId));
+        }
+    }
+
+    /// <summary>
+    /// Creates a URI by combining the base URL with a relative path.
+    /// </summary>
+    /// <param name="relativePath">The relative path to append.</param>
+    /// <returns>The combined URI.</returns>
+    protected Uri CreateUri(string relativePath)
+    {
+        var baseUrlString = BaseUrl.ToString().TrimEnd('/');
+        var path = relativePath.TrimStart('/');
+        return new Uri($"{baseUrlString}/{path}");
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
+            // Note: We don't dispose HttpClient here as it's typically injected
+            // and managed by the DI container
+        }
+
+        _disposed = true;
+    }
+}

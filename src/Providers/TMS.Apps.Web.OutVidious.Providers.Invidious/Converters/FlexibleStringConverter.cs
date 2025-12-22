@@ -1,11 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace TMS.Apps.Web.OutVidious.Core.Converters;
+namespace TMS.Apps.Web.OutVidious.Providers.Invidious.Converters;
 
 /// <summary>
 /// JSON converter that handles values that can be either string or number in JSON
-/// and converts them to string.
+/// and converts them to string. This is needed because Invidious API returns
+/// inconsistent types for some fields.
 /// </summary>
 public sealed class FlexibleStringConverter : JsonConverter<string?>
 {

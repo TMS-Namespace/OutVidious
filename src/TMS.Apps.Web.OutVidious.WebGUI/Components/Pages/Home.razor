@@ -36,13 +36,13 @@
         </MudStack>
 
         <MudText Typo="Typo.caption" Color="Color.Default" Class="mt-2">
-            Instance: @InvidiousBaseUrl
+            Provider: @ProviderBaseUrl
         </MudText>
     </MudPaper>
 
     @if (_videoPlayerVm != null)
     {
         <InvidiousPlayerComponent ViewModel="_videoPlayerVm" 
-                                   InvidiousBaseUrl="@InvidiousBaseUrl" />
+                                   ProviderBaseUrl="@ProviderBaseUrl" />
     }
 </MudContainer>

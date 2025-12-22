@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Components;
-using TMS.Apps.Web.OutVidious.Core.Interfaces;
+using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
 using TMS.Apps.Web.OutVidious.Core.ViewModels;
 
 namespace TMS.Apps.Web.OutVidious.WebGUI.Components.Pages;
@@ -12,7 +12,7 @@ public partial class Home : ComponentBase, IDisposable
     private const string DefaultVideoId = "JGJON9_uMHI";
 
     [Inject]
-    private IInvidiousApiService ApiService { get; set; } = null!;
+    private IVideoProvider VideoProvider { get; set; } = null!;
 
     [Inject]
     private ILogger<Home> Logger { get; set; } = null!;
@@ -27,9 +27,9 @@ public partial class Home : ComponentBase, IDisposable
     private CancellationTokenSource? _cts;
 
     /// <summary>
-    /// Gets the Invidious base URL from the API service.
+    /// Gets the provider base URL.
     /// </summary>
-    protected string InvidiousBaseUrl => ApiService.BaseUrl;
+    protected string ProviderBaseUrl => VideoProvider.BaseUrl.ToString().TrimEnd('/');
 
     protected override async Task OnInitializedAsync()
     {
@@ -39,7 +39,7 @@ public partial class Home : ComponentBase, IDisposable
         
         // Create the ViewModel
         var vmLogger = LoggerFactory.CreateLogger<VideoPlayerViewModel>();
-        _videoPlayerVm = new VideoPlayerViewModel(ApiService, vmLogger);
+        _videoPlayerVm = new VideoPlayerViewModel(VideoProvider, vmLogger);
 
         // Auto-load the demo video
         Logger.LogInformation("Auto-loading demo video: {VideoId}", DefaultVideoId);
@@ -87,7 +87,7 @@ public partial class Home : ComponentBase, IDisposable
             Logger.LogInformation("Calling _videoPlayerVm.LoadVideoAsync...");
             await _videoPlayerVm.LoadVideoAsync(videoId, _cts.Token);
             Logger.LogInformation("_videoPlayerVm.LoadVideoAsync completed. LoadState: {State}", _videoPlayerVm.LoadState);
-            Logger.LogInformation("Video Title: {Title}", _videoPlayerVm.VideoDetails?.Title ?? "(null)");
+            Logger.LogInformation("Video Title: {Title}", _videoPlayerVm.VideoInfo?.Title ?? "(null)");
             Logger.LogInformation("Current Stream URL: {Url}", _videoPlayerVm.CurrentStreamUrl ?? "(null)");
         }
         catch (Exception ex)

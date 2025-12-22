@@ -1,5 +1,3 @@
-@using TMS.Apps.Web.OutVidious.Core.Enums
-
 @if (ViewModel == null)
 {
     <MudAlert Severity="Severity.Warning">No video player ViewModel provided.</MudAlert>
@@ -19,7 +17,7 @@ else if (ViewModel.LoadState == VideoLoadState.Error)
         @(ViewModel.ErrorMessage ?? "Failed to load video. Please try again.")
     </MudAlert>
 }
-else if (ViewModel.LoadState == VideoLoadState.Loaded && ViewModel.VideoDetails != null)
+else if (ViewModel.LoadState == VideoLoadState.Loaded && ViewModel.VideoInfo != null)
 {
     <MudPaper Class="pa-4" Elevation="1">
         @* Player Controls *@
@@ -154,37 +152,37 @@ else if (ViewModel.LoadState == VideoLoadState.Loaded && ViewModel.VideoDetails 
         </MudPaper>
 
         @* Video Info *@
-        <MudText Typo="Typo.h5" Class="mb-2">@ViewModel.VideoDetails.Title</MudText>
+        <MudText Typo="Typo.h5" Class="mb-2">@ViewModel.VideoInfo.Title</MudText>
         
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                 <MudAvatar Size="Size.Medium" Color="Color.Primary">
-                    @(ViewModel.VideoDetails.Author?.FirstOrDefault().ToString().ToUpperInvariant() ?? "?")
+                    @(ViewModel.VideoInfo.Channel.Name?.FirstOrDefault().ToString().ToUpperInvariant() ?? "?")
                 </MudAvatar>
                 <MudLink Href="@GetAuthorUrl()" Target="_blank" Typo="Typo.subtitle1">
-                    @ViewModel.VideoDetails.Author
+                    @ViewModel.VideoInfo.Channel.Name
                 </MudLink>
             </MudStack>
 
             <MudStack Row="true" Spacing="3">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                     <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" />
-                    <MudText Typo="Typo.body2">@FormatViewCount(ViewModel.VideoDetails.ViewCount) views</MudText>
+                    <MudText Typo="Typo.body2">@FormatViewCount(ViewModel.VideoInfo.ViewCount) views</MudText>
                 </MudStack>
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                     <MudIcon Icon="@Icons.Material.Filled.ThumbUp" Size="Size.Small" />
-                    <MudText Typo="Typo.body2">@FormatNumber(ViewModel.VideoDetails.LikeCount)</MudText>
+                    <MudText Typo="Typo.body2">@FormatViewCount(ViewModel.VideoInfo.LikeCount)</MudText>
                 </MudStack>
             </MudStack>
         </MudStack>
 
         @* Description *@
-        @if (!string.IsNullOrEmpty(ViewModel.VideoDetails.Description))
+        @if (!string.IsNullOrEmpty(ViewModel.VideoInfo.Description))
         {
             <MudExpansionPanels>
                 <MudExpansionPanel Text="Description">
                     <MudText Typo="Typo.body2" Style="white-space: pre-wrap;">
-                        @ViewModel.VideoDetails.Description
+                        @ViewModel.VideoInfo.Description
                     </MudText>
                 </MudExpansionPanel>
             </MudExpansionPanels>

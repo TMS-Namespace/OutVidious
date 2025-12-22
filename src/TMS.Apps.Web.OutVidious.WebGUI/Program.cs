@@ -1,7 +1,7 @@
 using MudBlazor.Services;
 using Serilog;
-using TMS.Apps.Web.OutVidious.Core.Interfaces;
-using TMS.Apps.Web.OutVidious.Core.Services;
+using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
+using TMS.Apps.Web.OutVidious.Providers.Invidious;
 using TMS.Apps.Web.OutVidious.WebGUI.Components;
 
 // Configure Serilog - Find solution root for log file location
@@ -43,12 +43,12 @@ try
     // Add MudBlazor
     builder.Services.AddMudServices();
 
-    // Configure Invidious API service
-    const string invidiousBaseUrl = "https://youtube.srv1.tms.com";
+    // Configure Invidious video provider
+    var invidiousBaseUrl = new Uri("https://youtube.srv1.tms.com");
 
-    builder.Services.AddHttpClient<IInvidiousApiService, InvidiousApiService>(client =>
+    builder.Services.AddHttpClient<IVideoProvider, InvidiousVideoProvider>(client =>
     {
-        client.BaseAddress = new Uri(invidiousBaseUrl);
+        client.BaseAddress = invidiousBaseUrl;
         client.DefaultRequestHeaders.Add("Accept", "application/json");
         client.Timeout = TimeSpan.FromSeconds(30);
     })
@@ -58,12 +58,12 @@ try
         ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
     });
 
-    builder.Services.AddSingleton<IInvidiousApiService>(sp =>
+    builder.Services.AddSingleton<IVideoProvider>(sp =>
     {
         var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-        var httpClient = httpClientFactory.CreateClient(nameof(IInvidiousApiService));
-        var logger = sp.GetRequiredService<ILogger<InvidiousApiService>>();
-        return new InvidiousApiService(httpClient, logger, invidiousBaseUrl);
+        var httpClient = httpClientFactory.CreateClient(nameof(IVideoProvider));
+        var logger = sp.GetRequiredService<ILogger<InvidiousVideoProvider>>();
+        return new InvidiousVideoProvider(httpClient, logger, invidiousBaseUrl);
     });
 
     var app = builder.Build();
@@ -82,13 +82,18 @@ try
     app.UseAntiforgery();
 
     // Proxy endpoint for DASH manifest to avoid CORS issues (supports both GET and HEAD)
-    app.MapMethods("/api/proxy/dash/{videoId}", new[] { "GET", "HEAD" }, async (string videoId, IInvidiousApiService apiService, HttpContext context) =>
+    app.MapMethods("/api/proxy/dash/{videoId}", new[] { "GET", "HEAD" }, async (string videoId, IVideoProvider videoProvider, HttpContext context) =>
     {
         Log.Debug("DASH manifest proxy request: {Method} {VideoId}", context.Request.Method, videoId);
         
         try
         {
-            var dashUrl = apiService.GetDashManifestUrl(videoId);
+            var dashUrl = videoProvider.GetDashManifestUrl(videoId);
+            if (dashUrl == null)
+            {
+                Log.Warning("Provider does not support DASH manifest for video: {VideoId}", videoId);
+                return Results.NotFound("DASH manifest not supported");
+            }
             Log.Debug("Fetching DASH manifest from: {DashUrl}", dashUrl);
             
             using var httpClient = new HttpClient(new HttpClientHandler
@@ -112,7 +117,7 @@ try
             // Replace all video URLs to route through our proxy
             // The manifest contains URLs like https://host/videoplayback?... or /videoplayback?...
             // We need to route them through our /api/proxy/videoplayback endpoint
-            var baseUrl = apiService.BaseUrl;
+            var baseUrl = videoProvider.BaseUrl.ToString().TrimEnd('/');
             
             // Replace absolute URLs with our proxy
             content = content.Replace($"{baseUrl}/videoplayback", "/api/proxy/videoplayback");
@@ -141,24 +146,24 @@ try
 
     // Proxy endpoint for video playback segments to avoid CORS issues
     // This handles both /api/proxy/videoplayback and legacy /videoplayback paths
-    app.MapMethods("/api/proxy/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IInvidiousApiService apiService) =>
+    app.MapMethods("/api/proxy/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IVideoProvider videoProvider) =>
     {
-        await ProxyVideoPlaybackAsync(context, apiService);
+        await ProxyVideoPlaybackAsync(context, videoProvider);
     });
     
     // Also support /videoplayback for backwards compatibility and any edge cases
-    app.MapMethods("/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IInvidiousApiService apiService) =>
+    app.MapMethods("/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IVideoProvider videoProvider) =>
     {
-        await ProxyVideoPlaybackAsync(context, apiService);
+        await ProxyVideoPlaybackAsync(context, videoProvider);
     });
     
     // Handle /companion/videoplayback URLs that might appear in manifests
-    app.MapMethods("/companion/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IInvidiousApiService apiService) =>
+    app.MapMethods("/companion/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IVideoProvider videoProvider) =>
     {
-        await ProxyVideoPlaybackAsync(context, apiService);
+        await ProxyVideoPlaybackAsync(context, videoProvider);
     });
 
-    async Task ProxyVideoPlaybackAsync(HttpContext context, IInvidiousApiService apiService)
+    async Task ProxyVideoPlaybackAsync(HttpContext context, IVideoProvider videoProvider)
     {
         var queryString = context.Request.QueryString.Value ?? "";
         
@@ -175,9 +180,10 @@ try
         }
         else
         {
-            // Fallback to Invidious proxy
-            proxyUrl = $"{apiService.BaseUrl}/videoplayback{queryString}";
-            Log.Debug("Video proxy using Invidious: {BaseUrl}, Method: {Method}", apiService.BaseUrl, context.Request.Method);
+            // Fallback to provider proxy
+            var baseUrl = videoProvider.BaseUrl.ToString().TrimEnd('/');
+            proxyUrl = $"{baseUrl}/videoplayback{queryString}";
+            Log.Debug("Video proxy using provider: {BaseUrl}, Method: {Method}", baseUrl, context.Request.Method);
         }
         
         // Handle CORS preflight

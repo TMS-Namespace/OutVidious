@@ -1,12 +1,12 @@
 using System.Text.Json.Serialization;
-using TMS.Apps.Web.OutVidious.Core.Converters;
+using TMS.Apps.Web.OutVidious.Providers.Invidious.Converters;
 
-namespace TMS.Apps.Web.OutVidious.Core.Models;
+namespace TMS.Apps.Web.OutVidious.Providers.Invidious.ApiModels;
 
 /// <summary>
-/// Represents a format stream (video+audio combined) from the Invidious API.
+/// Raw format stream (video+audio combined) DTO from the Invidious API.
 /// </summary>
-public sealed record FormatStream
+public sealed record InvidiousFormatStreamDto
 {
     public string Url { get; init; } = string.Empty;
 

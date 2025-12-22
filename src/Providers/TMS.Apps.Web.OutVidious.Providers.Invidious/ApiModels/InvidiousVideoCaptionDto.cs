@@ -1,11 +1,11 @@
 using System.Text.Json.Serialization;
 
-namespace TMS.Apps.Web.OutVidious.Core.Models;
+namespace TMS.Apps.Web.OutVidious.Providers.Invidious.ApiModels;
 
 /// <summary>
-/// Represents a video caption/subtitle from the Invidious API.
+/// Raw video caption/subtitle DTO from the Invidious API.
 /// </summary>
-public sealed record VideoCaption
+public sealed record InvidiousVideoCaptionDto
 {
     public string Label { get; init; } = string.Empty;
 

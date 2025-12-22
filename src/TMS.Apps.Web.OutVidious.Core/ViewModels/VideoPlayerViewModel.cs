@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Logging;
+using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
+using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Enums;
+using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
 using TMS.Apps.Web.OutVidious.Core.Enums;
-using TMS.Apps.Web.OutVidious.Core.Interfaces;
-using TMS.Apps.Web.OutVidious.Core.Models;
 
 namespace TMS.Apps.Web.OutVidious.Core.ViewModels;
 
@@ -10,14 +11,14 @@ namespace TMS.Apps.Web.OutVidious.Core.ViewModels;
 /// </summary>
 public sealed class VideoPlayerViewModel : IDisposable
 {
-    private readonly IInvidiousApiService _apiService;
+    private readonly IVideoProvider _videoProvider;
     private readonly ILogger<VideoPlayerViewModel> _logger;
     private CancellationTokenSource? _loadCts;
     private bool _disposed;
 
-    public VideoPlayerViewModel(IInvidiousApiService apiService, ILogger<VideoPlayerViewModel> logger)
+    public VideoPlayerViewModel(IVideoProvider videoProvider, ILogger<VideoPlayerViewModel> logger)
     {
-        _apiService = apiService ?? throw new ArgumentNullException(nameof(apiService));
+        _videoProvider = videoProvider ?? throw new ArgumentNullException(nameof(videoProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -27,9 +28,9 @@ public sealed class VideoPlayerViewModel : IDisposable
     public event EventHandler? StateChanged;
 
     /// <summary>
-    /// Gets the current video details.
+    /// Gets the current video information.
     /// </summary>
-    public VideoDetails? VideoDetails { get; private set; }
+    public VideoInfo? VideoInfo { get; private set; }
 
     /// <summary>
     /// Gets the current video ID.
@@ -105,9 +106,9 @@ public sealed class VideoPlayerViewModel : IDisposable
 
         try
         {
-            VideoDetails = await _apiService.GetVideoDetailsAsync(videoId, _loadCts.Token);
+            VideoInfo = await _videoProvider.GetVideoInfoAsync(videoId, _loadCts.Token);
 
-            if (VideoDetails != null)
+            if (VideoInfo != null)
             {
                 UpdateAvailableQualities();
                 UpdateDashQualities();
@@ -115,7 +116,7 @@ public sealed class VideoPlayerViewModel : IDisposable
                 UpdateEmbedUrl();
                 UpdateDashManifestUrl();
                 LoadState = VideoLoadState.Loaded;
-                _logger.LogInformation("Successfully loaded video: {Title}", VideoDetails.Title);
+                _logger.LogInformation("Successfully loaded video: {Title}", VideoInfo.Title);
             }
             else
             {
@@ -172,15 +173,16 @@ public sealed class VideoPlayerViewModel : IDisposable
 
     private void UpdateAvailableQualities()
     {
-        if (VideoDetails?.FormatStreams == null || VideoDetails.FormatStreams.Count == 0)
+        if (VideoInfo?.CombinedStreams == null || VideoInfo.CombinedStreams.Count == 0)
         {
             AvailableQualities = [];
             SelectedQuality = null;
             return;
         }
 
-        AvailableQualities = VideoDetails.FormatStreams
-            .Select(f => f.QualityLabel)
+        AvailableQualities = VideoInfo.CombinedStreams
+            .Where(s => !string.IsNullOrEmpty(s.QualityLabel))
+            .Select(s => s.QualityLabel!)
             .Distinct()
             .ToList();
 
@@ -190,16 +192,16 @@ public sealed class VideoPlayerViewModel : IDisposable
 
     private void UpdateStreamUrl()
     {
-        if (VideoDetails?.FormatStreams == null || string.IsNullOrEmpty(SelectedQuality))
+        if (VideoInfo?.CombinedStreams == null || string.IsNullOrEmpty(SelectedQuality))
         {
             CurrentStreamUrl = null;
             return;
         }
 
-        var selectedStream = VideoDetails.FormatStreams
-            .FirstOrDefault(f => f.QualityLabel == SelectedQuality);
+        var selectedStream = VideoInfo.CombinedStreams
+            .FirstOrDefault(s => s.QualityLabel == SelectedQuality);
 
-        CurrentStreamUrl = selectedStream?.Url;
+        CurrentStreamUrl = selectedStream?.Url.ToString();
         _logger.LogDebug("Stream URL updated for quality {Quality}: {HasUrl}", SelectedQuality, CurrentStreamUrl != null);
     }
 
@@ -211,7 +213,7 @@ public sealed class VideoPlayerViewModel : IDisposable
             return;
         }
 
-        EmbedUrl = _apiService.GetEmbedUrl(VideoId);
+        EmbedUrl = _videoProvider.GetEmbedUrl(VideoId).ToString();
         _logger.LogDebug("Embed URL updated: {EmbedUrl}", EmbedUrl);
     }
 
@@ -224,22 +226,23 @@ public sealed class VideoPlayerViewModel : IDisposable
         }
 
         // Use proxied URL to avoid CORS issues
-        DashManifestUrl = _apiService.GetProxiedDashManifestUrl(VideoId);
+        var proxiedUrl = _videoProvider.GetProxiedDashManifestUrl(VideoId);
+        DashManifestUrl = proxiedUrl?.ToString();
         _logger.LogDebug("DASH manifest URL updated: {DashUrl}", DashManifestUrl);
     }
 
     private void UpdateDashQualities()
     {
-        if (VideoDetails?.AdaptiveFormats == null || VideoDetails.AdaptiveFormats.Count == 0)
+        if (VideoInfo?.AdaptiveStreams == null || VideoInfo.AdaptiveStreams.Count == 0)
         {
             AvailableDashQualities = [];
             return;
         }
 
         // Get video-only adaptive formats and extract quality labels
-        AvailableDashQualities = VideoDetails.AdaptiveFormats
-            .Where(f => !string.IsNullOrEmpty(f.QualityLabel) && f.Type.StartsWith("video/", StringComparison.OrdinalIgnoreCase))
-            .Select(f => f.QualityLabel!)
+        AvailableDashQualities = VideoInfo.AdaptiveStreams
+            .Where(s => !string.IsNullOrEmpty(s.QualityLabel) && s.Type == StreamType.Video)
+            .Select(s => s.QualityLabel!)
             .Distinct()
             .OrderByDescending(ParseQualityHeight)
             .ToList();

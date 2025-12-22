@@ -1,12 +1,12 @@
 using System.Text.Json.Serialization;
-using TMS.Apps.Web.OutVidious.Core.Converters;
+using TMS.Apps.Web.OutVidious.Providers.Invidious.Converters;
 
-namespace TMS.Apps.Web.OutVidious.Core.Models;
+namespace TMS.Apps.Web.OutVidious.Providers.Invidious.ApiModels;
 
 /// <summary>
-/// Represents an adaptive format stream (audio-only or video-only) from the Invidious API.
+/// Raw adaptive format stream (audio-only or video-only) DTO from the Invidious API.
 /// </summary>
-public sealed record AdaptiveFormat
+public sealed record InvidiousAdaptiveFormatDto
 {
     [JsonConverter(typeof(FlexibleStringConverter))]
     public string Index { get; init; } = string.Empty;

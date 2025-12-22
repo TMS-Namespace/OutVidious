@@ -1,9 +1,9 @@
-namespace TMS.Apps.Web.OutVidious.Core.Models;
+namespace TMS.Apps.Web.OutVidious.Providers.Invidious.ApiModels;
 
 /// <summary>
-/// Represents a video thumbnail from the Invidious API.
+/// Raw video thumbnail DTO from the Invidious API.
 /// </summary>
-public sealed record VideoThumbnail
+public sealed record InvidiousVideoThumbnailDto
 {
     public string Quality { get; init; } = string.Empty;
 

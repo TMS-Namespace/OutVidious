@@ -8,9 +8,12 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.Extensions.Logging" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TMS.Apps.Web.OutVidious.Common.ProvidersCore\TMS.Apps.Web.OutVidious.Common.ProvidersCore.csproj" />
   </ItemGroup>
 
 </Project>

@@ -9,6 +9,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.Web.OutVidious.Web
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.Web.OutVidious.Core", "src\TMS.Apps.Web.OutVidious.Core\TMS.Apps.Web.OutVidious.Core.csproj", "{E88527C6-3FC6-4FF0-8DF9-5E3B5530E871}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.Web.OutVidious.Common.ProvidersCore", "src\TMS.Apps.Web.OutVidious.Common.ProvidersCore\TMS.Apps.Web.OutVidious.Common.ProvidersCore.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Providers", "Providers", "{B2C3D4E5-F6A7-8901-BCDE-F12345678901}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.Web.OutVidious.Providers.Invidious", "src\Providers\TMS.Apps.Web.OutVidious.Providers.Invidious\TMS.Apps.Web.OutVidious.Providers.Invidious.csproj", "{C3D4E5F6-A7B8-9012-CDEF-123456789012}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,9 +32,20 @@ Global
 		{E88527C6-3FC6-4FF0-8DF9-5E3B5530E871}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E88527C6-3FC6-4FF0-8DF9-5E3B5530E871}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E88527C6-3FC6-4FF0-8DF9-5E3B5530E871}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{571864BA-E1F0-4AC8-B5E5-66D944DC6B5F} = {65C9E5DF-2F30-45FC-8EC4-D937BBB2A59C}
 		{E88527C6-3FC6-4FF0-8DF9-5E3B5530E871} = {65C9E5DF-2F30-45FC-8EC4-D937BBB2A59C}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890} = {65C9E5DF-2F30-45FC-8EC4-D937BBB2A59C}
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901} = {65C9E5DF-2F30-45FC-8EC4-D937BBB2A59C}
+		{C3D4E5F6-A7B8-9012-CDEF-123456789012} = {B2C3D4E5-F6A7-8901-BCDE-F12345678901}
 	EndGlobalSection
 EndGlobal

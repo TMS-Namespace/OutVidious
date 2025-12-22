@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TMS.Apps.Web.OutVidious.Core\TMS.Apps.Web.OutVidious.Core.csproj" />
+    <ProjectReference Include="..\Providers\TMS.Apps.Web.OutVidious.Providers.Invidious\TMS.Apps.Web.OutVidious.Providers.Invidious.csproj" />
   </ItemGroup>
 
   <ItemGroup>

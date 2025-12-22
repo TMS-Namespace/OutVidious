@@ -32,7 +32,7 @@ public partial class InvidiousPlayerComponent : ComponentBase, IAsyncDisposable
     public VideoPlayerViewModel? ViewModel { get; set; }
 
     [Parameter]
-    public string InvidiousBaseUrl { get; set; } = string.Empty;
+    public string ProviderBaseUrl { get; set; } = string.Empty;
 
     /// <summary>
     /// Unique ID for the Shaka Player video element.
@@ -233,20 +233,22 @@ public partial class InvidiousPlayerComponent : ComponentBase, IAsyncDisposable
 
     private string? GetPosterUrl()
     {
-        var thumbnail = ViewModel?.VideoDetails?.VideoThumbnails
-            .FirstOrDefault(t => t.Quality == "maxres" || t.Quality == "sddefault");
+        // Get the highest quality thumbnail
+        var thumbnail = ViewModel?.VideoInfo?.Thumbnails
+            .OrderByDescending(t => t.Width * t.Height)
+            .FirstOrDefault();
 
-        return thumbnail?.Url;
+        return thumbnail?.Url.ToString();
     }
 
     private string GetAuthorUrl()
     {
-        if (string.IsNullOrEmpty(InvidiousBaseUrl) || ViewModel?.VideoDetails == null)
+        if (string.IsNullOrEmpty(ProviderBaseUrl) || ViewModel?.VideoInfo == null)
         {
             return "#";
         }
 
-        return $"{InvidiousBaseUrl}/channel/{ViewModel.VideoDetails.AuthorId}";
+        return $"{ProviderBaseUrl}/channel/{ViewModel.VideoInfo.Channel.ChannelId}";
     }
 
     private static string FormatViewCount(long count)
