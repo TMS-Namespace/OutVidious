@@ -57,4 +57,40 @@ public interface IVideoProvider : IProviderInfo, IDisposable
     /// <param name="videoId">The video identifier to validate.</param>
     /// <returns>True if the video ID format is valid.</returns>
     bool IsValidVideoId(string videoId);
+
+    /// <summary>
+    /// Gets detailed information about a channel.
+    /// </summary>
+    /// <param name="channelId">The channel identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Channel details or null if not found.</returns>
+    Task<ChannelDetails?> GetChannelDetailsAsync(string channelId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gets a page of videos from a channel.
+    /// </summary>
+    /// <param name="channelId">The channel identifier.</param>
+    /// <param name="tab">The channel tab to fetch from (e.g., "videos", "shorts", "live"). Defaults to "videos".</param>
+    /// <param name="continuationToken">Token for pagination. Null for the first page.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A page of videos with continuation token for next page.</returns>
+    Task<ChannelVideoPage?> GetChannelVideosAsync(
+        string channelId,
+        string tab = "videos",
+        string? continuationToken = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the URL to a channel page.
+    /// </summary>
+    /// <param name="channelId">The channel identifier.</param>
+    /// <returns>The channel page URL.</returns>
+    Uri GetChannelUrl(string channelId);
+
+    /// <summary>
+    /// Validates whether a channel ID is in the correct format for this provider.
+    /// </summary>
+    /// <param name="channelId">The channel identifier to validate.</param>
+    /// <returns>True if the channel ID format is valid.</returns>
+    bool IsValidChannelId(string channelId);
 }

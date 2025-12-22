@@ -1,0 +1,77 @@
+@page "/channel/{ChannelId}"
+@inherits ChannelPageBase
+
+<PageTitle>@PageTitle</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    @if (ViewModel.IsLoading && ViewModel.Channel is null)
+    {
+        <div class="channel-loading">
+            <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />
+            <MudText Typo="Typo.body1" Class="mt-2">Loading channel...</MudText>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(ViewModel.ErrorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Class="ma-4">
+            @ViewModel.ErrorMessage
+        </MudAlert>
+    }
+    else if (ViewModel.Channel is not null)
+    {
+        <!-- Channel Header -->
+        <div class="channel-header">
+            @if (BannerUrl is not null)
+            {
+                <div class="channel-banner" style="background-image: url('@BannerUrl')"></div>
+            }
+
+            <div class="channel-info">
+                <MudAvatar Size="Size.Large" Class="channel-avatar">
+                    <MudImage Src="@AvatarUrl" Alt="@ViewModel.Channel.Name" />
+                </MudAvatar>
+
+                <div class="channel-details">
+                    <MudText Typo="Typo.h4" Class="channel-name">
+                        @ViewModel.Channel.Name
+                    </MudText>
+
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        @ViewModel.Channel.SubscriberCountText
+                    </MudText>
+
+                    @if (!string.IsNullOrWhiteSpace(ViewModel.Channel.Description))
+                    {
+                        <MudText Typo="Typo.body2" Class="channel-description mt-2">
+                            @ViewModel.Channel.Description
+                        </MudText>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        @if (ViewModel.Channel.AvailableTabs.Count > 0)
+        {
+            <MudTabs @bind-ActivePanelIndex="SelectedTabIndex" 
+                     Elevation="0" 
+                     ApplyEffectsToContainer="true"
+                     Class="channel-tabs">
+                @foreach (var tab in ViewModel.Channel.AvailableTabs)
+                {
+                    <MudTabPanel Text="@tab.DisplayName" ID="@tab.TabId" />
+                }
+            </MudTabs>
+        }
+
+        <!-- Videos Grid -->
+        <VideosGridComponent 
+            Videos="@ViewModel.Videos"
+            ShowChannelName="false"
+            IsLoading="@ViewModel.IsLoading"
+            IsLoadingMore="@ViewModel.IsLoadingMore"
+            HasMore="@ViewModel.HasMore"
+            OnVideoClick="HandleVideoClick"
+            OnLoadMore="HandleLoadMore" />
+    }
+</MudContainer>

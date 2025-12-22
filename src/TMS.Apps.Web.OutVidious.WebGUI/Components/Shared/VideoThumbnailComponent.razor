@@ -1,0 +1,54 @@
+@inherits VideoThumbnailComponentBase
+
+<MudCard Class="video-thumbnail-card" Elevation="0" Style="@CardStyle">
+    <MudCardMedia Image="@ThumbnailUrl" Height="180" Title="@Video?.Title" Class="video-thumbnail-image" />
+    
+    @if (Video is not null && Video.Duration.TotalSeconds > 0)
+    {
+        <div class="video-duration">@FormattedDuration</div>
+    }
+    
+    @if (Video?.IsLive == true)
+    {
+        <MudChip T="string" Size="Size.Small" Color="Color.Error" Class="live-badge">LIVE</MudChip>
+    }
+    else if (Video?.IsUpcoming == true)
+    {
+        <MudChip T="string" Size="Size.Small" Color="Color.Info" Class="upcoming-badge">UPCOMING</MudChip>
+    }
+
+    <MudCardContent Class="video-content pa-2">
+        <MudText Typo="Typo.body2" Class="video-title" title="@Video?.Title">
+            @Video?.Title
+        </MudText>
+        
+        @if (ShowChannelName && Video?.Channel is not null)
+        {
+            <span @onclick:stopPropagation="true">
+                <MudLink Typo="Typo.caption" 
+                         Color="Color.Secondary" 
+                         Class="channel-name"
+                         Href="@ChannelUrl"
+                         @onclick="OnChannelClick">
+                    @Video.Channel.Name
+                </MudLink>
+            </span>
+        }
+        
+        <div class="video-metadata">
+            @if (!string.IsNullOrWhiteSpace(Video?.ViewCountText))
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @Video.ViewCountText
+                </MudText>
+            }
+            
+            @if (!string.IsNullOrWhiteSpace(Video?.PublishedTimeText))
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    • @Video.PublishedTimeText
+                </MudText>
+            }
+        </div>
+    </MudCardContent>
+</MudCard>

@@ -137,6 +137,162 @@ public sealed partial class InvidiousVideoProvider : VideoProviderBase
         return YoutubeVideoIdRegex().IsMatch(videoId);
     }
 
+    /// <inheritdoc />
+    public override async Task<ChannelDetails?> GetChannelDetailsAsync(string channelId, CancellationToken cancellationToken)
+    {
+        ValidateChannelIdNotEmpty(channelId);
+
+        var apiUrl = $"{BaseUrl.ToString().TrimEnd('/')}/api/v1/channels/{Uri.EscapeDataString(channelId)}";
+        Logger.LogDebug("Fetching channel details from Invidious: {ApiUrl}", apiUrl);
+
+        try
+        {
+            var response = await HttpClient.GetAsync(apiUrl, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning(
+                    "Invidious API request failed with status {StatusCode} for channel {ChannelId}",
+                    response.StatusCode,
+                    channelId);
+                return null;
+            }
+
+            var dto = await response.Content.ReadFromJsonAsync<InvidiousChannelDto>(
+                _jsonOptions,
+                cancellationToken);
+
+            if (dto == null)
+            {
+                Logger.LogWarning("Invidious API returned null for channel {ChannelId}", channelId);
+                return null;
+            }
+
+            var channelDetails = ChannelMapper.ToChannelDetails(dto, BaseUrl);
+            Logger.LogDebug("Successfully fetched and mapped channel details for: {ChannelId}", channelId);
+
+            return channelDetails;
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "HTTP error while fetching channel {ChannelId} from Invidious", channelId);
+            throw;
+        }
+        catch (JsonException ex)
+        {
+            Logger.LogError(ex, "JSON parsing error for channel {ChannelId} from Invidious", channelId);
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public override async Task<ChannelVideoPage?> GetChannelVideosAsync(
+        string channelId,
+        string? tabId,
+        string? continuationToken,
+        CancellationToken cancellationToken)
+    {
+        ValidateChannelIdNotEmpty(channelId);
+
+        // Default to "videos" tab if not specified
+        var tab = string.IsNullOrWhiteSpace(tabId) ? "videos" : tabId;
+        
+        var apiUrl = BuildChannelVideosUrl(channelId, tab, continuationToken);
+        Logger.LogDebug("Fetching channel videos from Invidious: {ApiUrl}", apiUrl);
+
+        try
+        {
+            var response = await HttpClient.GetAsync(apiUrl, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning(
+                    "Invidious API request failed with status {StatusCode} for channel videos {ChannelId}",
+                    response.StatusCode,
+                    channelId);
+                return ChannelVideoPage.Empty(channelId, tab);
+            }
+
+            var dto = await response.Content.ReadFromJsonAsync<InvidiousChannelVideosResponseDto>(
+                _jsonOptions,
+                cancellationToken);
+
+            if (dto == null || dto.Videos == null)
+            {
+                Logger.LogWarning("Invidious API returned null for channel videos {ChannelId}", channelId);
+                return ChannelVideoPage.Empty(channelId, tab);
+            }
+
+            var videos = dto.Videos.Select(v => ChannelMapper.ToVideoSummary(v, BaseUrl)).ToList();
+
+            var page = new ChannelVideoPage
+            {
+                ChannelId = channelId,
+                Tab = tab,
+                Videos = videos,
+                ContinuationToken = dto.Continuation,
+                TotalVideoCount = null // Invidious doesn't provide total count in paginated responses
+            };
+
+            Logger.LogDebug(
+                "Successfully fetched {VideoCount} videos for channel {ChannelId}, HasMore: {HasMore}",
+                videos.Count,
+                channelId,
+                page.HasMore);
+
+            return page;
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "HTTP error while fetching channel videos {ChannelId} from Invidious", channelId);
+            throw;
+        }
+        catch (JsonException ex)
+        {
+            Logger.LogError(ex, "JSON parsing error for channel videos {ChannelId} from Invidious", channelId);
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public override Uri GetChannelUrl(string channelId)
+    {
+        ValidateChannelIdNotEmpty(channelId);
+        return CreateUri($"channel/{Uri.EscapeDataString(channelId)}");
+    }
+
+    /// <inheritdoc />
+    public override bool IsValidChannelId(string channelId)
+    {
+        if (string.IsNullOrWhiteSpace(channelId))
+        {
+            return false;
+        }
+
+        // YouTube channel IDs are 24 characters starting with "UC"
+        // Also accept custom handles starting with "@"
+        return YoutubeChannelIdRegex().IsMatch(channelId) || 
+               YoutubeChannelHandleRegex().IsMatch(channelId);
+    }
+
+    private string BuildChannelVideosUrl(string channelId, string tab, string? continuationToken)
+    {
+        var baseApiUrl = $"{BaseUrl.ToString().TrimEnd('/')}/api/v1/channels/{Uri.EscapeDataString(channelId)}/{tab}";
+
+        if (!string.IsNullOrWhiteSpace(continuationToken))
+        {
+            return $"{baseApiUrl}?continuation={Uri.EscapeDataString(continuationToken)}";
+        }
+
+        return baseApiUrl;
+    }
+
     [GeneratedRegex(@"^[a-zA-Z0-9_-]{11}$")]
     private static partial Regex YoutubeVideoIdRegex();
+
+    [GeneratedRegex(@"^UC[a-zA-Z0-9_-]{22}$")]
+    private static partial Regex YoutubeChannelIdRegex();
+
+    [GeneratedRegex(@"^@[a-zA-Z0-9_.-]{3,30}$")]
+    private static partial Regex YoutubeChannelHandleRegex();
 }

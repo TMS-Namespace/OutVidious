@@ -1,0 +1,59 @@
+@inherits VideosGridComponentBase
+
+<div class="videos-grid-container">
+    @if (Videos is null || Videos.Count == 0)
+    {
+        @if (IsLoading)
+        {
+            <div class="videos-grid-skeleton">
+                @for (var i = 0; i < 12; i++)
+                {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="180px" Class="mb-2" />
+                    <MudSkeleton Width="100%" Class="mb-1" />
+                    <MudSkeleton Width="60%" />
+                }
+            </div>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Class="ma-4">
+                @EmptyMessage
+            </MudAlert>
+        }
+    }
+    else
+    {
+        <div class="videos-grid @GridClass">
+            @foreach (var video in Videos)
+            {
+                <div class="video-item" @onclick="() => HandleVideoClick(video)">
+                    <VideoThumbnailComponent 
+                        Video="@video"
+                        ShowChannelName="@ShowChannelName"
+                        OnChannelClicked="HandleChannelClick" />
+                </div>
+            }
+        </div>
+
+        @if (HasMore && ShowLoadMore)
+        {
+            <div class="load-more-container">
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Primary"
+                           OnClick="HandleLoadMore"
+                           Disabled="@IsLoadingMore"
+                           StartIcon="@(IsLoadingMore ? null : Icons.Material.Filled.ExpandMore)">
+                    @if (IsLoadingMore)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Loading...</span>
+                    }
+                    else
+                    {
+                        <span>Load More</span>
+                    }
+                </MudButton>
+            </div>
+        }
+    }
+</div>

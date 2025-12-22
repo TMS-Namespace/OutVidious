@@ -57,6 +57,22 @@ public abstract class VideoProviderBase : IVideoProvider
     /// <inheritdoc />
     public abstract bool IsValidVideoId(string videoId);
 
+    /// <inheritdoc />
+    public abstract Task<ChannelDetails?> GetChannelDetailsAsync(string channelId, CancellationToken cancellationToken);
+
+    /// <inheritdoc />
+    public abstract Task<ChannelVideoPage?> GetChannelVideosAsync(
+        string channelId,
+        string tab = "videos",
+        string? continuationToken = null,
+        CancellationToken cancellationToken = default);
+
+    /// <inheritdoc />
+    public abstract Uri GetChannelUrl(string channelId);
+
+    /// <inheritdoc />
+    public abstract bool IsValidChannelId(string channelId);
+
     /// <summary>
     /// Validates that a video ID is not null or empty.
     /// </summary>
@@ -67,6 +83,19 @@ public abstract class VideoProviderBase : IVideoProvider
         if (string.IsNullOrWhiteSpace(videoId))
         {
             throw new ArgumentException("Video ID cannot be empty.", nameof(videoId));
+        }
+    }
+
+    /// <summary>
+    /// Validates that a channel ID is not null or empty.
+    /// </summary>
+    /// <param name="channelId">The channel ID to validate.</param>
+    /// <exception cref="ArgumentException">Thrown when channel ID is null or empty.</exception>
+    protected static void ValidateChannelIdNotEmpty(string channelId)
+    {
+        if (string.IsNullOrWhiteSpace(channelId))
+        {
+            throw new ArgumentException("Channel ID cannot be empty.", nameof(channelId));
         }
     }
 
