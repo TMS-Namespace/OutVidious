@@ -71,11 +71,6 @@ public class ChannelEntity
     /// </summary>
     public string? Keywords { get; set; }
 
-    /// <summary>
-    /// Default playback speed for videos from this channel.
-    /// </summary>
-    public float? DefaultPlaybackSpeed { get; set; }
-
     // Navigation properties
     public ICollection<VideoEntity> Videos { get; set; } = [];
 
@@ -83,5 +78,5 @@ public class ChannelEntity
 
     public ICollection<ChannelBannerMapEntity> Banners { get; set; } = [];
 
-    public SubscriptionEntity? Subscription { get; set; }
+    public ICollection<ScopedSubscriptionEntity> Subscriptions { get; set; } = [];
 }

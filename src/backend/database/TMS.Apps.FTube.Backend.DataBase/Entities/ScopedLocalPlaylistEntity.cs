@@ -1,12 +1,20 @@
 namespace TMS.Apps.FTube.Backend.DataBase.Entities;
 
 /// <summary>
-/// Represents a local playlist.
+/// Represents a local playlist scoped to a user.
 /// </summary>
-public class LocalPlaylistEntity
+public class ScopedLocalPlaylistEntity
 {
     public int Id { get; set; }
 
+    /// <summary>
+    /// User who owns this playlist.
+    /// </summary>
+    public int UserId { get; set; }
+
+    /// <summary>
+    /// When the playlist was created.
+    /// </summary>
     public DateTime CreatedAt { get; set; }
 
     /// <summary>
@@ -30,5 +38,7 @@ public class LocalPlaylistEntity
     public int SortOrder { get; set; }
 
     // Navigation properties
-    public ICollection<LocalPlaylistVideoMapEntity> VideoMappings { get; set; } = [];
+    public UserEntity User { get; set; } = null!;
+
+    public ICollection<ScopedLocalPlaylistVideoMapEntity> VideoMappings { get; set; } = [];
 }

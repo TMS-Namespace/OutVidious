@@ -59,6 +59,13 @@ public sealed record DataBaseConfig
     public int ConnectionTimeoutSeconds { get; init; } = 30;
 
     /// <summary>
+    /// Whether development mode is enabled.
+    /// When true, a development user will be seeded.
+    /// Default: true.
+    /// </summary>
+    public bool IsDevMode { get; init; } = true;
+
+    /// <summary>
     /// Builds a PostgreSQL connection string from the configured properties.
     /// </summary>
     public string BuildConnectionString()

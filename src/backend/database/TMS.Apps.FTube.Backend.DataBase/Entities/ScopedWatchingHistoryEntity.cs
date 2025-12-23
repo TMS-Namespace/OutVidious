@@ -1,11 +1,16 @@
 namespace TMS.Apps.FTube.Backend.DataBase.Entities;
 
 /// <summary>
-/// Represents a video watching history entry.
+/// Represents a video watching history entry scoped to a user.
 /// </summary>
-public class WatchingHistoryEntity
+public class ScopedWatchingHistoryEntity
 {
     public int Id { get; set; }
+
+    /// <summary>
+    /// User who owns this history entry.
+    /// </summary>
+    public int UserId { get; set; }
 
     /// <summary>
     /// When the video was started.
@@ -17,6 +22,9 @@ public class WatchingHistoryEntity
     /// </summary>
     public DateTime? LastWatchedAt { get; set; }
 
+    /// <summary>
+    /// The video being watched.
+    /// </summary>
     public int VideoId { get; set; }
 
     /// <summary>
@@ -39,6 +47,14 @@ public class WatchingHistoryEntity
     /// </summary>
     public float? PlaybackSpeed { get; set; }
 
-    // Navigation property
+    /// <summary>
+    /// Video quality label the user was watching (e.g., "1080p", "720p").
+    /// Used to resume at the same quality.
+    /// </summary>
+    public string? VideoQualityLabel { get; set; }
+
+    // Navigation properties
+    public UserEntity User { get; set; } = null!;
+
     public VideoEntity Video { get; set; } = null!;
 }

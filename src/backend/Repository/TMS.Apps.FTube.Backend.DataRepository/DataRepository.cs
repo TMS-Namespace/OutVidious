@@ -19,20 +19,30 @@ public sealed class DataRepository : IDataRepository
 {
     private readonly DataRepositoryConfig _config;
     private readonly ILogger<DataRepository> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly string _connectionString;
+    private readonly DevModeSeeder? _devModeSeeder;
 
     private readonly ICache<string, CachedItem<VideoInfo>> _videoCache;
     private readonly ICache<string, CachedItem<ChannelDetails>> _channelCache;
 
     private bool _disposed;
+    private bool _devUserSeeded;
 
     public DataRepository(
         DataRepositoryConfig config,
         ILoggerFactory loggerFactory)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
-        _logger = loggerFactory?.CreateLogger<DataRepository>() ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _logger = loggerFactory.CreateLogger<DataRepository>();
         _connectionString = config.DataBase.BuildConnectionString();
+
+        // Initialize dev mode seeder if enabled
+        if (config.DataBase.IsDevMode)
+        {
+            _devModeSeeder = new DevModeSeeder(loggerFactory);
+        }
 
         // Initialize caches with expiration
         _videoCache = new ConcurrentLruBuilder<string, CachedItem<VideoInfo>>()
@@ -53,6 +63,29 @@ public sealed class DataRepository : IDataRepository
 
     /// <summary>
     /// Creates a new FTubeDbContext instance using the configured connection string.
+    /// Ensures the database schema is created on first use and seeds dev user if enabled.
+    /// </summary>
+    private async Task<FTubeDbContext> CreateDbContextAsync(CancellationToken cancellationToken)
+    {
+        var optionsBuilder = new DbContextOptionsBuilder<FTubeDbContext>();
+        optionsBuilder.UseNpgsql(_connectionString);
+        var context = new FTubeDbContext(optionsBuilder.Options);
+
+        // Ensure database schema is created (code-first)
+        await context.Database.EnsureCreatedAsync(cancellationToken);
+
+        // Seed dev user if enabled and not already seeded
+        if (_devModeSeeder is not null && !_devUserSeeded)
+        {
+            await _devModeSeeder.SeedDevUserAsync(context, cancellationToken);
+            _devUserSeeded = true;
+        }
+
+        return context;
+    }
+
+    /// <summary>
+    /// Creates a new FTubeDbContext instance synchronously.
     /// Ensures the database schema is created on first use.
     /// </summary>
     private FTubeDbContext CreateDbContext()
@@ -103,7 +136,7 @@ public sealed class DataRepository : IDataRepository
             _logger.LogWarning("Provider returned null for video: {RemoteId}", remoteId);
             
             // Fall back to DB if provider fails (may have cached streams)
-            await using var dbContextFallback = CreateDbContext();
+            await using var dbContextFallback = await CreateDbContextAsync(cancellationToken);
             var entityFallback = await dbContextFallback.Videos
                 .Include(v => v.Channel)
                 .Include(v => v.Thumbnails).ThenInclude(t => t.Image)
@@ -115,7 +148,7 @@ public sealed class DataRepository : IDataRepository
         }
 
         // 3. Check database for existing entity to update
-        await using var dbContext = CreateDbContext();
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var entity = await dbContext.Videos
             .Include(v => v.Channel)
             .FirstOrDefaultAsync(v => v.RemoteId == remoteId, cancellationToken);
@@ -153,7 +186,7 @@ public sealed class DataRepository : IDataRepository
         }
 
         // 2. Check database
-        await using var dbContext = CreateDbContext();
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var entity = await dbContext.Channels
             .Include(c => c.Avatars).ThenInclude(a => a.Image)
             .Include(c => c.Banners).ThenInclude(b => b.Image)
@@ -239,7 +272,7 @@ public sealed class DataRepository : IDataRepository
 
     private async Task UpsertVideoSummariesAsync(string channelId, IReadOnlyList<VideoSummary> videos, CancellationToken cancellationToken)
     {
-        await using var dbContext = CreateDbContext();
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
 
         // Get channel entity to link videos
         var channelEntity = await dbContext.Channels
@@ -384,9 +417,12 @@ public sealed class DataRepository : IDataRepository
         }
 
         // Combine all streams from the video (only those with itag)
+        // Use GroupBy to ensure uniqueness by itag (same itag might appear in both adaptive and combined)
         var allStreams = video.AdaptiveStreams
             .Concat(video.CombinedStreams)
             .Where(s => s.Itag.HasValue) // Only save streams with itag for unique constraint
+            .GroupBy(s => s.Itag!.Value)
+            .Select(g => g.First()) // Take first stream per itag
             .ToList();
 
         // Add all new streams

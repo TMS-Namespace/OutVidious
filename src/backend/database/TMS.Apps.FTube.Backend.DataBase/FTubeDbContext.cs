@@ -14,6 +14,7 @@ public class FTubeDbContext : DbContext
     {
     }
 
+    // Shared tables (not user-scoped)
     public DbSet<ChannelEntity> Channels => Set<ChannelEntity>();
 
     public DbSet<VideoEntity> Videos => Set<VideoEntity>();
@@ -28,15 +29,23 @@ public class FTubeDbContext : DbContext
 
     public DbSet<VideoThumbnailMapEntity> VideoThumbnailMaps => Set<VideoThumbnailMapEntity>();
 
-    public DbSet<SubscriptionEntity> Subscriptions => Set<SubscriptionEntity>();
-
-    public DbSet<LocalPlaylistEntity> LocalPlaylists => Set<LocalPlaylistEntity>();
-
-    public DbSet<LocalPlaylistVideoMapEntity> LocalPlaylistVideoMaps => Set<LocalPlaylistVideoMapEntity>();
-
-    public DbSet<WatchingHistoryEntity> WatchingHistory => Set<WatchingHistoryEntity>();
-
     public DbSet<StreamEntity> Streams => Set<StreamEntity>();
+
+    // User table
+    public DbSet<UserEntity> Users => Set<UserEntity>();
+
+    // Scoped tables (user-specific)
+    public DbSet<ScopedSubscriptionEntity> ScopedSubscriptions => Set<ScopedSubscriptionEntity>();
+
+    public DbSet<ScopedLocalPlaylistEntity> ScopedLocalPlaylists => Set<ScopedLocalPlaylistEntity>();
+
+    public DbSet<ScopedLocalPlaylistVideoMapEntity> ScopedLocalPlaylistVideoMaps => Set<ScopedLocalPlaylistVideoMapEntity>();
+
+    public DbSet<ScopedWatchingHistoryEntity> ScopedWatchingHistory => Set<ScopedWatchingHistoryEntity>();
+
+    public DbSet<ScopedGroupEntity> ScopedGroups => Set<ScopedGroupEntity>();
+
+    public DbSet<ScopedSubscriptionGroupMapEntity> ScopedSubscriptionGroupMaps => Set<ScopedSubscriptionGroupMapEntity>();
 
     // Enum tables
     public DbSet<EnumStreamTypeEntity> EnumStreamTypes => Set<EnumStreamTypeEntity>();
@@ -63,6 +72,7 @@ public class FTubeDbContext : DbContext
         ConfigureEnumAudioQuality(modelBuilder);
         ConfigureEnumProjectionType(modelBuilder);
 
+        // Shared tables
         ConfigureChannel(modelBuilder);
         ConfigureVideo(modelBuilder);
         ConfigureImage(modelBuilder);
@@ -71,10 +81,36 @@ public class FTubeDbContext : DbContext
         ConfigureChannelAvatarMap(modelBuilder);
         ConfigureChannelBannerMap(modelBuilder);
         ConfigureVideoThumbnailMap(modelBuilder);
-        ConfigureSubscription(modelBuilder);
-        ConfigureLocalPlaylist(modelBuilder);
-        ConfigureLocalPlaylistVideoMap(modelBuilder);
-        ConfigureWatchingHistory(modelBuilder);
+
+        // User table
+        ConfigureUser(modelBuilder);
+
+        // Scoped tables
+        ConfigureScopedSubscription(modelBuilder);
+        ConfigureScopedLocalPlaylist(modelBuilder);
+        ConfigureScopedLocalPlaylistVideoMap(modelBuilder);
+        ConfigureScopedWatchingHistory(modelBuilder);
+        ConfigureScopedGroup(modelBuilder);
+        ConfigureScopedSubscriptionGroupMap(modelBuilder);
+    }
+
+    private static void ConfigureUser(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<UserEntity>(entity =>
+        {
+            entity.ToTable("user");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+
+            entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(255).IsRequired();
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("now()");
+
+            entity.HasIndex(e => e.Name);
+        });
     }
 
     private static void ConfigureChannel(ModelBuilder modelBuilder)
@@ -103,7 +139,6 @@ public class FTubeDbContext : DbContext
             entity.Property(e => e.JoinedAt).HasColumnName("joined_at");
             entity.Property(e => e.IsVerified).HasColumnName("is_verified");
             entity.Property(e => e.Keywords).HasColumnName("keywords").HasMaxLength(1000);
-            entity.Property(e => e.DefaultPlaybackSpeed).HasColumnName("default_playback_speed");
 
             entity.HasIndex(e => e.RemoteId).IsUnique();
             entity.HasIndex(e => e.Handle);
@@ -276,40 +311,58 @@ public class FTubeDbContext : DbContext
         });
     }
 
-    private static void ConfigureSubscription(ModelBuilder modelBuilder)
+    private static void ConfigureScopedSubscription(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<SubscriptionEntity>(entity =>
+        modelBuilder.Entity<ScopedSubscriptionEntity>(entity =>
         {
-            entity.ToTable("subscription");
+            entity.ToTable("scoped_subscription");
 
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.Property(e => e.CreatedAt)
                 .HasColumnName("created_at")
                 .HasDefaultValueSql("now()");
 
+            entity.Property(e => e.ModifiedAt)
+                .HasColumnName("modified_at")
+                .HasDefaultValueSql("now()");
+
             entity.Property(e => e.ChannelId).HasColumnName("channel_id");
+            entity.Property(e => e.Alias).HasColumnName("alias").HasMaxLength(255);
             entity.Property(e => e.NotificationsEnabled).HasColumnName("notifications_enabled");
             entity.Property(e => e.NotificationSettings).HasColumnName("notification_settings");
+            entity.Property(e => e.DefaultPlaybackSpeed).HasColumnName("default_playback_speed");
+            entity.Property(e => e.DefaultSyncInterval).HasColumnName("default_sync_interval");
 
-            entity.HasIndex(e => e.ChannelId).IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.ChannelId }).IsUnique();
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.ChannelId);
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.Subscriptions)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(e => e.Channel)
-                .WithOne(c => c.Subscription)
-                .HasForeignKey<SubscriptionEntity>(e => e.ChannelId)
+                .WithMany(c => c.Subscriptions)
+                .HasForeignKey(e => e.ChannelId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
 
-    private static void ConfigureLocalPlaylist(ModelBuilder modelBuilder)
+    private static void ConfigureScopedLocalPlaylist(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<LocalPlaylistEntity>(entity =>
+        modelBuilder.Entity<ScopedLocalPlaylistEntity>(entity =>
         {
-            entity.ToTable("local_playlist");
+            entity.ToTable("scoped_local_playlist");
 
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.Property(e => e.CreatedAt)
                 .HasColumnName("created_at")
@@ -320,15 +373,21 @@ public class FTubeDbContext : DbContext
             entity.Property(e => e.IsBuiltIn).HasColumnName("is_built_in");
             entity.Property(e => e.SortOrder).HasColumnName("sort_order");
 
-            entity.HasIndex(e => e.Alias);
+            entity.HasIndex(e => new { e.UserId, e.Alias });
+            entity.HasIndex(e => e.UserId);
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.LocalPlaylists)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 
-    private static void ConfigureLocalPlaylistVideoMap(ModelBuilder modelBuilder)
+    private static void ConfigureScopedLocalPlaylistVideoMap(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<LocalPlaylistVideoMapEntity>(entity =>
+        modelBuilder.Entity<ScopedLocalPlaylistVideoMapEntity>(entity =>
         {
-            entity.ToTable("local_playlist_video_map");
+            entity.ToTable("scoped_local_playlist_video_map");
 
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
@@ -356,14 +415,16 @@ public class FTubeDbContext : DbContext
         });
     }
 
-    private static void ConfigureWatchingHistory(ModelBuilder modelBuilder)
+    private static void ConfigureScopedWatchingHistory(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<WatchingHistoryEntity>(entity =>
+        modelBuilder.Entity<ScopedWatchingHistoryEntity>(entity =>
         {
-            entity.ToTable("watching_history");
+            entity.ToTable("scoped_watching_history");
 
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.Property(e => e.StartedAt)
                 .HasColumnName("started_at")
@@ -373,15 +434,88 @@ public class FTubeDbContext : DbContext
             entity.Property(e => e.VideoId).HasColumnName("video_id");
             entity.Property(e => e.LastPosition).HasColumnName("last_position");
             entity.Property(e => e.VideoDuration).HasColumnName("video_duration");
-            entity.Property(e => e.MarkedAsWatched).HasColumnName("mark_as_watched");
+            entity.Property(e => e.MarkedAsWatched).HasColumnName("marked_as_watched");
             entity.Property(e => e.PlaybackSpeed).HasColumnName("playback_speed");
+            entity.Property(e => e.VideoQualityLabel).HasColumnName("video_quality_label").HasMaxLength(20);
 
+            entity.HasIndex(e => new { e.UserId, e.VideoId });
+            entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.VideoId);
             entity.HasIndex(e => e.StartedAt);
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.WatchingHistory)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(e => e.Video)
                 .WithMany(v => v.WatchingHistory)
                 .HasForeignKey(e => e.VideoId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureScopedGroup(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ScopedGroupEntity>(entity =>
+        {
+            entity.ToTable("scoped_group");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Alias).HasColumnName("alias").HasMaxLength(255).IsRequired();
+            entity.Property(e => e.ParentGroupId).HasColumnName("parent_group_id");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("now()");
+
+            entity.Property(e => e.ModifiedAt)
+                .HasColumnName("modified_at")
+                .HasDefaultValueSql("now()");
+
+            entity.HasIndex(e => new { e.UserId, e.Alias });
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.ParentGroupId);
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.Groups)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ParentGroup)
+                .WithMany(g => g.ChildGroups)
+                .HasForeignKey(e => e.ParentGroupId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigureScopedSubscriptionGroupMap(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ScopedSubscriptionGroupMapEntity>(entity =>
+        {
+            entity.ToTable("scoped_subscription_group_map");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+
+            entity.Property(e => e.GroupId).HasColumnName("group_id");
+            entity.Property(e => e.SubscriptionId).HasColumnName("subscription_id");
+
+            entity.HasIndex(e => new { e.GroupId, e.SubscriptionId }).IsUnique();
+            entity.HasIndex(e => e.GroupId);
+            entity.HasIndex(e => e.SubscriptionId);
+
+            entity.HasOne(e => e.Group)
+                .WithMany(g => g.SubscriptionMappings)
+                .HasForeignKey(e => e.GroupId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Subscription)
+                .WithMany(s => s.GroupMappings)
+                .HasForeignKey(e => e.SubscriptionId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
