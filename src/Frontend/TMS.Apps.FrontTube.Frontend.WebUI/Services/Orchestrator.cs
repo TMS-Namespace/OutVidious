@@ -2,7 +2,7 @@ using TMS.Apps.FTube.Backend.DataRepository.Interfaces;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
 using TMS.Apps.Web.OutVidious.Core.ViewModels;
 
-namespace TMS.Apps.Web.OutVidious.WebGUI.Services;
+namespace TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
 /// <summary>
 /// Orchestrator service that creates and manages the Super ViewModel instance.

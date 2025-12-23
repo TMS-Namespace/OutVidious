@@ -1,14 +1,14 @@
 using Microsoft.AspNetCore.Components;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
 using TMS.Apps.Web.OutVidious.Core.ViewModels;
-using TMS.Apps.Web.OutVidious.WebGUI.Services;
+using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
-namespace TMS.Apps.Web.OutVidious.WebGUI.Components.Pages;
+namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Pages;
 
 /// <summary>
 /// Page for displaying a YouTube channel's content.
 /// </summary>
-public partial class ChannelPageBase : ComponentBase, IDisposable
+public partial class ChannelPage : ComponentBase, IDisposable
 {
     private int _selectedTabIndex;
     private bool _isDisposed;
@@ -20,7 +20,7 @@ public partial class ChannelPageBase : ComponentBase, IDisposable
     private Orchestrator Orchestrator { get; set; } = null!;
 
     [Inject]
-    private ILogger<ChannelPageBase> Logger { get; set; } = null!;
+    private ILogger<ChannelPage> Logger { get; set; } = null!;
 
     [Inject]
     private NavigationManager NavigationManager { get; set; } = null!;

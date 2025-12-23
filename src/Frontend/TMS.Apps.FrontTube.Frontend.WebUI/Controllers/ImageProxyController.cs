@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using TMS.Apps.FTube.Backend.DataRepository.Interfaces;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
 
-namespace TMS.Apps.Web.OutVidious.WebGUI.Controllers;
+namespace TMS.Apps.FrontTube.Frontend.WebUI.Controllers;
 
 /// <summary>
 /// Controller that proxies image requests through the caching layer (memory → DB → web).

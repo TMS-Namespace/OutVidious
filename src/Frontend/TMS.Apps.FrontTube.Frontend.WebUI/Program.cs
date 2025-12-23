@@ -5,8 +5,8 @@ using TMS.Apps.FTube.Backend.DataRepository.Interfaces;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Configuration;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
 using TMS.Apps.Web.OutVidious.Providers.Invidious;
-using TMS.Apps.Web.OutVidious.WebGUI.Components;
-using TMS.Apps.Web.OutVidious.WebGUI.Services;
+using TMS.Apps.FrontTube.Frontend.WebUI.Components;
+using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
 // Configure Serilog - Find solution root for log file location
 var solutionRoot = Directory.GetCurrentDirectory();
@@ -16,8 +16,8 @@ while (searchDir != null && !searchDir.GetFiles("*.sln").Any())
     searchDir = searchDir.Parent;
 }
 var logPath = searchDir != null 
-    ? Path.Combine(searchDir.FullName, "logs", "outvidious-.log")
-    : Path.Combine(AppContext.BaseDirectory, "logs", "outvidious-.log");
+    ? Path.Combine(searchDir.FullName, "logs", "front-tube-.log")
+    : Path.Combine(AppContext.BaseDirectory, "logs", "front-tube-.log");
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -33,7 +33,7 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
-    Log.Information("Starting OutVidious WebGUI application");
+    Log.Information("Starting FrontTube WebUI application");
 
     var builder = WebApplication.CreateBuilder(args);
 

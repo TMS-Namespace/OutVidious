@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Enums;
-using TMS.Apps.Web.OutVidious.WebGUI.Services;
+using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
-namespace TMS.Apps.Web.OutVidious.WebGUI.Components.Shared;
+namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Shared;
 
 /// <summary>
 /// Component for displaying a single video thumbnail with metadata.

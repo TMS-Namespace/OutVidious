@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Components;
 using TMS.Apps.Web.OutVidious.Core.ViewModels;
-using TMS.Apps.Web.OutVidious.WebGUI.Services;
+using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
-namespace TMS.Apps.Web.OutVidious.WebGUI.Components.Pages;
+namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Pages;
 
 /// <summary>
 /// Code-behind for the Home page.

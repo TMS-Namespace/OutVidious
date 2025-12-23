@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
 
-namespace TMS.Apps.Web.OutVidious.WebGUI.Components.Shared;
+namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Shared;
 
 /// <summary>
 /// Component for displaying a grid of video thumbnails.

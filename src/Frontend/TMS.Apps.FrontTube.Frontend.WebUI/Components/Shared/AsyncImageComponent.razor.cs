@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using TMS.Apps.Web.OutVidious.Core.ViewModels;
-using TMS.Apps.Web.OutVidious.WebGUI.Services;
+using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
-namespace TMS.Apps.Web.OutVidious.WebGUI.Components.Shared;
+namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Shared;
 
 /// <summary>
 /// Component for loading images asynchronously with caching support.

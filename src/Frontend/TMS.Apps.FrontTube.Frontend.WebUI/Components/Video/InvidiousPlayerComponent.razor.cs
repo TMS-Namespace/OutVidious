@@ -3,9 +3,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using TMS.Apps.Web.OutVidious.Core.Enums;
 using TMS.Apps.Web.OutVidious.Core.ViewModels;
-using TMS.Apps.Web.OutVidious.WebGUI.Services;
+using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
-namespace TMS.Apps.Web.OutVidious.WebGUI.Components.Video;
+namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Video;
 
 /// <summary>
 /// Code-behind for the Invidious video player component.

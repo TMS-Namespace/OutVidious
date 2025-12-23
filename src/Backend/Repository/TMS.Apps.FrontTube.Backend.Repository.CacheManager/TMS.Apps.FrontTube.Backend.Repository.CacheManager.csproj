@@ -15,8 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\TMS.Apps.Web.OutVidious.Common.ProvidersCore\TMS.Apps.Web.OutVidious.Common.ProvidersCore.csproj" />
-    <ProjectReference Include="..\..\database\TMS.Apps.FTube.Backend.DataBase\TMS.Apps.FTube.Backend.DataBase.csproj" />
+    <ProjectReference Include="../../Common/TMS.Apps.FrontTube.Backend.Common.ProviderCore/TMS.Apps.FrontTube.Backend.Common.ProviderCore.csproj" />
+    <ProjectReference Include="../TMS.Apps.FrontTube.Backend.Repository.DataBase/TMS.Apps.FrontTube.Backend.Repository.DataBase.csproj" />
   </ItemGroup>
+
+
 
 </Project>
