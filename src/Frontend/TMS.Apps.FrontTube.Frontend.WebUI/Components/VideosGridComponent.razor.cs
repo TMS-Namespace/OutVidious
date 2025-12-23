@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 
-namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Shared;
+namespace TMS.Apps.FrontTube.Frontend.WebUI.Components;
 
 /// <summary>
 /// Component for displaying a grid of video thumbnails.

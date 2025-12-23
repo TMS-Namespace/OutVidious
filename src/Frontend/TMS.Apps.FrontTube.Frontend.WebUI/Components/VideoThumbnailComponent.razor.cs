@@ -3,7 +3,7 @@ using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
-namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Shared;
+namespace TMS.Apps.FrontTube.Frontend.WebUI.Components;
 
 /// <summary>
 /// Component for displaying a single video thumbnail with metadata.

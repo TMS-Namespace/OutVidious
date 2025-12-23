@@ -7,6 +7,7 @@ using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious;
 using TMS.Apps.FrontTube.Frontend.WebUI.Components;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
+using TMS.Apps.FrontTube.Frontend.WebUI;
 
 // Configure Serilog - Find solution root for log file location
 var solutionRoot = Directory.GetCurrentDirectory();

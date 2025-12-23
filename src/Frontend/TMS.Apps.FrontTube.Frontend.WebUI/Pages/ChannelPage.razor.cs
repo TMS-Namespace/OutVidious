@@ -3,7 +3,7 @@ using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
-namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Pages;
+namespace TMS.Apps.FrontTube.Frontend.WebUI.Pages;
 
 /// <summary>
 /// Page for displaying a YouTube channel's content.

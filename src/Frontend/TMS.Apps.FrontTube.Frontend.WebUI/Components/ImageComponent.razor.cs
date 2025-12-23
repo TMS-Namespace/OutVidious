@@ -3,13 +3,13 @@ using MudBlazor;
 using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
-namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Shared;
+namespace TMS.Apps.FrontTube.Frontend.WebUI.Components;
 
 /// <summary>
 /// Component for loading images asynchronously with caching support.
 /// Shows a skeleton while loading, and a fallback icon on failure.
 /// </summary>
-public partial class AsyncImageComponentBase : ComponentBase, IDisposable
+public partial class ImageComponent : ComponentBase, IDisposable
 {
     private CancellationTokenSource? _cts;
     private Image? _imageViewModel;
@@ -20,7 +20,7 @@ public partial class AsyncImageComponentBase : ComponentBase, IDisposable
     private Orchestrator Orchestrator { get; set; } = null!;
 
     [Inject]
-    private ILogger<AsyncImageComponentBase> Logger { get; set; } = null!;
+    private ILogger<ImageComponent> Logger { get; set; } = null!;
 
     /// <summary>
     /// The URL of the image to load.

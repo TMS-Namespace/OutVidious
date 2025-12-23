@@ -1,6 +1,6 @@
 ﻿@page "/"
 
-@using TMS.Apps.FrontTube.Frontend.WebUI.Components.Video
+@using TMS.Apps.FrontTube.Frontend.WebUI.Components
 
 <PageTitle>OutVidious - Home</PageTitle>
 
@@ -42,7 +42,7 @@
 
     @if (_videoPlayerVm != null)
     {
-        <InvidiousPlayerComponent ViewModel="_videoPlayerVm" 
+        <VideoPlayerComponent ViewModel="_videoPlayerVm" 
                                    ProviderBaseUrl="@ProviderBaseUrl" />
     }
 </MudContainer>

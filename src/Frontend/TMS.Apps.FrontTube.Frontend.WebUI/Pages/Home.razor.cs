@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Components;
 using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
-namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Pages;
+namespace TMS.Apps.FrontTube.Frontend.WebUI.Pages;
 
 /// <summary>
 /// Code-behind for the Home page.

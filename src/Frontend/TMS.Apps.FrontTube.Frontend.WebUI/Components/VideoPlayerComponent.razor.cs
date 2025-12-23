@@ -5,16 +5,16 @@ using TMS.Apps.FrontTube.Backend.Core.Enums;
 using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
-namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Video;
+namespace TMS.Apps.FrontTube.Frontend.WebUI.Components;
 
 /// <summary>
 /// Code-behind for the Invidious video player component.
 /// Supports Native, DASH (Shaka Player), and Embedded player modes.
 /// </summary>
-public partial class InvidiousPlayerComponent : ComponentBase, IAsyncDisposable
+public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
 {
     private bool _disposed;
-    private DotNetObjectReference<InvidiousPlayerComponent>? _dotNetRef;
+    private DotNetObjectReference<VideoPlayerComponent>? _dotNetRef;
     private bool _shakaPlayerLoading;
     private bool _shakaPlayerInitialized;
     private string? _shakaPlayerError;
@@ -27,7 +27,7 @@ public partial class InvidiousPlayerComponent : ComponentBase, IAsyncDisposable
     private IJSRuntime JsRuntime { get; set; } = default!;
 
     [Inject]
-    private ILogger<InvidiousPlayerComponent> Logger { get; set; } = default!;
+    private ILogger<VideoPlayerComponent> Logger { get; set; } = default!;
 
     [Inject]
     private Orchestrator Orchestrator { get; set; } = default!;
