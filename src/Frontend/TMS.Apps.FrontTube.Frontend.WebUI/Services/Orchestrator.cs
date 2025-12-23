@@ -1,4 +1,4 @@
-using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 

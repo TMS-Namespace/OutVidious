@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
-using TMS.Apps.FrontTube.Backend.Repository.CacheManager;
-using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.Cache;
+using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
@@ -43,7 +43,7 @@ public sealed class Super : IDisposable
     public Super(
         ILoggerFactory loggerFactory,
         IVideoProvider videoProvider,
-        DataRepositoryConfig dataRepositoryConfig)
+        CacheConfig dataRepositoryConfig)
     {
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         _videoProvider = videoProvider ?? throw new ArgumentNullException(nameof(videoProvider));

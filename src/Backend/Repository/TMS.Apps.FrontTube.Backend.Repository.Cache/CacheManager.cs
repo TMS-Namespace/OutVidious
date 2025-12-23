@@ -4,20 +4,20 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
-using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Interfaces;
-using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Mappers;
+using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.Cache.Mappers;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
-namespace TMS.Apps.FrontTube.Backend.Repository.CacheManager;
+namespace TMS.Apps.FrontTube.Backend.Repository.Cache;
 
 /// <summary>
 /// Data repository implementing multi-tier caching: Memory → Database → Provider.
 /// </summary>
 public sealed class CacheManager : ICacheManager
 {
-    private readonly DataRepositoryConfig _config;
+    private readonly CacheConfig _config;
     private readonly ILogger<CacheManager> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly string _connectionString;
@@ -32,7 +32,7 @@ public sealed class CacheManager : ICacheManager
     private bool _devUserSeeded;
 
     public CacheManager(
-        DataRepositoryConfig config,
+        CacheConfig config,
         ILoggerFactory loggerFactory)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));

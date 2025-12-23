@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../Common/TMS.Apps.FrontTube.Backend.Common.ProviderCore/TMS.Apps.FrontTube.Backend.Common.ProviderCore.csproj" />
-    <ProjectReference Include="../TMS.Apps.FrontTube.Backend.Repository.DataBase/TMS.Apps.FrontTube.Backend.Repository.DataBase.csproj" />
+    <ProjectReference Include="../TMS.Apps.FrontTube.Backend.Repository.DataBase/TMS.Apps.FrontTube.Backend.Repository.DataBase.csproj" PrivateAssets="all"/>
   </ItemGroup>
 
 

@@ -21,7 +21,7 @@ public sealed record DataBaseConfig
     /// Database name.
     /// Default: ftube.
     /// </summary>
-    public string Database { get; init; } = "ftube";
+    public string DatabaseName { get; init; } = "front_tube";
 
     /// <summary>
     /// Database username.
@@ -56,7 +56,7 @@ public sealed record DataBaseConfig
     /// Connection timeout in seconds.
     /// Default: 30.
     /// </summary>
-    public int ConnectionTimeoutSeconds { get; init; } = 30;
+    public int ConnectionTimeoutSeconds { get; init; } = 5;
 
     /// <summary>
     /// Whether development mode is enabled.
@@ -70,7 +70,7 @@ public sealed record DataBaseConfig
     /// </summary>
     public string BuildConnectionString()
     {
-        return $"Host={Host};Port={Port};Database={Database};Username={Username};Password={Password};" +
+        return $"Host={Host};Port={Port};Database={DatabaseName};Username={Username};Password={Password};" +
                $"Minimum Pool Size={MinPoolSize};Maximum Pool Size={MaxPoolSize};Timeout={ConnectionTimeoutSeconds};" +
                $"Include Error Detail={IncludeErrorDetail}";
     }

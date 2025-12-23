@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Controllers;

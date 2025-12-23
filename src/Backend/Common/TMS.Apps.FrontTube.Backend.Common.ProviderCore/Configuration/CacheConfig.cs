@@ -3,7 +3,7 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 /// <summary>
 /// Configuration for the data repository cache and staleness thresholds.
 /// </summary>
-public sealed record DataRepositoryConfig
+public sealed record CacheConfig
 {
     /// <summary>
     /// Database connection configuration.

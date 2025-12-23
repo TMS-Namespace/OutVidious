@@ -1,4 +1,4 @@
-namespace TMS.Apps.FrontTube.Backend.Repository.CacheManager;
+namespace TMS.Apps.FrontTube.Backend.Repository.Cache;
 
 /// <summary>
 /// Wrapper for cached items that tracks when they were last synced.

@@ -13,8 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Common/TMS.Apps.FrontTube.Backend.Common.ProviderCore/TMS.Apps.FrontTube.Backend.Common.ProviderCore.csproj" />
-    <ProjectReference Include="../Repository/TMS.Apps.FrontTube.Backend.Repository.CacheManager/TMS.Apps.FrontTube.Backend.Repository.CacheManager.csproj" />
+    <ProjectReference Include="../Common/TMS.Apps.FrontTube.Backend.Common.ProviderCore/TMS.Apps.FrontTube.Backend.Common.ProviderCore.csproj" PrivateAssets="all"/>
+    <ProjectReference Include="../Repository/TMS.Apps.FrontTube.Backend.Repository.Cache/TMS.Apps.FrontTube.Backend.Repository.Cache.csproj" PrivateAssets="all"/>
   </ItemGroup>
 
 

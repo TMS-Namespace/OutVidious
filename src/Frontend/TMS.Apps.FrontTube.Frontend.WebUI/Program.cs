@@ -1,7 +1,7 @@
 using MudBlazor.Services;
 using Serilog;
-using TMS.Apps.FrontTube.Backend.Repository.CacheManager;
-using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.Cache;
+using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious;
@@ -72,13 +72,13 @@ try
     });
 
     // Configure DataRepository
-    var dataRepositoryConfig = new DataRepositoryConfig
+    var dataRepositoryConfig = new CacheConfig
     {
         DataBase = new DataBaseConfig
         {
             Host = "localhost",
             Port = 5656,
-            Database = "ftube",
+            DatabaseName = "front-tube",
             Username = "root",
             Password = "password"
         }
@@ -88,7 +88,7 @@ try
     // Register DataRepository as singleton (shared cache across all requests)
     builder.Services.AddSingleton<ICacheManager>(sp =>
     {
-        var config = sp.GetRequiredService<DataRepositoryConfig>();
+        var config = sp.GetRequiredService<CacheConfig>();
         var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
         return new CacheManager(config, loggerFactory);
     });
