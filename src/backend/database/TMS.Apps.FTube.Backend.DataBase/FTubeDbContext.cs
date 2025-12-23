@@ -198,15 +198,13 @@ public class FTubeDbContext : DbContext
 
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.LastSyncedAt).HasColumnName("last_synced_at");
-            entity.Property(e => e.RemoteId).HasColumnName("remote_id").HasMaxLength(100);
-            entity.Property(e => e.RemoteUrl).HasColumnName("remote_url").HasMaxLength(2000);
+            entity.Property(e => e.RemoteUrl).HasColumnName("remote_url").HasMaxLength(2000).IsRequired();
             entity.Property(e => e.Data).HasColumnName("data");
             entity.Property(e => e.Width).HasColumnName("width");
             entity.Property(e => e.Height).HasColumnName("height");
-            entity.Property(e => e.Quality).HasColumnName("quality").HasMaxLength(20);
             entity.Property(e => e.MimeType).HasColumnName("mime_type").HasMaxLength(50);
 
-            entity.HasIndex(e => e.RemoteUrl);
+            entity.HasIndex(e => e.RemoteUrl).IsUnique();
         });
     }
 

@@ -73,6 +73,9 @@ public abstract class VideoProviderBase : IVideoProvider
     /// <inheritdoc />
     public abstract bool IsValidChannelId(string channelId);
 
+    /// <inheritdoc />
+    public abstract Uri GetImageFetchUrl(Uri originalUrl);
+
     /// <summary>
     /// Validates that a video ID is not null or empty.
     /// </summary>

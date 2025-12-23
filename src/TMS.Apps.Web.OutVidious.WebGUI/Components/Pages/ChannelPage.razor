@@ -23,12 +23,21 @@
         <div class="channel-header">
             @if (BannerUrl is not null)
             {
-                <div class="channel-banner" style="background-image: url('@BannerUrl')"></div>
+                <AsyncImageComponent 
+                    ImageUrl="@BannerUrl" 
+                    Alt="Channel Banner"
+                    Class="channel-banner-image"
+                    ObjectFit="ObjectFit.Cover"
+                    UseAsyncLoading="false" />
             }
 
             <div class="channel-info">
                 <MudAvatar Size="Size.Large" Class="channel-avatar">
-                    <MudImage Src="@AvatarUrl" Alt="@ViewModel.Channel.Name" />
+                    <AsyncImageComponent 
+                        ImageUrl="@AvatarUrl" 
+                        Alt="@ViewModel.Channel.Name"
+                        ObjectFit="ObjectFit.Cover"
+                        UseAsyncLoading="false" />
                 </MudAvatar>
 
                 <div class="channel-details">

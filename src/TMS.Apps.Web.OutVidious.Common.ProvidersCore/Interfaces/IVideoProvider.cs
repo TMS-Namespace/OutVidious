@@ -93,4 +93,11 @@ public interface IVideoProvider : IProviderInfo, IDisposable
     /// <param name="channelId">The channel identifier to validate.</param>
     /// <returns>True if the channel ID format is valid.</returns>
     bool IsValidChannelId(string channelId);
+
+    /// <summary>
+    /// Constructs the provider-specific fetch URL for an image from its original YouTube URL.
+    /// </summary>
+    /// <param name="originalUrl">The original YouTube CDN URL (e.g., https://i.ytimg.com/vi/VIDEO_ID/quality.jpg).</param>
+    /// <returns>The provider URL to fetch the image from.</returns>
+    Uri GetImageFetchUrl(Uri originalUrl);
 }

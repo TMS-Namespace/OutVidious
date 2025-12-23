@@ -1,5 +1,7 @@
 using MudBlazor.Services;
 using Serilog;
+using TMS.Apps.FTube.Backend.DataRepository;
+using TMS.Apps.FTube.Backend.DataRepository.Interfaces;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Configuration;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
 using TMS.Apps.Web.OutVidious.Providers.Invidious;
@@ -82,8 +84,19 @@ try
     };
     builder.Services.AddSingleton(dataRepositoryConfig);
 
+    // Register DataRepository as singleton (shared cache across all requests)
+    builder.Services.AddSingleton<IDataRepository>(sp =>
+    {
+        var config = sp.GetRequiredService<DataRepositoryConfig>();
+        var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+        return new DataRepository(config, loggerFactory);
+    });
+
     // Register Orchestrator as scoped service (one per user session)
     builder.Services.AddScoped<Orchestrator>();
+
+    // Add API controllers support
+    builder.Services.AddControllers();
 
     var app = builder.Build();
 
@@ -273,6 +286,9 @@ try
             await context.Response.WriteAsync($"Failed to proxy video: {ex.Message}");
         }
     }
+
+    // Map API controllers (like ImageProxyController)
+    app.MapControllers();
 
     app.MapRazorComponents<App>()
         .AddInteractiveServerRenderMode();

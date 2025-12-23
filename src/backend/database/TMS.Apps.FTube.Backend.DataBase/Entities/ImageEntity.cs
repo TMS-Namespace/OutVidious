@@ -13,14 +13,10 @@ public class ImageEntity
     public DateTime? LastSyncedAt { get; set; }
 
     /// <summary>
-    /// Remote identifier (e.g., YouTube thumbnail ID).
+    /// URL to the original image source (e.g., YouTube CDN URL like https://i.ytimg.com/...).
+    /// This is the unique identifier for the image.
     /// </summary>
-    public string? RemoteId { get; set; }
-
-    /// <summary>
-    /// URL to the original image (for remote images).
-    /// </summary>
-    public string? RemoteUrl { get; set; }
+    public required string RemoteUrl { get; set; }
 
     /// <summary>
     /// Binary image data (if cached locally).
@@ -36,11 +32,6 @@ public class ImageEntity
     /// Image height in pixels.
     /// </summary>
     public int? Height { get; set; }
-
-    /// <summary>
-    /// Quality identifier (e.g., "default", "medium", "high", "maxres").
-    /// </summary>
-    public string? Quality { get; set; }
 
     /// <summary>
     /// MIME type of the image (e.g., "image/jpeg", "image/webp").

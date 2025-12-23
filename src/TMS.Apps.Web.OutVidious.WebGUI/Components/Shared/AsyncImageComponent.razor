@@ -1,0 +1,43 @@
+@inherits AsyncImageComponentBase
+
+@if (!UseAsyncLoading)
+{
+    @* Non-async mode: just render the image directly *@
+    <MudImage 
+        Src="@DisplayUrl" 
+        Alt="@Alt" 
+        Width="@Width" 
+        Height="@Height"
+        ObjectFit="@ObjectFit"
+        Class="@Class"
+        Elevation="0" />
+}
+else if (IsLoading)
+{
+    @* Async mode: loading in progress *@
+    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="@WidthStyle" Height="@HeightStyle" Class="@Class" Animation="Animation.Wave" />
+}
+else if (HasFailed)
+{
+    @* Async mode: load failed *@
+    <MudPaper Elevation="0" Class="@CombinedClass" Style="@FallbackStyle">
+        <MudIcon Icon="@Icons.Material.Filled.BrokenImage" Size="Size.Medium" Color="Color.Default" />
+    </MudPaper>
+}
+else if (IsLoaded)
+{
+    @* Async mode: load succeeded *@
+    <MudImage 
+        Src="@DisplayUrl" 
+        Alt="@Alt" 
+        Width="@Width" 
+        Height="@Height"
+        ObjectFit="@ObjectFit"
+        Class="@Class"
+        Elevation="0" />
+}
+else
+{
+    @* Initial/not started state - show skeleton while waiting *@
+    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="@WidthStyle" Height="@HeightStyle" Class="@Class" Animation="Animation.Wave" />
+}

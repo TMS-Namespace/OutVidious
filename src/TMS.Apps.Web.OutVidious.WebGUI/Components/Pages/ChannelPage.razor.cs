@@ -114,12 +114,14 @@ public partial class ChannelPageBase : ComponentBase, IDisposable
 
             Logger.LogDebug("Channel loaded: {ChannelName}", ViewModel.Channel.Name);
 
-            // Load initial videos
-            await ViewModel.LoadInitialVideosAsync(_cts.Token);
-            
-            // Mark initial load complete so tab changes can now trigger reloads
+            // Mark initial load complete and show content - videos will load in background
             _initialLoadComplete = true;
             _loadedChannelId = channelId;
+            IsInitialLoading = false;
+            StateHasChanged();
+
+            // Load initial videos in background (don't await - let UI render first)
+            _ = ViewModel.LoadInitialVideosAsync(_cts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -129,9 +131,6 @@ public partial class ChannelPageBase : ComponentBase, IDisposable
         {
             ErrorMessage = "Failed to load channel. Please try again.";
             Logger.LogError(ex, "Error loading channel: {ChannelId}", channelId);
-        }
-        finally
-        {
             IsInitialLoading = false;
             StateHasChanged();
         }
@@ -186,7 +185,8 @@ public partial class ChannelPageBase : ComponentBase, IDisposable
             .OrderByDescending(a => a.Width)
             .FirstOrDefault();
 
-        return preferred?.Url.ToString() ?? avatars.First().Url.ToString();
+        var avatar = preferred ?? avatars.First();
+        return Orchestrator.Super.BuildImageProxyUrl(avatar.Url);
     }
 
     private string? GetBestBanner()
@@ -204,7 +204,8 @@ public partial class ChannelPageBase : ComponentBase, IDisposable
             .OrderByDescending(b => b.Width)
             .FirstOrDefault();
 
-        return preferred?.Url.ToString() ?? banners.First().Url.ToString();
+        var banner = preferred ?? banners.First();
+        return Orchestrator.Super.BuildImageProxyUrl(banner.Url);
     }
 
     public void Dispose()

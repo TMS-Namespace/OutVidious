@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using TMS.Apps.Web.OutVidious.Core.Enums;
 using TMS.Apps.Web.OutVidious.Core.ViewModels;
+using TMS.Apps.Web.OutVidious.WebGUI.Services;
 
 namespace TMS.Apps.Web.OutVidious.WebGUI.Components.Video;
 
@@ -27,6 +28,9 @@ public partial class InvidiousPlayerComponent : ComponentBase, IAsyncDisposable
 
     [Inject]
     private ILogger<InvidiousPlayerComponent> Logger { get; set; } = default!;
+
+    [Inject]
+    private Orchestrator Orchestrator { get; set; } = default!;
 
     [Parameter]
     public VideoPlayerViewModel? ViewModel { get; set; }
@@ -238,7 +242,12 @@ public partial class InvidiousPlayerComponent : ComponentBase, IAsyncDisposable
             .OrderByDescending(t => t.Width * t.Height)
             .FirstOrDefault();
 
-        return thumbnail?.Url.ToString();
+        if (thumbnail is null)
+        {
+            return null;
+        }
+
+        return Orchestrator.Super.BuildImageProxyUrl(thumbnail.Url);
     }
 
     private string GetAuthorUrl()

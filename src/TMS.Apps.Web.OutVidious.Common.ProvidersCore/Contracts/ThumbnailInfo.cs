@@ -13,7 +13,8 @@ public sealed record ThumbnailInfo
     public required ThumbnailQuality Quality { get; init; }
 
     /// <summary>
-    /// URL to the thumbnail image.
+    /// URL to the original image source (e.g., YouTube CDN URL like https://i.ytimg.com/...).
+    /// This is the unique identifier for the image.
     /// </summary>
     public required Uri Url { get; init; }
 

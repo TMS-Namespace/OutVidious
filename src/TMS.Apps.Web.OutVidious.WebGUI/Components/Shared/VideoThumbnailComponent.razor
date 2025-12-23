@@ -1,7 +1,17 @@
 @inherits VideoThumbnailComponentBase
 
 <MudCard Class="video-thumbnail-card" Elevation="0" Style="@CardStyle">
-    <MudCardMedia Image="@ThumbnailUrl" Height="180" Title="@Video?.Title" Class="video-thumbnail-image" />
+    <div class="video-thumbnail-container" id="@ThumbnailContainerId">
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" 
+                     Width="100%" 
+                     Height="180px" 
+                     Animation="Animation.Wave" 
+                     Class="thumbnail-skeleton" />
+        <img src="@ThumbnailUrl" 
+             alt="@Video?.Title" 
+             class="video-thumbnail-image"
+             loading="lazy" />
+    </div>
     
     @if (Video is not null && Video.Duration.TotalSeconds > 0)
     {

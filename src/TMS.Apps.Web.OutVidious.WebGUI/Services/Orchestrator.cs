@@ -1,4 +1,4 @@
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Configuration;
+using TMS.Apps.FTube.Backend.DataRepository.Interfaces;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
 using TMS.Apps.Web.OutVidious.Core.ViewModels;
 
@@ -17,11 +17,11 @@ public sealed class Orchestrator : IDisposable
     public Orchestrator(
         ILoggerFactory loggerFactory,
         IVideoProvider videoProvider,
-        DataRepositoryConfig dataRepositoryConfig)
+        IDataRepository dataRepository)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
         ArgumentNullException.ThrowIfNull(videoProvider);
-        ArgumentNullException.ThrowIfNull(dataRepositoryConfig);
+        ArgumentNullException.ThrowIfNull(dataRepository);
 
         _logger = loggerFactory.CreateLogger<Orchestrator>();
 
@@ -29,7 +29,7 @@ public sealed class Orchestrator : IDisposable
         _super = new Lazy<Super>(() =>
         {
             _logger.LogDebug("Creating Super instance");
-            return new Super(loggerFactory, videoProvider, dataRepositoryConfig);
+            return new Super(loggerFactory, videoProvider, dataRepository);
         });
 
         _logger.LogDebug("Orchestrator initialized");

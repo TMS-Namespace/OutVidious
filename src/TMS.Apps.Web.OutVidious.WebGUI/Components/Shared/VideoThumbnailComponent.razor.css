@@ -10,8 +10,35 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.video-thumbnail-image {
+.video-thumbnail-container {
+    position: relative;
+    width: 100%;
+    height: 180px;
     border-radius: 8px;
+    overflow: hidden;
+    background: var(--mud-palette-surface);
+}
+
+/* Skeleton is positioned absolute and behind the image */
+::deep .thumbnail-skeleton {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1;
+}
+
+/* Image sits on top of skeleton with absolute positioning to fully cover it */
+.video-thumbnail-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    z-index: 2;
 }
 
 .video-duration {

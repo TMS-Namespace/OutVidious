@@ -97,10 +97,12 @@ public static class ChannelMapper
             _ => ThumbnailQuality.Default
         };
 
+        var originalUrl = ThumbnailMapper.ExtractBannerUrl(dto.Url);
+
         return new ThumbnailInfo
         {
             Quality = quality,
-            Url = new Uri(dto.Url, UriKind.RelativeOrAbsolute),
+            Url = originalUrl,
             Width = dto.Width,
             Height = dto.Height
         };

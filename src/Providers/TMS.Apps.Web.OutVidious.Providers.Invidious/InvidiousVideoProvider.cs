@@ -275,6 +275,39 @@ public sealed partial class InvidiousVideoProvider : VideoProviderBase
                YoutubeChannelHandleRegex().IsMatch(channelId);
     }
 
+    /// <inheritdoc />
+    public override Uri GetImageFetchUrl(Uri originalUrl)
+    {
+        ArgumentNullException.ThrowIfNull(originalUrl);
+
+        var host = originalUrl.Host.ToLowerInvariant();
+        var path = originalUrl.AbsolutePath;
+
+        // Video thumbnails from i.ytimg.com: /vi/VIDEO_ID/quality.jpg -> {baseUrl}/vi/VIDEO_ID/quality.jpg
+        if (host is "i.ytimg.com" or "i1.ytimg.com" or "i2.ytimg.com" or "i3.ytimg.com" or "i4.ytimg.com")
+        {
+            // Path already has /vi/..., just append to base URL
+            return CreateUri(path.TrimStart('/'));
+        }
+
+        // Channel images from yt3.ggpht.com: /... -> {baseUrl}/ggpht/...
+        if (host == "yt3.ggpht.com")
+        {
+            return CreateUri($"ggpht{path}");
+        }
+
+        // For other URLs (e.g., googleusercontent), construct ggpht proxy path
+        if (host.EndsWith("googleusercontent.com"))
+        {
+            // Extract the path after the domain and construct ggpht proxy
+            return CreateUri($"ggpht{path}");
+        }
+
+        // Fallback: try to proxy as-is (may not work for all URLs)
+        Logger.LogWarning("Unknown image URL host, attempting direct proxy: {OriginalUrl}", originalUrl);
+        return originalUrl;
+    }
+
     private string BuildChannelVideosUrl(string channelId, string tab, string? continuationToken)
     {
         var baseApiUrl = $"{BaseUrl.ToString().TrimEnd('/')}/api/v1/channels/{Uri.EscapeDataString(channelId)}/{tab}";

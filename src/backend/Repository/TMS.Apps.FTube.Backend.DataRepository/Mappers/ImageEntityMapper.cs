@@ -11,22 +11,27 @@ public static class ImageEntityMapper
 {
     /// <summary>
     /// Converts an ImageEntity to a ThumbnailInfo contract.
+    /// Quality is inferred from dimensions.
     /// </summary>
     public static ThumbnailInfo ToThumbnailInfo(ImageEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
+        var width = entity.Width ?? 0;
+        var height = entity.Height ?? 0;
+
         return new ThumbnailInfo
         {
-            Quality = ParseQuality(entity.Quality),
-            Url = new Uri(entity.RemoteUrl ?? $"data:image/{entity.MimeType ?? "jpeg"};base64,placeholder", UriKind.RelativeOrAbsolute),
-            Width = entity.Width ?? 0,
-            Height = entity.Height ?? 0
+            Quality = InferQualityFromDimensions(width, height),
+            Url = new Uri(entity.RemoteUrl, UriKind.Absolute),
+            Width = width,
+            Height = height
         };
     }
 
     /// <summary>
     /// Converts a ThumbnailInfo contract to an ImageEntity for database storage.
+    /// Quality is not stored - it's inferred from dimensions.
     /// </summary>
     public static ImageEntity ToEntity(ThumbnailInfo contract)
     {
@@ -37,9 +42,7 @@ public static class ImageEntityMapper
             RemoteUrl = contract.Url.ToString(),
             Width = contract.Width,
             Height = contract.Height,
-            Quality = contract.Quality.ToString().ToLowerInvariant(),
-            CreatedAt = DateTime.UtcNow,
-            LastSyncedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow
         };
     }
 
@@ -51,27 +54,33 @@ public static class ImageEntityMapper
         ArgumentNullException.ThrowIfNull(entity);
         ArgumentNullException.ThrowIfNull(contract);
 
-        entity.RemoteUrl = contract.Url.ToString();
+        // RemoteUrl should not change - it's the unique identifier
         entity.Width = contract.Width;
         entity.Height = contract.Height;
-        entity.Quality = contract.Quality.ToString().ToLowerInvariant();
-        entity.LastSyncedAt = DateTime.UtcNow;
     }
 
-    private static ThumbnailQuality ParseQuality(string? quality)
+    /// <summary>
+    /// Infers thumbnail quality from dimensions.
+    /// Based on standard YouTube thumbnail sizes.
+    /// </summary>
+    private static ThumbnailQuality InferQualityFromDimensions(int width, int height)
     {
-        if (string.IsNullOrWhiteSpace(quality))
-        {
-            return ThumbnailQuality.Unknown;
-        }
+        // YouTube thumbnail standard sizes:
+        // default: 120x90
+        // medium: 320x180
+        // high: 480x360
+        // standard: 640x480
+        // maxres: 1280x720 or higher
 
-        return quality.ToLowerInvariant() switch
+        var pixels = width * height;
+
+        return pixels switch
         {
-            "default" => ThumbnailQuality.Default,
-            "medium" => ThumbnailQuality.Medium,
-            "high" => ThumbnailQuality.High,
-            "standard" => ThumbnailQuality.Standard,
-            "maxres" => ThumbnailQuality.MaxRes,
+            >= 921600 => ThumbnailQuality.MaxRes,    // 1280x720 = 921,600
+            >= 307200 => ThumbnailQuality.Standard,  // 640x480 = 307,200
+            >= 172800 => ThumbnailQuality.High,      // 480x360 = 172,800
+            >= 57600 => ThumbnailQuality.Medium,     // 320x180 = 57,600
+            > 0 => ThumbnailQuality.Default,         // 120x90 = 10,800
             _ => ThumbnailQuality.Unknown
         };
     }

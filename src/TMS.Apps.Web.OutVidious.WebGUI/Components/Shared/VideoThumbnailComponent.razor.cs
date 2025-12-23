@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Enums;
+using TMS.Apps.Web.OutVidious.WebGUI.Services;
 
 namespace TMS.Apps.Web.OutVidious.WebGUI.Components.Shared;
 
@@ -9,6 +10,11 @@ namespace TMS.Apps.Web.OutVidious.WebGUI.Components.Shared;
 /// </summary>
 public partial class VideoThumbnailComponentBase : ComponentBase
 {
+    private readonly string _containerId = $"thumb-{Guid.NewGuid():N}";
+
+    [Inject]
+    private Orchestrator Orchestrator { get; set; } = default!;
+
     /// <summary>
     /// The video summary to display.
     /// </summary>
@@ -38,6 +44,8 @@ public partial class VideoThumbnailComponentBase : ComponentBase
     /// </summary>
     [Parameter]
     public EventCallback<ChannelInfo> OnChannelClicked { get; set; }
+
+    protected string ThumbnailContainerId => _containerId;
 
     protected string ThumbnailUrl => GetBestThumbnail();
 
@@ -79,12 +87,13 @@ public partial class VideoThumbnailComponentBase : ComponentBase
             
             if (thumbnail is not null)
             {
-                return thumbnail.Url.ToString();
+                return Orchestrator.Super.BuildImageProxyUrl(thumbnail.Url);
             }
         }
 
         // Fall back to the first available thumbnail
-        return Video.Thumbnails.First().Url.ToString();
+        var fallback = Video.Thumbnails.First();
+        return Orchestrator.Super.BuildImageProxyUrl(fallback.Url);
     }
 
     private static string FormatDuration(TimeSpan duration)
