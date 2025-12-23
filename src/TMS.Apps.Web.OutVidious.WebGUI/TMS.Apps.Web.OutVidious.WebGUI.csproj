@@ -9,7 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\TMS.Apps.Web.OutVidious.Core\TMS.Apps.Web.OutVidious.Core.csproj" />
     <ProjectReference Include="..\Providers\TMS.Apps.Web.OutVidious.Providers.Invidious\TMS.Apps.Web.OutVidious.Providers.Invidious.csproj" />
-    <ProjectReference Include="..\backend\Repository\TMS.Apps.FTube.Backend.DataRepository\TMS.Apps.FTube.Backend.DataRepository.csproj" />
+    <ProjectReference Include="..\Backend\Repository\TMS.Apps.FTube.Backend.DataRepository\TMS.Apps.FTube.Backend.DataRepository.csproj" />
   </ItemGroup>
 
   <ItemGroup>

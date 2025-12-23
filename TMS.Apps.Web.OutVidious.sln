@@ -15,15 +15,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Providers", "Providers", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.Web.OutVidious.Providers.Invidious", "src\Providers\TMS.Apps.Web.OutVidious.Providers.Invidious\TMS.Apps.Web.OutVidious.Providers.Invidious.csproj", "{C3D4E5F6-A7B8-9012-CDEF-123456789012}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{42772A00-DE59-4A7F-9FA0-7B6B20294AEC}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Backend", "Backend", "{42772A00-DE59-4A7F-9FA0-7B6B20294AEC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "database", "database", "{9517F558-3264-4251-B6D6-C387C5D1921A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.FTube.Backend.DataBase", "src\backend\database\TMS.Apps.FTube.Backend.DataBase\TMS.Apps.FTube.Backend.DataBase.csproj", "{7B273CFF-8467-4A40-B6A5-68CFB16D5E21}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.FTube.Backend.DataBase", "src\Backend\database\TMS.Apps.FTube.Backend.DataBase\TMS.Apps.FTube.Backend.DataBase.csproj", "{7B273CFF-8467-4A40-B6A5-68CFB16D5E21}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Repository", "Repository", "{2DC4590B-900E-47F8-B9FA-47BF792841E8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.FTube.Backend.DataRepository", "src\backend\Repository\TMS.Apps.FTube.Backend.DataRepository\TMS.Apps.FTube.Backend.DataRepository.csproj", "{A5407470-E237-4EC8-B870-84FEB17FF1FD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.FTube.Backend.DataRepository", "src\Backend\Repository\TMS.Apps.FTube.Backend.DataRepository\TMS.Apps.FTube.Backend.DataRepository.csproj", "{A5407470-E237-4EC8-B870-84FEB17FF1FD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
