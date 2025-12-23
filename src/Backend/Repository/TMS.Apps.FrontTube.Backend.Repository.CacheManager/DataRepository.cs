@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
-using TMS.Apps.FTube.Backend.DataRepository.Interfaces;
-using TMS.Apps.FTube.Backend.DataRepository.Mappers;
+using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Mappers;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
-namespace TMS.Apps.FTube.Backend.DataRepository;
+namespace TMS.Apps.FrontTube.Backend.Repository.CacheManager;
 
 /// <summary>
 /// Data repository implementing multi-tier caching: Memory → Database → Provider.

@@ -1,7 +1,7 @@
 using MudBlazor.Services;
 using Serilog;
-using TMS.Apps.FTube.Backend.DataRepository;
-using TMS.Apps.FTube.Backend.DataRepository.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.CacheManager;
+using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Interfaces;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious;

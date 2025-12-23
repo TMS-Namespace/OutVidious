@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using TMS.Apps.FTube.Backend.DataRepository.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Interfaces;
 
 namespace TMS.Apps.Web.OutVidious.Core.ViewModels;
 

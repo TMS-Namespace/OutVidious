@@ -1,7 +1,7 @@
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 
-namespace TMS.Apps.FTube.Backend.DataRepository.Mappers;
+namespace TMS.Apps.FrontTube.Backend.Repository.CacheManager.Mappers;
 
 /// <summary>
 /// Maps between database entities and provider contracts for channels.

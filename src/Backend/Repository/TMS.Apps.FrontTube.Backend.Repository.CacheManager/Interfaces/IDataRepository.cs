@@ -1,7 +1,7 @@
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
-namespace TMS.Apps.FTube.Backend.DataRepository.Interfaces;
+namespace TMS.Apps.FrontTube.Backend.Repository.CacheManager.Interfaces;
 
 /// <summary>
 /// Represents cached image data including binary content and metadata.

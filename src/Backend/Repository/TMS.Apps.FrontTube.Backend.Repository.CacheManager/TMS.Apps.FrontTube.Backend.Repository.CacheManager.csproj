@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>TMS.Apps.FTube.Backend.DataRepository</RootNamespace>
+    <RootNamespace>TMS.Apps.FrontTube.Backend.Repository.CacheManager</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

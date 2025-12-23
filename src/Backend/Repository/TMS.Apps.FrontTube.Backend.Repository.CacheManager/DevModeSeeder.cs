@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
-namespace TMS.Apps.FTube.Backend.DataRepository;
+namespace TMS.Apps.FrontTube.Backend.Repository.CacheManager;
 
 /// <summary>
 /// Seeds development data when IsDevMode is enabled.
