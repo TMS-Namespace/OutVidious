@@ -1,6 +1,6 @@
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Enums;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 
-namespace TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
+namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 
 /// <summary>
 /// Represents a media stream (video, audio, or combined).

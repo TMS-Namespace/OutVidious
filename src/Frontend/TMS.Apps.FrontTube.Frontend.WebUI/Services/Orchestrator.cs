@@ -1,5 +1,5 @@
 using TMS.Apps.FTube.Backend.DataRepository.Interfaces;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 using TMS.Apps.Web.OutVidious.Core.ViewModels;
 
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Services;

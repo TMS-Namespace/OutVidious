@@ -1,4 +1,4 @@
-namespace TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
+namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
 /// <summary>
 /// Metadata about a video provider.

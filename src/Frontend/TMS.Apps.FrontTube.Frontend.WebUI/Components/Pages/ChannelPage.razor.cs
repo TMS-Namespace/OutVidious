@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Components;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.Web.OutVidious.Core.ViewModels;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 

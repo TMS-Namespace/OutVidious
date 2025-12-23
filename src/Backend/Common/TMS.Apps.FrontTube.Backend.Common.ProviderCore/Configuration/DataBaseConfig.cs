@@ -1,4 +1,4 @@
-namespace TMS.Apps.Web.OutVidious.Common.ProvidersCore.Configuration;
+namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 
 /// <summary>
 /// Configuration for PostgreSQL database connection.

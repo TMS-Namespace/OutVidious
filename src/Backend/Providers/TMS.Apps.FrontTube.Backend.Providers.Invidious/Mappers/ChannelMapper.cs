@@ -1,5 +1,5 @@
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Enums;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
 
 namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.Mappers;

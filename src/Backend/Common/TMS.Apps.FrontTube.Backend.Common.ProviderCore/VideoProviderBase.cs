@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
-namespace TMS.Apps.Web.OutVidious.Common.ProvidersCore;
+namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore;
 
 /// <summary>
 /// Base class for video providers with common functionality.

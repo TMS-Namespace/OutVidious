@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Enums;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.Web.OutVidious.Core.Enums;
 
 namespace TMS.Apps.Web.OutVidious.Core.ViewModels;

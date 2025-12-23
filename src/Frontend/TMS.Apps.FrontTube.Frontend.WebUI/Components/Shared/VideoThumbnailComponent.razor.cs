@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Components;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Enums;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Shared;

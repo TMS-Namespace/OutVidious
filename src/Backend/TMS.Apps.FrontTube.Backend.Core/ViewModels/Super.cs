@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FTube.Backend.DataRepository;
 using TMS.Apps.FTube.Backend.DataRepository.Interfaces;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Configuration;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
 namespace TMS.Apps.Web.OutVidious.Core.ViewModels;
 

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using TMS.Apps.FTube.Backend.DataRepository.Interfaces;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Controllers;
 

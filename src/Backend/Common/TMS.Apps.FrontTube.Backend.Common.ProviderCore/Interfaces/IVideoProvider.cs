@@ -1,6 +1,6 @@
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 
-namespace TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
+namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
 /// <summary>
 /// Interface for video providers that can fetch video information and generate playback URLs.

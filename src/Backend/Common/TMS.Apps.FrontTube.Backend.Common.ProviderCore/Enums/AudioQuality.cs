@@ -1,4 +1,4 @@
-namespace TMS.Apps.Web.OutVidious.Common.ProvidersCore.Enums;
+namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 
 /// <summary>
 /// Audio quality levels.

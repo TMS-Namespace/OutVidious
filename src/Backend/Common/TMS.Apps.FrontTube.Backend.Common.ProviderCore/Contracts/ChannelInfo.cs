@@ -1,4 +1,4 @@
-namespace TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
+namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 
 /// <summary>
 /// Represents basic channel/author information.
