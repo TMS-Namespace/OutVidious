@@ -1,4 +1,4 @@
-using TMS.Apps.FTube.Backend.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 
 namespace TMS.Apps.FTube.Backend.DataRepository.Mappers;

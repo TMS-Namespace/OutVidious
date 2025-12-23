@@ -1,4 +1,4 @@
-namespace TMS.Apps.FTube.Backend.DataBase.Entities;
+namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
 /// <summary>
 /// Represents a local playlist scoped to a user.

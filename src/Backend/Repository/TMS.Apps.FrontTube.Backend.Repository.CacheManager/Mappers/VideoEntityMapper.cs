@@ -1,4 +1,4 @@
-using TMS.Apps.FTube.Backend.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 

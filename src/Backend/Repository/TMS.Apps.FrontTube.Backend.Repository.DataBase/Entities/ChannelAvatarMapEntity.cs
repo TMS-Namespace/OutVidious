@@ -1,4 +1,4 @@
-namespace TMS.Apps.FTube.Backend.DataBase.Entities;
+namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
 /// <summary>
 /// Maps channels to their avatar images.

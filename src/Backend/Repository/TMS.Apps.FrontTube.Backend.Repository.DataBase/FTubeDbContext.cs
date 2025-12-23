@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using TMS.Apps.FTube.Backend.DataBase.Entities;
-using TMS.Apps.FTube.Backend.DataBase.Entities.Enums;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Enums;
 
-namespace TMS.Apps.FTube.Backend.DataBase;
+namespace TMS.Apps.FrontTube.Backend.Repository.DataBase;
 
 /// <summary>
 /// Database context for FTube application.

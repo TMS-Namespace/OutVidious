@@ -1,6 +1,6 @@
-using TMS.Apps.FTube.Backend.DataBase.Entities.Enums;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Enums;
 
-namespace TMS.Apps.FTube.Backend.DataBase.Entities;
+namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
 /// <summary>
 /// Represents a media stream (video, audio, or combined) for a video.

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace TMS.Apps.FTube.Backend.DataBase;
+namespace TMS.Apps.FrontTube.Backend.Repository.DataBase;
 
 /// <summary>
 /// Design-time factory for creating FTubeDbContext for migrations.

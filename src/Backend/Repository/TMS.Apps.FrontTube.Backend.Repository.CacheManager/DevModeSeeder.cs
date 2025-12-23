@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using TMS.Apps.FTube.Backend.DataBase;
-using TMS.Apps.FTube.Backend.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
 namespace TMS.Apps.FTube.Backend.DataRepository;
 

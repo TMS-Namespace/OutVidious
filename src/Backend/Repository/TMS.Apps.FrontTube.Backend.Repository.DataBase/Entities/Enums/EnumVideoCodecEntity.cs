@@ -1,4 +1,4 @@
-namespace TMS.Apps.FTube.Backend.DataBase.Entities.Enums;
+namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Enums;
 
 /// <summary>
 /// Database entity for VideoCodec enum values.
