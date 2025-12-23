@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TMS.Apps.FTube.Backend.DataBase.Entities;
+using TMS.Apps.FTube.Backend.DataBase.Entities.Enums;
 
 namespace TMS.Apps.FTube.Backend.DataBase;
 
@@ -35,14 +36,38 @@ public class FTubeDbContext : DbContext
 
     public DbSet<WatchingHistoryEntity> WatchingHistory => Set<WatchingHistoryEntity>();
 
+    public DbSet<StreamEntity> Streams => Set<StreamEntity>();
+
+    // Enum tables
+    public DbSet<EnumStreamTypeEntity> EnumStreamTypes => Set<EnumStreamTypeEntity>();
+
+    public DbSet<EnumVideoContainerEntity> EnumVideoContainers => Set<EnumVideoContainerEntity>();
+
+    public DbSet<EnumVideoCodecEntity> EnumVideoCodecs => Set<EnumVideoCodecEntity>();
+
+    public DbSet<EnumAudioCodecEntity> EnumAudioCodecs => Set<EnumAudioCodecEntity>();
+
+    public DbSet<EnumAudioQualityEntity> EnumAudioQualities => Set<EnumAudioQualityEntity>();
+
+    public DbSet<EnumProjectionTypeEntity> EnumProjectionTypes => Set<EnumProjectionTypeEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Configure enum tables first (they have seed data)
+        ConfigureEnumStreamType(modelBuilder);
+        ConfigureEnumVideoContainer(modelBuilder);
+        ConfigureEnumVideoCodec(modelBuilder);
+        ConfigureEnumAudioCodec(modelBuilder);
+        ConfigureEnumAudioQuality(modelBuilder);
+        ConfigureEnumProjectionType(modelBuilder);
 
         ConfigureChannel(modelBuilder);
         ConfigureVideo(modelBuilder);
         ConfigureImage(modelBuilder);
         ConfigureVideoCaption(modelBuilder);
+        ConfigureStream(modelBuilder);
         ConfigureChannelAvatarMap(modelBuilder);
         ConfigureChannelBannerMap(modelBuilder);
         ConfigureVideoThumbnailMap(modelBuilder);
@@ -358,6 +383,217 @@ public class FTubeDbContext : DbContext
                 .WithMany(v => v.WatchingHistory)
                 .HasForeignKey(e => e.VideoId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureEnumStreamType(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<EnumStreamTypeEntity>(entity =>
+        {
+            entity.ToTable("enum_stream_type");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedNever();
+            entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(50).IsRequired();
+
+            entity.HasIndex(e => e.Name).IsUnique();
+
+            // Seed data from StreamType enum
+            entity.HasData(
+                new EnumStreamTypeEntity { Id = 0, Name = "Unknown" },
+                new EnumStreamTypeEntity { Id = 1, Name = "Video" },
+                new EnumStreamTypeEntity { Id = 2, Name = "Audio" },
+                new EnumStreamTypeEntity { Id = 3, Name = "VideoAndAudio" }
+            );
+        });
+    }
+
+    private static void ConfigureEnumVideoContainer(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<EnumVideoContainerEntity>(entity =>
+        {
+            entity.ToTable("enum_video_container");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedNever();
+            entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(50).IsRequired();
+
+            entity.HasIndex(e => e.Name).IsUnique();
+
+            // Seed data from VideoContainer enum
+            entity.HasData(
+                new EnumVideoContainerEntity { Id = 0, Name = "Unknown" },
+                new EnumVideoContainerEntity { Id = 1, Name = "Mp4" },
+                new EnumVideoContainerEntity { Id = 2, Name = "WebM" },
+                new EnumVideoContainerEntity { Id = 3, Name = "Mkv" },
+                new EnumVideoContainerEntity { Id = 4, Name = "M4a" },
+                new EnumVideoContainerEntity { Id = 5, Name = "Opus" }
+            );
+        });
+    }
+
+    private static void ConfigureEnumVideoCodec(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<EnumVideoCodecEntity>(entity =>
+        {
+            entity.ToTable("enum_video_codec");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedNever();
+            entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(50).IsRequired();
+
+            entity.HasIndex(e => e.Name).IsUnique();
+
+            // Seed data from VideoCodec enum
+            entity.HasData(
+                new EnumVideoCodecEntity { Id = 0, Name = "Unknown" },
+                new EnumVideoCodecEntity { Id = 1, Name = "H264" },
+                new EnumVideoCodecEntity { Id = 2, Name = "H265" },
+                new EnumVideoCodecEntity { Id = 3, Name = "Vp8" },
+                new EnumVideoCodecEntity { Id = 4, Name = "Vp9" },
+                new EnumVideoCodecEntity { Id = 5, Name = "Av1" }
+            );
+        });
+    }
+
+    private static void ConfigureEnumAudioCodec(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<EnumAudioCodecEntity>(entity =>
+        {
+            entity.ToTable("enum_audio_codec");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedNever();
+            entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(50).IsRequired();
+
+            entity.HasIndex(e => e.Name).IsUnique();
+
+            // Seed data from AudioCodec enum
+            entity.HasData(
+                new EnumAudioCodecEntity { Id = 0, Name = "Unknown" },
+                new EnumAudioCodecEntity { Id = 1, Name = "Aac" },
+                new EnumAudioCodecEntity { Id = 2, Name = "Mp3" },
+                new EnumAudioCodecEntity { Id = 3, Name = "Vorbis" },
+                new EnumAudioCodecEntity { Id = 4, Name = "Opus" }
+            );
+        });
+    }
+
+    private static void ConfigureEnumAudioQuality(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<EnumAudioQualityEntity>(entity =>
+        {
+            entity.ToTable("enum_audio_quality");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedNever();
+            entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(50).IsRequired();
+
+            entity.HasIndex(e => e.Name).IsUnique();
+
+            // Seed data from AudioQuality enum
+            entity.HasData(
+                new EnumAudioQualityEntity { Id = 0, Name = "Unknown" },
+                new EnumAudioQualityEntity { Id = 1, Name = "Low" },
+                new EnumAudioQualityEntity { Id = 2, Name = "Medium" },
+                new EnumAudioQualityEntity { Id = 3, Name = "High" }
+            );
+        });
+    }
+
+    private static void ConfigureEnumProjectionType(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<EnumProjectionTypeEntity>(entity =>
+        {
+            entity.ToTable("enum_projection_type");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedNever();
+            entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(50).IsRequired();
+
+            entity.HasIndex(e => e.Name).IsUnique();
+
+            // Seed data from ProjectionType enum
+            entity.HasData(
+                new EnumProjectionTypeEntity { Id = 0, Name = "Unknown" },
+                new EnumProjectionTypeEntity { Id = 1, Name = "Rectangular" },
+                new EnumProjectionTypeEntity { Id = 2, Name = "Spherical" },
+                new EnumProjectionTypeEntity { Id = 3, Name = "Spherical360" },
+                new EnumProjectionTypeEntity { Id = 4, Name = "Mesh" }
+            );
+        });
+    }
+
+    private static void ConfigureStream(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<StreamEntity>(entity =>
+        {
+            entity.ToTable("stream");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("now()");
+
+            entity.Property(e => e.LastSyncedAt).HasColumnName("last_synced_at");
+            entity.Property(e => e.VideoId).HasColumnName("video_id");
+            entity.Property(e => e.Url).HasColumnName("url").HasMaxLength(2000).IsRequired();
+            entity.Property(e => e.StreamTypeId).HasColumnName("stream_type_id");
+            entity.Property(e => e.ContainerId).HasColumnName("container_id");
+            entity.Property(e => e.VideoCodecId).HasColumnName("video_codec_id");
+            entity.Property(e => e.AudioCodecId).HasColumnName("audio_codec_id");
+            entity.Property(e => e.AudioQualityId).HasColumnName("audio_quality_id");
+            entity.Property(e => e.ProjectionTypeId).HasColumnName("projection_type_id");
+            entity.Property(e => e.QualityLabel).HasColumnName("quality_label").HasMaxLength(20);
+            entity.Property(e => e.Width).HasColumnName("width");
+            entity.Property(e => e.Height).HasColumnName("height");
+            entity.Property(e => e.FrameRate).HasColumnName("frame_rate");
+            entity.Property(e => e.Bitrate).HasColumnName("bitrate");
+            entity.Property(e => e.ContentLength).HasColumnName("content_length");
+            entity.Property(e => e.AudioSampleRate).HasColumnName("audio_sample_rate");
+            entity.Property(e => e.AudioChannels).HasColumnName("audio_channels");
+            entity.Property(e => e.MimeType).HasColumnName("mime_type").HasMaxLength(100);
+            entity.Property(e => e.Itag).HasColumnName("itag");
+
+            entity.HasIndex(e => e.VideoId);
+            entity.HasIndex(e => new { e.VideoId, e.Itag }).IsUnique();
+
+            entity.HasOne(e => e.Video)
+                .WithMany(v => v.Streams)
+                .HasForeignKey(e => e.VideoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.StreamType)
+                .WithMany()
+                .HasForeignKey(e => e.StreamTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Container)
+                .WithMany()
+                .HasForeignKey(e => e.ContainerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.VideoCodec)
+                .WithMany()
+                .HasForeignKey(e => e.VideoCodecId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.AudioCodec)
+                .WithMany()
+                .HasForeignKey(e => e.AudioCodecId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.AudioQuality)
+                .WithMany()
+                .HasForeignKey(e => e.AudioQualityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ProjectionType)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectionTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

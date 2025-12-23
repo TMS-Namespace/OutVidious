@@ -1,25 +1,43 @@
 using Microsoft.Extensions.Logging;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Enums;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
 using TMS.Apps.Web.OutVidious.Core.Enums;
 
 namespace TMS.Apps.Web.OutVidious.Core.ViewModels;
 
 /// <summary>
 /// ViewModel for managing video player state and interactions.
+/// Wraps a VideoInfo contract loaded via Super.
 /// </summary>
 public sealed class VideoPlayerViewModel : IDisposable
 {
-    private readonly IVideoProvider _videoProvider;
+    private readonly Super _super;
     private readonly ILogger<VideoPlayerViewModel> _logger;
-    private CancellationTokenSource? _loadCts;
     private bool _disposed;
 
-    public VideoPlayerViewModel(IVideoProvider videoProvider, ILogger<VideoPlayerViewModel> logger)
+    /// <summary>
+    /// Creates a new VideoPlayerViewModel wrapping the provided video info.
+    /// </summary>
+    /// <param name="super">The parent Super ViewModel.</param>
+    /// <param name="loggerFactory">Logger factory for creating loggers.</param>
+    /// <param name="videoInfo">The video info contract to wrap.</param>
+    public VideoPlayerViewModel(Super super, ILoggerFactory loggerFactory, VideoInfo videoInfo)
     {
-        _videoProvider = videoProvider ?? throw new ArgumentNullException(nameof(videoProvider));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _super = super ?? throw new ArgumentNullException(nameof(super));
+        ArgumentNullException.ThrowIfNull(loggerFactory);
+        _logger = loggerFactory.CreateLogger<VideoPlayerViewModel>();
+        
+        VideoInfo = videoInfo ?? throw new ArgumentNullException(nameof(videoInfo));
+        VideoId = videoInfo.VideoId;
+        LoadState = VideoLoadState.Loaded;
+
+        UpdateAvailableQualities();
+        UpdateDashQualities();
+        UpdateStreamUrl();
+        UpdateEmbedUrl();
+        UpdateDashManifestUrl();
+
+        _logger.LogDebug("VideoPlayerViewModel created for: {Title}", videoInfo.Title);
     }
 
     /// <summary>
@@ -30,22 +48,22 @@ public sealed class VideoPlayerViewModel : IDisposable
     /// <summary>
     /// Gets the current video information.
     /// </summary>
-    public VideoInfo? VideoInfo { get; private set; }
+    public VideoInfo VideoInfo { get; }
 
     /// <summary>
     /// Gets the current video ID.
     /// </summary>
-    public string? VideoId { get; private set; }
+    public string VideoId { get; }
 
     /// <summary>
     /// Gets the current loading state.
     /// </summary>
-    public VideoLoadState LoadState { get; private set; } = VideoLoadState.NotLoaded;
+    public VideoLoadState LoadState { get; }
 
     /// <summary>
     /// Gets the error message if loading failed.
     /// </summary>
-    public string? ErrorMessage { get; private set; }
+    public string? ErrorMessage { get; }
 
     /// <summary>
     /// Gets the current player mode.
@@ -83,64 +101,6 @@ public sealed class VideoPlayerViewModel : IDisposable
     public IReadOnlyList<string> AvailableDashQualities { get; private set; } = [];
 
     /// <summary>
-    /// Loads a video by its ID.
-    /// </summary>
-    public async Task LoadVideoAsync(string videoId, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(videoId))
-        {
-            _logger.LogWarning("LoadVideoAsync called with empty videoId");
-            return;
-        }
-
-        _logger.LogInformation("Loading video with ID: {VideoId}", videoId);
-
-        // Cancel any existing load operation
-        await CancelCurrentLoadAsync();
-        _loadCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-        VideoId = videoId;
-        LoadState = VideoLoadState.Loading;
-        ErrorMessage = null;
-        OnStateChanged();
-
-        try
-        {
-            VideoInfo = await _videoProvider.GetVideoInfoAsync(videoId, _loadCts.Token);
-
-            if (VideoInfo != null)
-            {
-                UpdateAvailableQualities();
-                UpdateDashQualities();
-                UpdateStreamUrl();
-                UpdateEmbedUrl();
-                UpdateDashManifestUrl();
-                LoadState = VideoLoadState.Loaded;
-                _logger.LogInformation("Successfully loaded video: {Title}", VideoInfo.Title);
-            }
-            else
-            {
-                LoadState = VideoLoadState.Error;
-                ErrorMessage = "Video not found or unavailable.";
-                _logger.LogWarning("Video not found: {VideoId}", videoId);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogDebug("Video load cancelled for: {VideoId}", videoId);
-            LoadState = VideoLoadState.NotLoaded;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to load video: {VideoId}", videoId);
-            LoadState = VideoLoadState.Error;
-            ErrorMessage = $"Failed to load video: {ex.Message}";
-        }
-
-        OnStateChanged();
-    }
-
-    /// <summary>
     /// Sets the player mode.
     /// </summary>
     public void SetPlayerMode(PlayerMode mode)
@@ -173,7 +133,7 @@ public sealed class VideoPlayerViewModel : IDisposable
 
     private void UpdateAvailableQualities()
     {
-        if (VideoInfo?.CombinedStreams == null || VideoInfo.CombinedStreams.Count == 0)
+        if (VideoInfo.CombinedStreams.Count == 0)
         {
             AvailableQualities = [];
             SelectedQuality = null;
@@ -192,7 +152,7 @@ public sealed class VideoPlayerViewModel : IDisposable
 
     private void UpdateStreamUrl()
     {
-        if (VideoInfo?.CombinedStreams == null || string.IsNullOrEmpty(SelectedQuality))
+        if (VideoInfo.CombinedStreams.Count == 0 || string.IsNullOrEmpty(SelectedQuality))
         {
             CurrentStreamUrl = null;
             return;
@@ -213,7 +173,7 @@ public sealed class VideoPlayerViewModel : IDisposable
             return;
         }
 
-        EmbedUrl = _videoProvider.GetEmbedUrl(VideoId).ToString();
+        EmbedUrl = _super.VideoProvider.GetEmbedUrl(VideoId).ToString();
         _logger.LogDebug("Embed URL updated: {EmbedUrl}", EmbedUrl);
     }
 
@@ -226,14 +186,14 @@ public sealed class VideoPlayerViewModel : IDisposable
         }
 
         // Use proxied URL to avoid CORS issues
-        var proxiedUrl = _videoProvider.GetProxiedDashManifestUrl(VideoId);
+        var proxiedUrl = _super.VideoProvider.GetProxiedDashManifestUrl(VideoId);
         DashManifestUrl = proxiedUrl?.ToString();
         _logger.LogDebug("DASH manifest URL updated: {DashUrl}", DashManifestUrl);
     }
 
     private void UpdateDashQualities()
     {
-        if (VideoInfo?.AdaptiveStreams == null || VideoInfo.AdaptiveStreams.Count == 0)
+        if (VideoInfo.AdaptiveStreams.Count == 0)
         {
             AvailableDashQualities = [];
             return;
@@ -257,16 +217,6 @@ public sealed class VideoPlayerViewModel : IDisposable
         return int.TryParse(numericPart, out var height) ? height : 0;
     }
 
-    private async Task CancelCurrentLoadAsync()
-    {
-        if (_loadCts != null)
-        {
-            await _loadCts.CancelAsync();
-            _loadCts.Dispose();
-            _loadCts = null;
-        }
-    }
-
     private void OnStateChanged()
     {
         StateChanged?.Invoke(this, EventArgs.Empty);
@@ -279,8 +229,6 @@ public sealed class VideoPlayerViewModel : IDisposable
             return;
         }
 
-        _loadCts?.Cancel();
-        _loadCts?.Dispose();
         _disposed = true;
     }
 }

@@ -4,20 +4,20 @@
 <PageTitle>@PageTitle</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
-    @if (ViewModel.IsLoading && ViewModel.Channel is null)
+    @if (IsInitialLoading)
     {
         <div class="channel-loading">
             <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />
             <MudText Typo="Typo.body1" Class="mt-2">Loading channel...</MudText>
         </div>
     }
-    else if (!string.IsNullOrWhiteSpace(ViewModel.ErrorMessage))
+    else if (!string.IsNullOrWhiteSpace(ErrorMessage))
     {
         <MudAlert Severity="Severity.Error" Class="ma-4">
-            @ViewModel.ErrorMessage
+            @ErrorMessage
         </MudAlert>
     }
-    else if (ViewModel.Channel is not null)
+    else if (ViewModel is not null)
     {
         <!-- Channel Header -->
         <div class="channel-header">

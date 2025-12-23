@@ -9,6 +9,18 @@ namespace TMS.Apps.FTube.Backend.DataRepository.Mappers;
 public static class ChannelEntityMapper
 {
     /// <summary>
+    /// Default channel tabs to use when loading from database.
+    /// Most YouTube channels have at least Videos tab.
+    /// </summary>
+    private static readonly IReadOnlyList<ChannelTab> DefaultChannelTabs =
+    [
+        new ChannelTab { TabId = "videos", DisplayName = "Videos", IsAvailable = true },
+        new ChannelTab { TabId = "shorts", DisplayName = "Shorts", IsAvailable = true },
+        new ChannelTab { TabId = "streams", DisplayName = "Live", IsAvailable = true },
+        new ChannelTab { TabId = "playlists", DisplayName = "Playlists", IsAvailable = true }
+    ];
+
+    /// <summary>
     /// Converts a ChannelEntity to a ChannelDetails contract.
     /// </summary>
     public static ChannelDetails ToContract(ChannelEntity entity)
@@ -36,7 +48,7 @@ public static class ChannelEntityMapper
             Banners = entity.Banners
                 .Select(b => ImageEntityMapper.ToThumbnailInfo(b.Image))
                 .ToList(),
-            AvailableTabs = [] // Not stored in DB, fetched fresh from provider
+            AvailableTabs = DefaultChannelTabs // Use default tabs when loading from DB
         };
     }
 

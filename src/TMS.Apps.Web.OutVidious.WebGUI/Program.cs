@@ -1,8 +1,10 @@
 using MudBlazor.Services;
 using Serilog;
+using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Configuration;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
 using TMS.Apps.Web.OutVidious.Providers.Invidious;
 using TMS.Apps.Web.OutVidious.WebGUI.Components;
+using TMS.Apps.Web.OutVidious.WebGUI.Services;
 
 // Configure Serilog - Find solution root for log file location
 var solutionRoot = Directory.GetCurrentDirectory();
@@ -65,6 +67,23 @@ try
         var logger = sp.GetRequiredService<ILogger<InvidiousVideoProvider>>();
         return new InvidiousVideoProvider(httpClient, logger, invidiousBaseUrl);
     });
+
+    // Configure DataRepository
+    var dataRepositoryConfig = new DataRepositoryConfig
+    {
+        DataBase = new DataBaseConfig
+        {
+            Host = "localhost",
+            Port = 5656,
+            Database = "ftube",
+            Username = "root",
+            Password = "password"
+        }
+    };
+    builder.Services.AddSingleton(dataRepositoryConfig);
+
+    // Register Orchestrator as scoped service (one per user session)
+    builder.Services.AddScoped<Orchestrator>();
 
     var app = builder.Build();
 

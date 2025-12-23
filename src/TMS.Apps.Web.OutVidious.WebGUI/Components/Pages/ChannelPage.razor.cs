@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
 using TMS.Apps.Web.OutVidious.Core.ViewModels;
+using TMS.Apps.Web.OutVidious.WebGUI.Services;
 
 namespace TMS.Apps.Web.OutVidious.WebGUI.Components.Pages;
 
@@ -12,13 +12,15 @@ public partial class ChannelPageBase : ComponentBase, IDisposable
 {
     private int _selectedTabIndex;
     private bool _isDisposed;
+    private bool _initialLoadComplete;
+    private string? _loadedChannelId;
     private CancellationTokenSource? _cts;
 
     [Inject]
-    private IVideoProvider VideoProvider { get; set; } = null!;
+    private Orchestrator Orchestrator { get; set; } = null!;
 
     [Inject]
-    private ILoggerFactory LoggerFactory { get; set; } = null!;
+    private ILogger<ChannelPageBase> Logger { get; set; } = null!;
 
     [Inject]
     private NavigationManager NavigationManager { get; set; } = null!;
@@ -29,9 +31,13 @@ public partial class ChannelPageBase : ComponentBase, IDisposable
     [Parameter]
     public string? ChannelId { get; set; }
 
-    protected ChannelViewModel ViewModel { get; private set; } = null!;
+    protected ChannelViewModel? ViewModel { get; private set; }
 
-    protected string PageTitle => ViewModel?.Channel?.Name ?? "Channel";
+    protected bool IsInitialLoading { get; private set; } = true;
+
+    protected string? ErrorMessage { get; private set; }
+
+    protected string PageTitle => ViewModel?.Channel.Name ?? "Channel";
 
     protected int SelectedTabIndex
     {
@@ -41,7 +47,13 @@ public partial class ChannelPageBase : ComponentBase, IDisposable
             if (_selectedTabIndex != value)
             {
                 _selectedTabIndex = value;
-                _ = OnTabChangedAsync(value);
+                
+                // Only trigger tab change after initial load is complete
+                // to avoid clearing videos when MudTabs first binds
+                if (_initialLoadComplete)
+                {
+                    _ = OnTabChangedAsync(value);
+                }
             }
         }
     }
@@ -53,17 +65,75 @@ public partial class ChannelPageBase : ComponentBase, IDisposable
     protected override void OnInitialized()
     {
         _cts = new CancellationTokenSource();
-        
-        var vmLogger = LoggerFactory.CreateLogger<ChannelViewModel>();
-        ViewModel = new ChannelViewModel(VideoProvider, vmLogger);
-        ViewModel.StateChanged += OnViewModelStateChanged;
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        if (!string.IsNullOrWhiteSpace(ChannelId) && _cts is not null)
+        // Only load if channel ID changed or hasn't been loaded yet
+        if (!string.IsNullOrWhiteSpace(ChannelId) && 
+            _cts is not null && 
+            _loadedChannelId != ChannelId)
         {
-            await ViewModel.LoadChannelAsync(ChannelId, _cts.Token);
+            await LoadChannelAsync(ChannelId);
+        }
+    }
+
+    private async Task LoadChannelAsync(string channelId)
+    {
+        if (_cts is null)
+        {
+            return;
+        }
+
+        IsInitialLoading = true;
+        _initialLoadComplete = false;
+        ErrorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            Logger.LogDebug("Loading channel: {ChannelId}", channelId);
+
+            // Dispose previous ViewModel if any
+            if (ViewModel is not null)
+            {
+                ViewModel.StateChanged -= OnViewModelStateChanged;
+                ViewModel.Dispose();
+            }
+
+            ViewModel = await Orchestrator.Super.GetChannelDetailsByRemoteIdAsync(channelId, _cts.Token);
+
+            if (ViewModel is null)
+            {
+                ErrorMessage = $"Channel '{channelId}' not found.";
+                Logger.LogWarning("Channel not found: {ChannelId}", channelId);
+                return;
+            }
+
+            ViewModel.StateChanged += OnViewModelStateChanged;
+
+            Logger.LogDebug("Channel loaded: {ChannelName}", ViewModel.Channel.Name);
+
+            // Load initial videos
+            await ViewModel.LoadInitialVideosAsync(_cts.Token);
+            
+            // Mark initial load complete so tab changes can now trigger reloads
+            _initialLoadComplete = true;
+            _loadedChannelId = channelId;
+        }
+        catch (OperationCanceledException)
+        {
+            Logger.LogDebug("Channel loading cancelled for: {ChannelId}", channelId);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Failed to load channel. Please try again.";
+            Logger.LogError(ex, "Error loading channel: {ChannelId}", channelId);
+        }
+        finally
+        {
+            IsInitialLoading = false;
+            StateHasChanged();
         }
     }
 
@@ -76,7 +146,7 @@ public partial class ChannelPageBase : ComponentBase, IDisposable
 
     protected async Task HandleLoadMore()
     {
-        if (_cts is not null)
+        if (_cts is not null && ViewModel is not null)
         {
             await ViewModel.LoadMoreVideosAsync(_cts.Token);
         }
@@ -84,7 +154,7 @@ public partial class ChannelPageBase : ComponentBase, IDisposable
 
     private async Task OnTabChangedAsync(int tabIndex)
     {
-        if (ViewModel.Channel is null || 
+        if (ViewModel?.Channel is null || 
             tabIndex < 0 || 
             tabIndex >= ViewModel.Channel.AvailableTabs.Count ||
             _cts is null)
@@ -103,7 +173,7 @@ public partial class ChannelPageBase : ComponentBase, IDisposable
 
     private string? GetBestAvatar()
     {
-        var avatars = ViewModel?.Channel?.Avatars;
+        var avatars = ViewModel?.Channel.Avatars;
         
         if (avatars is null || avatars.Count == 0)
         {
@@ -121,7 +191,7 @@ public partial class ChannelPageBase : ComponentBase, IDisposable
 
     private string? GetBestBanner()
     {
-        var banners = ViewModel?.Channel?.Banners;
+        var banners = ViewModel?.Channel.Banners;
         
         if (banners is null || banners.Count == 0)
         {

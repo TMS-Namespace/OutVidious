@@ -53,12 +53,18 @@ public sealed class DataRepository : IDataRepository
 
     /// <summary>
     /// Creates a new FTubeDbContext instance using the configured connection string.
+    /// Ensures the database schema is created on first use.
     /// </summary>
     private FTubeDbContext CreateDbContext()
     {
         var optionsBuilder = new DbContextOptionsBuilder<FTubeDbContext>();
         optionsBuilder.UseNpgsql(_connectionString);
-        return new FTubeDbContext(optionsBuilder.Options);
+        var context = new FTubeDbContext(optionsBuilder.Options);
+
+        // Ensure database schema is created (code-first)
+        context.Database.EnsureCreated();
+
+        return context;
     }
 
     /// <inheritdoc />
@@ -69,57 +75,55 @@ public sealed class DataRepository : IDataRepository
 
         _logger.LogDebug("GetVideoAsync called for: {RemoteId}", remoteId);
 
-        // 1. Check memory cache
+        // Note: Videos always need fresh data from provider because stream URLs expire quickly.
+        // We still check cache/DB for metadata freshness to decide if we need to update DB.
+
+        // 1. Check memory cache for fresh data with streams
         if (_videoCache.TryGet(remoteId, out var cached))
         {
             _logger.LogDebug("Video cache hit for: {RemoteId}", remoteId);
 
-            if (!IsStale(cached.LastSyncedAt, _config.VideoStalenessThreshold))
+            // Only use cache if it has stream data (provider data)
+            if (!IsStale(cached.LastSyncedAt, _config.VideoStalenessThreshold) && 
+                cached.Data.CombinedStreams.Count > 0)
             {
-                _logger.LogDebug("Video is fresh, returning cached: {RemoteId}", remoteId);
+                _logger.LogDebug("Video is fresh with streams, returning cached: {RemoteId}", remoteId);
                 return cached.Data;
             }
 
-            _logger.LogDebug("Video is stale, will refresh: {RemoteId}", remoteId);
+            _logger.LogDebug("Video cache is stale or missing streams, will refresh: {RemoteId}", remoteId);
         }
 
-        // 2. Check database
-        await using var dbContext = CreateDbContext();
-        var entity = await dbContext.Videos
-            .Include(v => v.Channel)
-            .Include(v => v.Thumbnails).ThenInclude(t => t.Image)
-            .Include(v => v.Captions)
-            .FirstOrDefaultAsync(v => v.RemoteId == remoteId, cancellationToken);
-
-        if (entity is not null)
-        {
-            _logger.LogDebug("Video found in database: {RemoteId}", remoteId);
-
-            if (!IsStale(entity.LastSyncedAt, _config.VideoStalenessThreshold))
-            {
-                var videoInfo = VideoEntityMapper.ToContract(entity);
-                PutVideoInCache(remoteId, videoInfo, entity.LastSyncedAt);
-                _logger.LogDebug("Video is fresh in DB, returning: {RemoteId}", remoteId);
-                return videoInfo;
-            }
-
-            _logger.LogDebug("Video is stale in DB, will refresh: {RemoteId}", remoteId);
-        }
-
-        // 3. Fetch from provider
+        // 2. Always fetch from provider to get fresh stream URLs
         _logger.LogDebug("Fetching video from provider: {RemoteId}", remoteId);
         var providerVideo = await provider.GetVideoInfoAsync(remoteId, cancellationToken);
 
         if (providerVideo is null)
         {
             _logger.LogWarning("Provider returned null for video: {RemoteId}", remoteId);
-            return entity is not null ? VideoEntityMapper.ToContract(entity) : null;
+            
+            // Fall back to DB if provider fails (may have cached streams)
+            await using var dbContextFallback = CreateDbContext();
+            var entityFallback = await dbContextFallback.Videos
+                .Include(v => v.Channel)
+                .Include(v => v.Thumbnails).ThenInclude(t => t.Image)
+                .Include(v => v.Captions)
+                .Include(v => v.Streams)
+                .FirstOrDefaultAsync(v => v.RemoteId == remoteId, cancellationToken);
+                
+            return entityFallback is not null ? VideoEntityMapper.ToContract(entityFallback) : null;
         }
 
-        // 4. Upsert to database
+        // 3. Check database for existing entity to update
+        await using var dbContext = CreateDbContext();
+        var entity = await dbContext.Videos
+            .Include(v => v.Channel)
+            .FirstOrDefaultAsync(v => v.RemoteId == remoteId, cancellationToken);
+
+        // 4. Upsert to database (store metadata for future reference)
         await UpsertVideoAsync(dbContext, entity, providerVideo, cancellationToken);
 
-        // 5. Put in cache
+        // 5. Put in cache with stream data
         PutVideoInCache(remoteId, providerVideo, DateTime.UtcNow);
 
         _logger.LogDebug("Video fetched and cached: {RemoteId}", remoteId);
@@ -208,17 +212,66 @@ public sealed class DataRepository : IDataRepository
             continuationToken is not null);
 
         // Channel video pages are not cached as they change frequently
-        // But we do cache individual videos when they are fetched
+        // But we do save video summaries to DB for persistence
         var page = await provider.GetChannelVideosAsync(channelId, tab, continuationToken, cancellationToken);
 
-        if (page?.Videos is not null)
+        if (page?.Videos is not null && page.Videos.Count > 0)
         {
-            // Optionally cache video summaries for quick lookup
-            // But full VideoInfo requires separate fetch
             _logger.LogDebug("Fetched {Count} videos from channel", page.Videos.Count);
+            
+            // Save video summaries to database in background (don't block the response)
+            // Use CancellationToken.None so the background save completes even if the request ends
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await UpsertVideoSummariesAsync(channelId, page.Videos, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to save video summaries for channel {ChannelId}", channelId);
+                }
+            });
         }
 
         return page;
+    }
+
+    private async Task UpsertVideoSummariesAsync(string channelId, IReadOnlyList<VideoSummary> videos, CancellationToken cancellationToken)
+    {
+        await using var dbContext = CreateDbContext();
+
+        // Get channel entity to link videos
+        var channelEntity = await dbContext.Channels
+            .FirstOrDefaultAsync(c => c.RemoteId == channelId, cancellationToken);
+
+        int? dbChannelId = channelEntity?.Id;
+
+        foreach (var video in videos)
+        {
+            // Check if video already exists
+            var existingVideo = await dbContext.Videos
+                .FirstOrDefaultAsync(v => v.RemoteId == video.VideoId, cancellationToken);
+
+            if (existingVideo is null)
+            {
+                // Create new video from summary
+                var newEntity = VideoEntityMapper.ToEntity(video, dbChannelId);
+                dbContext.Videos.Add(newEntity);
+            }
+            else
+            {
+                // Update existing video's basic info if needed
+                // Don't overwrite full VideoInfo data with summary data
+                if (existingVideo.ChannelId is null && dbChannelId.HasValue)
+                {
+                    existingVideo.ChannelId = dbChannelId.Value;
+                }
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        _logger.LogDebug("Saved {Count} video summaries for channel {ChannelId}", videos.Count, channelId);
     }
 
     /// <inheritdoc />
@@ -289,17 +342,23 @@ public sealed class DataRepository : IDataRepository
                 channelId = channelEntity.Id;
             }
 
+            int videoId;
             if (existingEntity is not null)
             {
                 VideoEntityMapper.UpdateEntity(existingEntity, video, channelId);
+                videoId = existingEntity.Id;
             }
             else
             {
                 var newEntity = VideoEntityMapper.ToEntity(video, channelId);
                 dbContext.Videos.Add(newEntity);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                videoId = newEntity.Id;
             }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
+            // Upsert streams - delete old ones and add new ones
+            await UpsertStreamsAsync(dbContext, videoId, video, cancellationToken);
+
             _logger.LogDebug("Video upserted to database: {RemoteId}", video.VideoId);
         }
         catch (Exception ex)
@@ -307,6 +366,43 @@ public sealed class DataRepository : IDataRepository
             _logger.LogError(ex, "Failed to upsert video to database: {RemoteId}", video.VideoId);
             // Don't rethrow - we still have the data from provider
         }
+    }
+
+    private async Task UpsertStreamsAsync(FTubeDbContext dbContext, int videoId, VideoInfo video, CancellationToken cancellationToken)
+    {
+        // Get existing streams for this video
+        var existingStreams = await dbContext.Streams
+            .Where(s => s.VideoId == videoId)
+            .ToListAsync(cancellationToken);
+
+        // Delete all existing streams first to avoid duplicate key issues
+        // Stream URLs expire anyway, so we always want fresh data
+        if (existingStreams.Count > 0)
+        {
+            dbContext.Streams.RemoveRange(existingStreams);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        // Combine all streams from the video (only those with itag)
+        var allStreams = video.AdaptiveStreams
+            .Concat(video.CombinedStreams)
+            .Where(s => s.Itag.HasValue) // Only save streams with itag for unique constraint
+            .ToList();
+
+        // Add all new streams
+        foreach (var stream in allStreams)
+        {
+            var newStream = StreamEntityMapper.ToEntity(stream, videoId);
+            dbContext.Streams.Add(newStream);
+        }
+
+        // Save the new streams
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogDebug(
+            "Upserted {StreamCount} streams for video {VideoId}", 
+            allStreams.Count, 
+            video.VideoId);
     }
 
     private async Task UpsertChannelAsync(FTubeDbContext dbContext, ChannelEntity? existingEntity, ChannelDetails channel, CancellationToken cancellationToken)

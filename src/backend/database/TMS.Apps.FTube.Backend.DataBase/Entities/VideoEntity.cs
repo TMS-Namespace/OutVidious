@@ -96,6 +96,8 @@ public class VideoEntity
 
     public ICollection<VideoCaptionEntity> Captions { get; set; } = [];
 
+    public ICollection<StreamEntity> Streams { get; set; } = [];
+
     public ICollection<LocalPlaylistVideoMapEntity> PlaylistMappings { get; set; } = [];
 
     public ICollection<WatchingHistoryEntity> WatchingHistory { get; set; } = [];

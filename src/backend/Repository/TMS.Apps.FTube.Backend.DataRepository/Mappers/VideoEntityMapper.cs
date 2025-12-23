@@ -46,6 +46,14 @@ public static class VideoEntityMapper
             Captions = entity.Captions
                 .Select(CaptionEntityMapper.ToContract)
                 .ToList(),
+            AdaptiveStreams = entity.Streams
+                .Where(s => s.StreamTypeId == (int)StreamType.Video || s.StreamTypeId == (int)StreamType.Audio)
+                .Select(StreamEntityMapper.ToContract)
+                .ToList(),
+            CombinedStreams = entity.Streams
+                .Where(s => s.StreamTypeId == (int)StreamType.VideoAndAudio)
+                .Select(StreamEntityMapper.ToContract)
+                .ToList(),
             IsLive = entity.IsLive,
             IsUpcoming = entity.IsUpcoming
         };

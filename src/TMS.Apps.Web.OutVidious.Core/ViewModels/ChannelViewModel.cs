@@ -1,25 +1,42 @@
 using System.Collections.ObjectModel;
 using Microsoft.Extensions.Logging;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
-using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
 
 namespace TMS.Apps.Web.OutVidious.Core.ViewModels;
 
 /// <summary>
 /// ViewModel for displaying a channel and its content.
+/// Wraps a ChannelDetails contract loaded via Super.
 /// </summary>
 public sealed class ChannelViewModel : IDisposable
 {
-    private readonly IVideoProvider _videoProvider;
+    private readonly Super _super;
     private readonly ILogger<ChannelViewModel> _logger;
     private CancellationTokenSource? _loadCts;
     private string? _currentContinuationToken;
     private bool _isDisposed;
 
-    public ChannelViewModel(IVideoProvider videoProvider, ILogger<ChannelViewModel> logger)
+    /// <summary>
+    /// Creates a new ChannelViewModel wrapping the provided channel details.
+    /// </summary>
+    /// <param name="super">The parent Super ViewModel.</param>
+    /// <param name="loggerFactory">Logger factory for creating loggers.</param>
+    /// <param name="channelDetails">The channel details contract to wrap.</param>
+    public ChannelViewModel(Super super, ILoggerFactory loggerFactory, ChannelDetails channelDetails)
     {
-        _videoProvider = videoProvider ?? throw new ArgumentNullException(nameof(videoProvider));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _super = super ?? throw new ArgumentNullException(nameof(super));
+        ArgumentNullException.ThrowIfNull(loggerFactory);
+        _logger = loggerFactory.CreateLogger<ChannelViewModel>();
+        
+        Channel = channelDetails ?? throw new ArgumentNullException(nameof(channelDetails));
+        ChannelId = channelDetails.ChannelId;
+
+        // Select the videos tab by default
+        SelectedTab = Channel.AvailableTabs.FirstOrDefault(t => 
+            t.TabId.Equals("videos", StringComparison.OrdinalIgnoreCase))
+            ?? Channel.AvailableTabs.FirstOrDefault();
+
+        _logger.LogDebug("ChannelViewModel created for: {ChannelName}", channelDetails.Name);
     }
 
     /// <summary>
@@ -30,12 +47,12 @@ public sealed class ChannelViewModel : IDisposable
     /// <summary>
     /// The current channel ID.
     /// </summary>
-    public string? ChannelId { get; private set; }
+    public string ChannelId { get; }
 
     /// <summary>
     /// The channel details.
     /// </summary>
-    public ChannelDetails? Channel { get; private set; }
+    public ChannelDetails Channel { get; }
 
     /// <summary>
     /// The list of videos from the channel.
@@ -68,71 +85,16 @@ public sealed class ChannelViewModel : IDisposable
     public string? ErrorMessage { get; private set; }
 
     /// <summary>
-    /// Loads a channel by its ID.
+    /// Loads the initial videos for the current tab.
     /// </summary>
-    public async Task LoadChannelAsync(string channelId, CancellationToken cancellationToken)
+    public async Task LoadInitialVideosAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(channelId))
+        if (SelectedTab is null)
         {
-            throw new ArgumentException("Channel ID cannot be empty", nameof(channelId));
+            return;
         }
 
-        CancelPendingLoads();
-        _loadCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var token = _loadCts.Token;
-
-        ChannelId = channelId;
-        Channel = null;
-        Videos.Clear();
-        SelectedTab = null;
-        _currentContinuationToken = null;
-        HasMore = false;
-        ErrorMessage = null;
-        IsLoading = true;
-        
-        NotifyStateChanged();
-
-        try
-        {
-            _logger.LogDebug("Loading channel details for {ChannelId}", channelId);
-            
-            Channel = await _videoProvider.GetChannelDetailsAsync(channelId, token);
-
-            if (Channel is null)
-            {
-                ErrorMessage = $"Channel '{channelId}' not found.";
-                _logger.LogWarning("Channel not found: {ChannelId}", channelId);
-                return;
-            }
-
-            _logger.LogDebug("Loaded channel: {ChannelName} with {TabCount} tabs", 
-                Channel.Name, 
-                Channel.AvailableTabs.Count);
-
-            // Select the videos tab by default
-            SelectedTab = Channel.AvailableTabs.FirstOrDefault(t => 
-                t.TabId.Equals("videos", StringComparison.OrdinalIgnoreCase))
-                ?? Channel.AvailableTabs.FirstOrDefault();
-
-            if (SelectedTab is not null)
-            {
-                await LoadVideosForTabAsync(SelectedTab.TabId, isInitial: true, token);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogDebug("Channel loading cancelled for {ChannelId}", channelId);
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = "Failed to load channel. Please try again.";
-            _logger.LogError(ex, "Error loading channel {ChannelId}", channelId);
-        }
-        finally
-        {
-            IsLoading = false;
-            NotifyStateChanged();
-        }
+        await LoadVideosForTabAsync(SelectedTab.TabId, isInitial: true, cancellationToken);
     }
 
     /// <summary>
@@ -140,7 +102,7 @@ public sealed class ChannelViewModel : IDisposable
     /// </summary>
     public async Task SelectTabAsync(string tabId, CancellationToken cancellationToken)
     {
-        if (Channel is null || string.IsNullOrWhiteSpace(tabId))
+        if (string.IsNullOrWhiteSpace(tabId))
         {
             return;
         }
@@ -175,10 +137,9 @@ public sealed class ChannelViewModel : IDisposable
 
     private async Task LoadVideosForTabAsync(string tabId, bool isInitial, CancellationToken cancellationToken)
     {
-        if (ChannelId is null)
-        {
-            return;
-        }
+        CancelPendingLoads();
+        _loadCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var token = _loadCts.Token;
 
         if (isInitial)
         {
@@ -201,11 +162,11 @@ public sealed class ChannelViewModel : IDisposable
                 tabId, 
                 _currentContinuationToken is not null);
 
-            var page = await _videoProvider.GetChannelVideosAsync(
+            var page = await _super.GetChannelVideosAsync(
                 ChannelId, 
                 tabId, 
                 _currentContinuationToken, 
-                cancellationToken);
+                token);
 
             if (page is not null)
             {
