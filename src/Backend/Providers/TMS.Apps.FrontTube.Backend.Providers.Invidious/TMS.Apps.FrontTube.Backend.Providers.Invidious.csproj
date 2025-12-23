@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>TMS.Apps.Web.OutVidious.Providers.Invidious</RootNamespace>
+    <RootNamespace>TMS.Apps.FrontTube.Backend.Providers.Invidious</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

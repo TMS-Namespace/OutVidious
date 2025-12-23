@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace TMS.Apps.Web.OutVidious.Providers.Invidious.ApiModels;
+namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
 
 /// <summary>
 /// Raw video caption/subtitle DTO from the Invidious API.

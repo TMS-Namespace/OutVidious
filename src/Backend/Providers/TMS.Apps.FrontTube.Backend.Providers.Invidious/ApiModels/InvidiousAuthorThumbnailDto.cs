@@ -1,4 +1,4 @@
-namespace TMS.Apps.Web.OutVidious.Providers.Invidious.ApiModels;
+namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
 
 /// <summary>
 /// Raw author/channel thumbnail DTO from the Invidious API.

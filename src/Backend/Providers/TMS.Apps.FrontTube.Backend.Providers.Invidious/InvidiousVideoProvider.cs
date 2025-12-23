@@ -5,11 +5,11 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
-using TMS.Apps.Web.OutVidious.Providers.Invidious.ApiModels;
-using TMS.Apps.Web.OutVidious.Providers.Invidious.Converters;
-using TMS.Apps.Web.OutVidious.Providers.Invidious.Mappers;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious.Converters;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious.Mappers;
 
-namespace TMS.Apps.Web.OutVidious.Providers.Invidious;
+namespace TMS.Apps.FrontTube.Backend.Providers.Invidious;
 
 /// <summary>
 /// Video provider implementation for Invidious instances.

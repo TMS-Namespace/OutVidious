@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace TMS.Apps.Web.OutVidious.Providers.Invidious.Converters;
+namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.Converters;
 
 /// <summary>
 /// JSON converter that handles values that can be either string or number in JSON

@@ -1,9 +1,9 @@
 using System.Text.RegularExpressions;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Contracts;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Enums;
-using TMS.Apps.Web.OutVidious.Providers.Invidious.ApiModels;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
 
-namespace TMS.Apps.Web.OutVidious.Providers.Invidious.Mappers;
+namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.Mappers;
 
 /// <summary>
 /// Maps Invidious stream DTOs to common StreamInfo contracts.

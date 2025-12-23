@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
-using TMS.Apps.Web.OutVidious.Providers.Invidious.Converters;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious.Converters;
 
-namespace TMS.Apps.Web.OutVidious.Providers.Invidious.ApiModels;
+namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
 
 /// <summary>
 /// Raw format stream (video+audio combined) DTO from the Invidious API.

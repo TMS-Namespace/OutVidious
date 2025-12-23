@@ -4,7 +4,7 @@ using TMS.Apps.FTube.Backend.DataRepository;
 using TMS.Apps.FTube.Backend.DataRepository.Interfaces;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Configuration;
 using TMS.Apps.Web.OutVidious.Common.ProvidersCore.Interfaces;
-using TMS.Apps.Web.OutVidious.Providers.Invidious;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious;
 using TMS.Apps.FrontTube.Frontend.WebUI.Components;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 

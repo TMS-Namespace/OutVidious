@@ -1,4 +1,4 @@
-namespace TMS.Apps.Web.OutVidious.Providers.Invidious.ApiModels;
+namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
 
 /// <summary>
 /// Raw video details DTO from the Invidious API.
