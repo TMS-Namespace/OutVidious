@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
-using TMS.Apps.Web.OutVidious.Core.Enums;
+using TMS.Apps.FrontTube.Backend.Core.Enums;
 
-namespace TMS.Apps.Web.OutVidious.Core.ViewModels;
+namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
 /// <summary>
 /// ViewModel for managing video player state and interactions.

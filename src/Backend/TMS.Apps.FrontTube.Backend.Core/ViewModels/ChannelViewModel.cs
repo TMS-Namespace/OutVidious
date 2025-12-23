@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 
-namespace TMS.Apps.Web.OutVidious.Core.ViewModels;
+namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
 /// <summary>
 /// ViewModel for displaying a channel and its content.

@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Interfaces;
 
-namespace TMS.Apps.Web.OutVidious.Core.ViewModels;
+namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
 /// <summary>
 /// Represents the loading state of an image.

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
-using TMS.Apps.Web.OutVidious.Core.Enums;
-using TMS.Apps.Web.OutVidious.Core.ViewModels;
+using TMS.Apps.FrontTube.Backend.Core.Enums;
+using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Video;

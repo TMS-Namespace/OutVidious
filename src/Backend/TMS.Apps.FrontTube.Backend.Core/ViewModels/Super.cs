@@ -5,7 +5,7 @@ using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
-namespace TMS.Apps.Web.OutVidious.Core.ViewModels;
+namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
 /// <summary>
 /// Top-level ViewModel that manages data repository and other ViewModels.

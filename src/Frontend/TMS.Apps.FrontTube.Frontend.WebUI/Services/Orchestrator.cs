@@ -1,6 +1,6 @@
 using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Interfaces;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
-using TMS.Apps.Web.OutVidious.Core.ViewModels;
+using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Services;
 

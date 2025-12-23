@@ -1,4 +1,4 @@
-namespace TMS.Apps.Web.OutVidious.Core.Enums;
+namespace TMS.Apps.FrontTube.Backend.Core.Enums;
 
 /// <summary>
 /// Represents the video player rendering mode.
