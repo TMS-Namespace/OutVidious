@@ -33,10 +33,10 @@ public enum ImageLoadState
 /// ViewModel for managing async image loading with caching.
 /// Handles the memory → DB → web caching pattern via repository.
 /// </summary>
-public sealed class ImageViewModel : IDisposable
+public sealed class Image : IDisposable
 {
     private readonly Super _super;
-    private readonly ILogger<ImageViewModel> _logger;
+    private readonly ILogger<Image> _logger;
     private CancellationTokenSource? _loadCts;
     private bool _disposed;
 
@@ -48,9 +48,9 @@ public sealed class ImageViewModel : IDisposable
     /// <param name="originalUrl">The original URL of the image (YouTube CDN URL).</param>
     /// <param name="fetchUrl">The URL to fetch the image from (may be provider proxy).</param>
     /// <param name="placeholderDataUrl">Optional placeholder data URL to show while loading.</param>
-    public ImageViewModel(
+    public Image(
         Super super,
-        ILogger<ImageViewModel> logger,
+        ILogger<Image> logger,
         Uri originalUrl,
         Uri fetchUrl,
         string? placeholderDataUrl = null)

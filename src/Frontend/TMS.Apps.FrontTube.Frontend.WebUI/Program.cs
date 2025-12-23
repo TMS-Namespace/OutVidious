@@ -85,11 +85,11 @@ try
     builder.Services.AddSingleton(dataRepositoryConfig);
 
     // Register DataRepository as singleton (shared cache across all requests)
-    builder.Services.AddSingleton<IDataRepository>(sp =>
+    builder.Services.AddSingleton<ICacheManager>(sp =>
     {
         var config = sp.GetRequiredService<DataRepositoryConfig>();
         var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-        return new DataRepository(config, loggerFactory);
+        return new CacheManager(config, loggerFactory);
     });
 
     // Register Orchestrator as scoped service (one per user session)

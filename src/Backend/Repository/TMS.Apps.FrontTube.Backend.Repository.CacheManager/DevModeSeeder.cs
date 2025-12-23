@@ -34,7 +34,7 @@ public sealed class DevModeSeeder
     /// <param name="dbContext">The database context.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The development user entity.</returns>
-    public async Task<UserEntity> SeedDevUserAsync(FTubeDbContext dbContext, CancellationToken cancellationToken)
+    public async Task<UserEntity> SeedDevUserAsync(DataBaseContext dbContext, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
 
@@ -67,7 +67,7 @@ public sealed class DevModeSeeder
     /// <param name="dbContext">The database context.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The development user entity, or null if not in dev mode context.</returns>
-    public async Task<UserEntity?> GetOrCreateDevUserAsync(FTubeDbContext dbContext, CancellationToken cancellationToken)
+    public async Task<UserEntity?> GetOrCreateDevUserAsync(DataBaseContext dbContext, CancellationToken cancellationToken)
     {
         return await SeedDevUserAsync(dbContext, cancellationToken);
     }

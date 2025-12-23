@@ -7,9 +7,9 @@ namespace TMS.Apps.FrontTube.Backend.Repository.DataBase;
 /// <summary>
 /// Database context for FTube application.
 /// </summary>
-public class FTubeDbContext : DbContext
+public class DataBaseContext : DbContext
 {
-    public FTubeDbContext(DbContextOptions<FTubeDbContext> options)
+    public DataBaseContext(DbContextOptions<DataBaseContext> options)
         : base(options)
     {
     }

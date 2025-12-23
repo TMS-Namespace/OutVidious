@@ -31,13 +31,13 @@ public partial class ChannelPage : ComponentBase, IDisposable
     [Parameter]
     public string? ChannelId { get; set; }
 
-    protected ChannelViewModel? ViewModel { get; private set; }
+    protected Channel? ViewModel { get; private set; }
 
     protected bool IsInitialLoading { get; private set; } = true;
 
     protected string? ErrorMessage { get; private set; }
 
-    protected string PageTitle => ViewModel?.Channel.Name ?? "Channel";
+    protected string PageTitle => ViewModel?.ChannelMetadata.Name ?? "Channel";
 
     protected int SelectedTabIndex
     {
@@ -112,7 +112,7 @@ public partial class ChannelPage : ComponentBase, IDisposable
 
             ViewModel.StateChanged += OnViewModelStateChanged;
 
-            Logger.LogDebug("Channel loaded: {ChannelName}", ViewModel.Channel.Name);
+            Logger.LogDebug("Channel loaded: {ChannelName}", ViewModel.ChannelMetadata.Name);
 
             // Mark initial load complete and show content - videos will load in background
             _initialLoadComplete = true;
@@ -153,15 +153,15 @@ public partial class ChannelPage : ComponentBase, IDisposable
 
     private async Task OnTabChangedAsync(int tabIndex)
     {
-        if (ViewModel?.Channel is null || 
+        if (ViewModel?.ChannelMetadata is null || 
             tabIndex < 0 || 
-            tabIndex >= ViewModel.Channel.AvailableTabs.Count ||
+            tabIndex >= ViewModel.ChannelMetadata.AvailableTabs.Count ||
             _cts is null)
         {
             return;
         }
 
-        var tab = ViewModel.Channel.AvailableTabs[tabIndex];
+        var tab = ViewModel.ChannelMetadata.AvailableTabs[tabIndex];
         await ViewModel.SelectTabAsync(tab.TabId, _cts.Token);
     }
 
@@ -172,7 +172,7 @@ public partial class ChannelPage : ComponentBase, IDisposable
 
     private string? GetBestAvatar()
     {
-        var avatars = ViewModel?.Channel.Avatars;
+        var avatars = ViewModel?.ChannelMetadata.Avatars;
         
         if (avatars is null || avatars.Count == 0)
         {
@@ -191,7 +191,7 @@ public partial class ChannelPage : ComponentBase, IDisposable
 
     private string? GetBestBanner()
     {
-        var banners = ViewModel?.Channel.Banners;
+        var banners = ViewModel?.ChannelMetadata.Banners;
         
         if (banners is null || banners.Count == 0)
         {

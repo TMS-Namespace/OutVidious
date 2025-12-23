@@ -15,10 +15,10 @@ namespace TMS.Apps.FrontTube.Backend.Repository.CacheManager;
 /// <summary>
 /// Data repository implementing multi-tier caching: Memory → Database → Provider.
 /// </summary>
-public sealed class DataRepository : IDataRepository
+public sealed class CacheManager : ICacheManager
 {
     private readonly DataRepositoryConfig _config;
-    private readonly ILogger<DataRepository> _logger;
+    private readonly ILogger<CacheManager> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly string _connectionString;
     private readonly DevModeSeeder? _devModeSeeder;
@@ -31,13 +31,13 @@ public sealed class DataRepository : IDataRepository
     private bool _disposed;
     private bool _devUserSeeded;
 
-    public DataRepository(
+    public CacheManager(
         DataRepositoryConfig config,
         ILoggerFactory loggerFactory)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-        _logger = loggerFactory.CreateLogger<DataRepository>();
+        _logger = loggerFactory.CreateLogger<CacheManager>();
         _connectionString = config.DataBase.BuildConnectionString();
 
         // Initialize dev mode seeder if enabled
@@ -88,11 +88,11 @@ public sealed class DataRepository : IDataRepository
     /// Creates a new FTubeDbContext instance using the configured connection string.
     /// Ensures the database schema is created on first use and seeds dev user if enabled.
     /// </summary>
-    private async Task<FTubeDbContext> CreateDbContextAsync(CancellationToken cancellationToken)
+    private async Task<DataBaseContext> CreateDbContextAsync(CancellationToken cancellationToken)
     {
-        var optionsBuilder = new DbContextOptionsBuilder<FTubeDbContext>();
+        var optionsBuilder = new DbContextOptionsBuilder<DataBaseContext>();
         optionsBuilder.UseNpgsql(_connectionString);
-        var context = new FTubeDbContext(optionsBuilder.Options);
+        var context = new DataBaseContext(optionsBuilder.Options);
 
         // Ensure database schema is created (code-first)
         await context.Database.EnsureCreatedAsync(cancellationToken);
@@ -111,11 +111,11 @@ public sealed class DataRepository : IDataRepository
     /// Creates a new FTubeDbContext instance synchronously.
     /// Ensures the database schema is created on first use.
     /// </summary>
-    private FTubeDbContext CreateDbContext()
+    private DataBaseContext CreateDbContext()
     {
-        var optionsBuilder = new DbContextOptionsBuilder<FTubeDbContext>();
+        var optionsBuilder = new DbContextOptionsBuilder<DataBaseContext>();
         optionsBuilder.UseNpgsql(_connectionString);
-        var context = new FTubeDbContext(optionsBuilder.Options);
+        var context = new DataBaseContext(optionsBuilder.Options);
 
         // Ensure database schema is created (code-first)
         context.Database.EnsureCreated();
@@ -388,7 +388,7 @@ public sealed class DataRepository : IDataRepository
         _channelCache.AddOrUpdate(remoteId, new CachedItem<ChannelDetails>(channel, lastSyncedAt));
     }
 
-    private async Task UpsertVideoAsync(FTubeDbContext dbContext, VideoEntity? existingEntity, VideoInfo video, CancellationToken cancellationToken)
+    private async Task UpsertVideoAsync(DataBaseContext dbContext, VideoEntity? existingEntity, VideoInfo video, CancellationToken cancellationToken)
     {
         try
         {
@@ -435,7 +435,7 @@ public sealed class DataRepository : IDataRepository
         }
     }
 
-    private async Task UpsertStreamsAsync(FTubeDbContext dbContext, int videoId, VideoInfo video, CancellationToken cancellationToken)
+    private async Task UpsertStreamsAsync(DataBaseContext dbContext, int videoId, VideoInfo video, CancellationToken cancellationToken)
     {
         // Get existing streams for this video
         var existingStreams = await dbContext.Streams
@@ -475,7 +475,7 @@ public sealed class DataRepository : IDataRepository
             video.VideoId);
     }
 
-    private async Task UpsertChannelAsync(FTubeDbContext dbContext, ChannelEntity? existingEntity, ChannelDetails channel, CancellationToken cancellationToken)
+    private async Task UpsertChannelAsync(DataBaseContext dbContext, ChannelEntity? existingEntity, ChannelDetails channel, CancellationToken cancellationToken)
     {
         try
         {
@@ -526,7 +526,7 @@ public sealed class DataRepository : IDataRepository
     }
 
     private async Task UpsertChannelImagesAsync(
-        FTubeDbContext dbContext,
+        DataBaseContext dbContext,
         ChannelEntity channelEntity,
         IReadOnlyList<ThumbnailInfo> images,
         bool isAvatar,
@@ -609,7 +609,7 @@ public sealed class DataRepository : IDataRepository
     }
 
     private async Task UpsertVideoThumbnailsAsync(
-        FTubeDbContext dbContext,
+        DataBaseContext dbContext,
         VideoEntity videoEntity,
         IReadOnlyList<ThumbnailInfo> thumbnails,
         CancellationToken cancellationToken)
@@ -1003,7 +1003,7 @@ public sealed class DataRepository : IDataRepository
     }
 
     private async Task UpsertImageAsync(
-        FTubeDbContext dbContext,
+        DataBaseContext dbContext,
         ImageEntity? existingEntity,
         CachedImage image,
         string remoteUrl,

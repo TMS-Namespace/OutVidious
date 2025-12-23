@@ -38,7 +38,7 @@ public sealed record CachedImage
 /// Repository interface for managing cached video/channel data.
 /// Implements a multi-tier caching strategy: Memory → Database → Provider.
 /// </summary>
-public interface IDataRepository : IDisposable
+public interface ICacheManager : IDisposable
 {
     /// <summary>
     /// Gets video information by remote ID.

@@ -12,7 +12,7 @@ namespace TMS.Apps.FrontTube.Frontend.WebUI.Components.Shared;
 public partial class AsyncImageComponentBase : ComponentBase, IDisposable
 {
     private CancellationTokenSource? _cts;
-    private ImageViewModel? _imageViewModel;
+    private Image? _imageViewModel;
     private bool _isDisposed;
     private string? _currentImageUrl;
 

@@ -17,7 +17,7 @@ public partial class Home : ComponentBase, IDisposable
     [Inject]
     private ILogger<Home> Logger { get; set; } = null!;
 
-    private VideoPlayerViewModel? _videoPlayerVm;
+    private Backend.Core.ViewModels.Video? _videoPlayerVm;
     private string _videoIdInput = DefaultVideoId;
     private bool _isLoading;
     private bool _disposed;

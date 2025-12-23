@@ -33,7 +33,7 @@ public partial class InvidiousPlayerComponent : ComponentBase, IAsyncDisposable
     private Orchestrator Orchestrator { get; set; } = default!;
 
     [Parameter]
-    public VideoPlayerViewModel? ViewModel { get; set; }
+    public Backend.Core.ViewModels.Video? ViewModel { get; set; }
 
     [Parameter]
     public string ProviderBaseUrl { get; set; } = string.Empty;

@@ -34,24 +34,24 @@
                 <MudAvatar Size="Size.Large" Class="channel-avatar">
                     <AsyncImageComponent 
                         ImageUrl="@AvatarUrl" 
-                        Alt="@ViewModel.Channel.Name"
+                        Alt="@ViewModel.ChannelMetadata.Name"
                         ObjectFit="ObjectFit.Cover"
                         UseAsyncLoading="false" />
                 </MudAvatar>
 
                 <div class="channel-details">
                     <MudText Typo="Typo.h4" Class="channel-name">
-                        @ViewModel.Channel.Name
+                        @ViewModel.ChannelMetadata.Name
                     </MudText>
 
                     <MudText Typo="Typo.body2" Color="Color.Secondary">
-                        @ViewModel.Channel.SubscriberCountText
+                        @ViewModel.ChannelMetadata.SubscriberCountText
                     </MudText>
 
-                    @if (!string.IsNullOrWhiteSpace(ViewModel.Channel.Description))
+                    @if (!string.IsNullOrWhiteSpace(ViewModel.ChannelMetadata.Description))
                     {
                         <MudText Typo="Typo.body2" Class="channel-description mt-2">
-                            @ViewModel.Channel.Description
+                            @ViewModel.ChannelMetadata.Description
                         </MudText>
                     }
                 </div>
@@ -59,13 +59,13 @@
         </div>
 
         <!-- Tab Navigation -->
-        @if (ViewModel.Channel.AvailableTabs.Count > 0)
+        @if (ViewModel.ChannelMetadata.AvailableTabs.Count > 0)
         {
             <MudTabs @bind-ActivePanelIndex="SelectedTabIndex" 
                      Elevation="0" 
                      ApplyEffectsToContainer="true"
                      Class="channel-tabs">
-                @foreach (var tab in ViewModel.Channel.AvailableTabs)
+                @foreach (var tab in ViewModel.ChannelMetadata.AvailableTabs)
                 {
                     <MudTabPanel Text="@tab.DisplayName" ID="@tab.TabId" />
                 }

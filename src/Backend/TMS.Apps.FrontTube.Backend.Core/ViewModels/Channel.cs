@@ -8,10 +8,10 @@ namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 /// ViewModel for displaying a channel and its content.
 /// Wraps a ChannelDetails contract loaded via Super.
 /// </summary>
-public sealed class ChannelViewModel : IDisposable
+public sealed class Channel : IDisposable
 {
     private readonly Super _super;
-    private readonly ILogger<ChannelViewModel> _logger;
+    private readonly ILogger<Channel> _logger;
     private CancellationTokenSource? _loadCts;
     private string? _currentContinuationToken;
     private bool _isDisposed;
@@ -22,19 +22,19 @@ public sealed class ChannelViewModel : IDisposable
     /// <param name="super">The parent Super ViewModel.</param>
     /// <param name="loggerFactory">Logger factory for creating loggers.</param>
     /// <param name="channelDetails">The channel details contract to wrap.</param>
-    public ChannelViewModel(Super super, ILoggerFactory loggerFactory, ChannelDetails channelDetails)
+    public Channel(Super super, ILoggerFactory loggerFactory, ChannelDetails channelDetails)
     {
         _super = super ?? throw new ArgumentNullException(nameof(super));
         ArgumentNullException.ThrowIfNull(loggerFactory);
-        _logger = loggerFactory.CreateLogger<ChannelViewModel>();
+        _logger = loggerFactory.CreateLogger<Channel>();
         
-        Channel = channelDetails ?? throw new ArgumentNullException(nameof(channelDetails));
+        ChannelMetadata = channelDetails ?? throw new ArgumentNullException(nameof(channelDetails));
         ChannelId = channelDetails.ChannelId;
 
         // Select the videos tab by default
-        SelectedTab = Channel.AvailableTabs.FirstOrDefault(t => 
+        SelectedTab = ChannelMetadata.AvailableTabs.FirstOrDefault(t => 
             t.TabId.Equals("videos", StringComparison.OrdinalIgnoreCase))
-            ?? Channel.AvailableTabs.FirstOrDefault();
+            ?? ChannelMetadata.AvailableTabs.FirstOrDefault();
 
         _logger.LogDebug("ChannelViewModel created for: {ChannelName}", channelDetails.Name);
     }
@@ -52,7 +52,7 @@ public sealed class ChannelViewModel : IDisposable
     /// <summary>
     /// The channel details.
     /// </summary>
-    public ChannelDetails Channel { get; }
+    public ChannelDetails ChannelMetadata { get; }
 
     /// <summary>
     /// The list of videos from the channel.
@@ -107,7 +107,7 @@ public sealed class ChannelViewModel : IDisposable
             return;
         }
 
-        var tab = Channel.AvailableTabs.FirstOrDefault(t => 
+        var tab = ChannelMetadata.AvailableTabs.FirstOrDefault(t => 
             t.TabId.Equals(tabId, StringComparison.OrdinalIgnoreCase));
         
         if (tab is null || tab == SelectedTab)

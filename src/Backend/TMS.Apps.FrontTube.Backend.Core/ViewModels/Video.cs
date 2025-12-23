@@ -9,10 +9,10 @@ namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 /// ViewModel for managing video player state and interactions.
 /// Wraps a VideoInfo contract loaded via Super.
 /// </summary>
-public sealed class VideoPlayerViewModel : IDisposable
+public sealed class Video : IDisposable
 {
     private readonly Super _super;
-    private readonly ILogger<VideoPlayerViewModel> _logger;
+    private readonly ILogger<Video> _logger;
     private bool _disposed;
 
     /// <summary>
@@ -21,11 +21,11 @@ public sealed class VideoPlayerViewModel : IDisposable
     /// <param name="super">The parent Super ViewModel.</param>
     /// <param name="loggerFactory">Logger factory for creating loggers.</param>
     /// <param name="videoInfo">The video info contract to wrap.</param>
-    public VideoPlayerViewModel(Super super, ILoggerFactory loggerFactory, VideoInfo videoInfo)
+    public Video(Super super, ILoggerFactory loggerFactory, VideoInfo videoInfo)
     {
         _super = super ?? throw new ArgumentNullException(nameof(super));
         ArgumentNullException.ThrowIfNull(loggerFactory);
-        _logger = loggerFactory.CreateLogger<VideoPlayerViewModel>();
+        _logger = loggerFactory.CreateLogger<Video>();
         
         VideoInfo = videoInfo ?? throw new ArgumentNullException(nameof(videoInfo));
         VideoId = videoInfo.VideoId;

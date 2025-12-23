@@ -15,7 +15,7 @@ public sealed class Super : IDisposable
 {
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<Super> _logger;
-    private readonly IDataRepository _dataRepository;
+    private readonly ICacheManager _dataRepository;
     private readonly IVideoProvider _videoProvider;
     private readonly bool _ownsDataRepository;
     private bool _disposed;
@@ -26,7 +26,7 @@ public sealed class Super : IDisposable
     public Super(
         ILoggerFactory loggerFactory,
         IVideoProvider videoProvider,
-        IDataRepository dataRepository)
+        ICacheManager dataRepository)
     {
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         _videoProvider = videoProvider ?? throw new ArgumentNullException(nameof(videoProvider));
@@ -51,7 +51,7 @@ public sealed class Super : IDisposable
 
         ArgumentNullException.ThrowIfNull(dataRepositoryConfig);
 
-        _dataRepository = new DataRepository(dataRepositoryConfig, loggerFactory);
+        _dataRepository = new CacheManager(dataRepositoryConfig, loggerFactory);
         _ownsDataRepository = true;
 
         _logger.LogDebug("Super initialized with provider: {ProviderType}", videoProvider.GetType().Name);
@@ -68,7 +68,7 @@ public sealed class Super : IDisposable
     /// <param name="remoteId">The video's remote identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A VideoPlayerViewModel wrapping the video data, or null if not found.</returns>
-    public async Task<VideoPlayerViewModel?> GetVideoByRemoteIdAsync(string remoteId, CancellationToken cancellationToken)
+    public async Task<Video?> GetVideoByRemoteIdAsync(string remoteId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(remoteId))
         {
@@ -88,7 +88,7 @@ public sealed class Super : IDisposable
                 return null;
             }
 
-            var viewModel = new VideoPlayerViewModel(this, _loggerFactory, videoInfo);
+            var viewModel = new Video(this, _loggerFactory, videoInfo);
             _logger.LogDebug("Created VideoPlayerViewModel for: {Title}", videoInfo.Title);
 
             return viewModel;
@@ -111,7 +111,7 @@ public sealed class Super : IDisposable
     /// <param name="remoteId">The channel's remote identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A ChannelViewModel wrapping the channel data, or null if not found.</returns>
-    public async Task<ChannelViewModel?> GetChannelDetailsByRemoteIdAsync(string remoteId, CancellationToken cancellationToken)
+    public async Task<Channel?> GetChannelDetailsByRemoteIdAsync(string remoteId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(remoteId))
         {
@@ -131,7 +131,7 @@ public sealed class Super : IDisposable
                 return null;
             }
 
-            var viewModel = new ChannelViewModel(this, _loggerFactory, channelDetails);
+            var viewModel = new Channel(this, _loggerFactory, channelDetails);
             _logger.LogDebug("Created ChannelViewModel for: {ChannelName}", channelDetails.Name);
 
             return viewModel;
@@ -237,11 +237,11 @@ public sealed class Super : IDisposable
     /// <param name="fetchUrl">The URL to fetch the image from (may be provider proxy).</param>
     /// <param name="placeholderDataUrl">Optional placeholder.</param>
     /// <returns>An ImageViewModel configured to load the image.</returns>
-    public ImageViewModel CreateImageViewModel(Uri originalUrl, Uri fetchUrl, string? placeholderDataUrl = null)
+    public Image CreateImageViewModel(Uri originalUrl, Uri fetchUrl, string? placeholderDataUrl = null)
     {
-        return new ImageViewModel(
+        return new Image(
             this,
-            _loggerFactory.CreateLogger<ImageViewModel>(),
+            _loggerFactory.CreateLogger<Image>(),
             originalUrl,
             fetchUrl,
             placeholderDataUrl);
