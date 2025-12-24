@@ -23,7 +23,7 @@ public static class ChannelMapper
     /// <summary>
     /// Maps an Invidious channel DTO to a ChannelDetails contract.
     /// </summary>
-    public static ChannelDetails ToChannelDetails(InvidiousChannelDto dto, Uri baseUrl)
+    public static Channel ToChannelDetails(InvidiousChannelDto dto, Uri baseUrl)
     {
         ArgumentNullException.ThrowIfNull(dto);
         ArgumentNullException.ThrowIfNull(baseUrl);
@@ -32,9 +32,9 @@ public static class ChannelMapper
             ? TryCreateUri($"{baseUrl.ToString().TrimEnd('/')}{dto.AuthorUrl}")
             : null;
 
-        return new ChannelDetails
+        return new Channel
         {
-            ChannelId = dto.AuthorId,
+            RemoteId = dto.AuthorId,
             Name = dto.Author,
             Description = dto.Description ?? string.Empty,
             DescriptionHtml = dto.DescriptionHtml,
@@ -47,14 +47,14 @@ public static class ChannelMapper
             Banners = dto.AuthorBanners.Select(ToBannerThumbnailInfo).ToList(),
             AvailableTabs = dto.Tabs.Select(ToChannelTab).ToList(),
             IsVerified = false, // Invidious doesn't expose this directly
-            Keywords = []
+            Tags = []
         };
     }
 
     /// <summary>
     /// Maps an Invidious channel video DTO to a VideoSummary contract.
     /// </summary>
-    public static VideoSummary ToVideoSummary(InvidiousChannelVideoDto dto, Uri baseUrl)
+    public static VideoMetadata ToVideoSummary(InvidiousChannelVideoDto dto, Uri baseUrl)
     {
         ArgumentNullException.ThrowIfNull(dto);
         ArgumentNullException.ThrowIfNull(baseUrl);
@@ -63,18 +63,18 @@ public static class ChannelMapper
             ? TryCreateUri($"{baseUrl.ToString().TrimEnd('/')}{dto.AuthorUrl}")
             : null;
 
-        return new VideoSummary
+        return new VideoMetadata
         {
-            VideoId = dto.VideoId,
+            RemoteId = dto.VideoId,
             Title = dto.Title,
             Duration = TimeSpan.FromSeconds(dto.LengthSeconds),
             ViewCount = dto.ViewCount,
             ViewCountText = dto.ViewCountText ?? FormatViewCount(dto.ViewCount),
-            PublishedTimeText = dto.PublishedText,
+            PublishedAgo = dto.PublishedText,
             PublishedAt = dto.Published > 0 ? DateTimeOffset.FromUnixTimeSeconds(dto.Published) : null,
-            Channel = new ChannelInfo
+            Channel = new ChannelMetadata
             {
-                ChannelId = dto.AuthorId,
+                RemoteId = dto.AuthorId,
                 Name = dto.Author,
                 ChannelUrl = channelUrl
             },
@@ -85,24 +85,24 @@ public static class ChannelMapper
         };
     }
 
-    private static ThumbnailInfo ToBannerThumbnailInfo(InvidiousChannelBannerDto dto)
+    private static Image ToBannerThumbnailInfo(InvidiousChannelBannerDto dto)
     {
         // Determine quality based on width
         var quality = dto.Width switch
         {
-            >= 2560 => ThumbnailQuality.MaxRes,
-            >= 1920 => ThumbnailQuality.High,
-            >= 1280 => ThumbnailQuality.Standard,
-            >= 640 => ThumbnailQuality.Medium,
-            _ => ThumbnailQuality.Default
+            >= 2560 => ImageQuality.MaxRes,
+            >= 1920 => ImageQuality.High,
+            >= 1280 => ImageQuality.Standard,
+            >= 640 => ImageQuality.Medium,
+            _ => ImageQuality.Default
         };
 
         var originalUrl = ThumbnailMapper.ExtractBannerUrl(dto.Url);
 
-        return new ThumbnailInfo
+        return new Image
         {
             Quality = quality,
-            Url = originalUrl,
+            RemoteUrl = originalUrl,
             Width = dto.Width,
             Height = dto.Height
         };
@@ -114,8 +114,8 @@ public static class ChannelMapper
         
         return new ChannelTab
         {
-            TabId = tabName.ToLowerInvariant(),
-            DisplayName = displayName,
+            RemoteTabId = tabName.ToLowerInvariant(),
+            Name = displayName,
             IsAvailable = true
         };
     }

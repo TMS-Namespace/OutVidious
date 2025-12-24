@@ -5,7 +5,7 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// <summary>
 /// Represents a media stream (video, audio, or combined).
 /// </summary>
-public sealed record StreamInfo
+public sealed record Stream
 {
     /// <summary>
     /// Type of stream (video only, audio only, or combined).
@@ -15,7 +15,7 @@ public sealed record StreamInfo
     /// <summary>
     /// URL to the stream.
     /// </summary>
-    public required Uri Url { get; init; }
+    public required Uri RemoteUrl { get; init; }
 
     /// <summary>
     /// Container format.

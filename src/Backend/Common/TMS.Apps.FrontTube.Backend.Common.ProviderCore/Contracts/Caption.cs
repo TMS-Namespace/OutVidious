@@ -3,12 +3,12 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// <summary>
 /// Represents a video caption/subtitle track.
 /// </summary>
-public sealed record CaptionInfo
+public sealed record Caption
 {
     /// <summary>
     /// Display label for the caption (e.g., "English", "Spanish (auto-generated)").
     /// </summary>
-    public required string Label { get; init; }
+    public required string Name { get; init; }
 
     /// <summary>
     /// ISO language code (e.g., "en", "es").
@@ -18,7 +18,7 @@ public sealed record CaptionInfo
     /// <summary>
     /// URL to download the caption file.
     /// </summary>
-    public required Uri Url { get; init; }
+    public required Uri RemoteUrl { get; init; }
 
     /// <summary>
     /// Whether this caption track is auto-generated.

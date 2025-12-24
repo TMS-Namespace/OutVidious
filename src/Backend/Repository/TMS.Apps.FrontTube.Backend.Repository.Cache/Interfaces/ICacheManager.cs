@@ -49,7 +49,7 @@ public interface ICacheManager : IDisposable
     /// <param name="provider">The provider to fetch from if not cached or stale.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Video information or null if not found.</returns>
-    Task<VideoInfo?> GetVideoAsync(string remoteId, IVideoProvider provider, CancellationToken cancellationToken);
+    Task<Video?> GetVideoAsync(string remoteId, IProvider provider, CancellationToken cancellationToken);
 
     /// <summary>
     /// Gets channel details by remote ID.
@@ -59,7 +59,7 @@ public interface ICacheManager : IDisposable
     /// <param name="provider">The provider to fetch from if not cached or stale.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Channel details or null if not found.</returns>
-    Task<ChannelDetails?> GetChannelAsync(string remoteId, IVideoProvider provider, CancellationToken cancellationToken);
+    Task<Channel?> GetChannelAsync(string remoteId, IProvider provider, CancellationToken cancellationToken);
 
     /// <summary>
     /// Gets a page of videos from a channel.
@@ -71,11 +71,11 @@ public interface ICacheManager : IDisposable
     /// <param name="provider">The provider to fetch from.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A page of video summaries.</returns>
-    Task<ChannelVideoPage?> GetChannelVideosAsync(
+    Task<VideosPage?> GetChannelVideosAsync(
         string channelId,
         string tab,
         string? continuationToken,
-        IVideoProvider provider,
+        IProvider provider,
         CancellationToken cancellationToken);
 
     /// <summary>

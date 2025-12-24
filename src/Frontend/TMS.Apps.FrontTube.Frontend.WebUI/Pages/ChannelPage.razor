@@ -67,7 +67,7 @@
                      Class="channel-tabs">
                 @foreach (var tab in ViewModel.ChannelMetadata.AvailableTabs)
                 {
-                    <MudTabPanel Text="@tab.DisplayName" ID="@tab.TabId" />
+                    <MudTabPanel Text="@tab.Name" ID="@tab.RemoteTabId" />
                 }
             </MudTabs>
         }

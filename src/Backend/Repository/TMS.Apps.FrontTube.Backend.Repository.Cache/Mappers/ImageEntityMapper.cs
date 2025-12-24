@@ -13,17 +13,17 @@ public static class ImageEntityMapper
     /// Converts an ImageEntity to a ThumbnailInfo contract.
     /// Quality is inferred from dimensions.
     /// </summary>
-    public static ThumbnailInfo ToThumbnailInfo(ImageEntity entity)
+    public static Image ToThumbnailInfo(ImageEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
         var width = entity.Width ?? 0;
         var height = entity.Height ?? 0;
 
-        return new ThumbnailInfo
+        return new Image
         {
             Quality = InferQualityFromDimensions(width, height),
-            Url = new Uri(entity.RemoteUrl, UriKind.Absolute),
+            RemoteUrl = new Uri(entity.RemoteUrl, UriKind.Absolute),
             Width = width,
             Height = height
         };
@@ -33,13 +33,13 @@ public static class ImageEntityMapper
     /// Converts a ThumbnailInfo contract to an ImageEntity for database storage.
     /// Quality is not stored - it's inferred from dimensions.
     /// </summary>
-    public static ImageEntity ToEntity(ThumbnailInfo contract)
+    public static ImageEntity ToEntity(Image contract)
     {
         ArgumentNullException.ThrowIfNull(contract);
 
         return new ImageEntity
         {
-            RemoteUrl = contract.Url.ToString(),
+            RemoteUrl = contract.RemoteUrl.ToString(),
             Width = contract.Width,
             Height = contract.Height,
             CreatedAt = DateTime.UtcNow
@@ -49,7 +49,7 @@ public static class ImageEntityMapper
     /// <summary>
     /// Updates an existing entity with data from a contract.
     /// </summary>
-    public static void UpdateEntity(ImageEntity entity, ThumbnailInfo contract)
+    public static void UpdateEntity(ImageEntity entity, Image contract)
     {
         ArgumentNullException.ThrowIfNull(entity);
         ArgumentNullException.ThrowIfNull(contract);
@@ -63,7 +63,7 @@ public static class ImageEntityMapper
     /// Infers thumbnail quality from dimensions.
     /// Based on standard YouTube thumbnail sizes.
     /// </summary>
-    private static ThumbnailQuality InferQualityFromDimensions(int width, int height)
+    private static ImageQuality InferQualityFromDimensions(int width, int height)
     {
         // YouTube thumbnail standard sizes:
         // default: 120x90
@@ -76,12 +76,12 @@ public static class ImageEntityMapper
 
         return pixels switch
         {
-            >= 921600 => ThumbnailQuality.MaxRes,    // 1280x720 = 921,600
-            >= 307200 => ThumbnailQuality.Standard,  // 640x480 = 307,200
-            >= 172800 => ThumbnailQuality.High,      // 480x360 = 172,800
-            >= 57600 => ThumbnailQuality.Medium,     // 320x180 = 57,600
-            > 0 => ThumbnailQuality.Default,         // 120x90 = 10,800
-            _ => ThumbnailQuality.Unknown
+            >= 921600 => ImageQuality.MaxRes,    // 1280x720 = 921,600
+            >= 307200 => ImageQuality.Standard,  // 640x480 = 307,200
+            >= 172800 => ImageQuality.High,      // 480x360 = 172,800
+            >= 57600 => ImageQuality.Medium,     // 320x180 = 57,600
+            > 0 => ImageQuality.Default,         // 120x90 = 10,800
+            _ => ImageQuality.Unknown
         };
     }
 }

@@ -22,18 +22,18 @@ public sealed class Channel : IDisposable
     /// <param name="super">The parent Super ViewModel.</param>
     /// <param name="loggerFactory">Logger factory for creating loggers.</param>
     /// <param name="channelDetails">The channel details contract to wrap.</param>
-    public Channel(Super super, ILoggerFactory loggerFactory, ChannelDetails channelDetails)
+    public Channel(Super super, ILoggerFactory loggerFactory, Common.ProviderCore.Contracts.Channel channelDetails)
     {
         _super = super ?? throw new ArgumentNullException(nameof(super));
         ArgumentNullException.ThrowIfNull(loggerFactory);
         _logger = loggerFactory.CreateLogger<Channel>();
         
         ChannelMetadata = channelDetails ?? throw new ArgumentNullException(nameof(channelDetails));
-        ChannelId = channelDetails.ChannelId;
+        ChannelId = channelDetails.RemoteId;
 
         // Select the videos tab by default
         SelectedTab = ChannelMetadata.AvailableTabs.FirstOrDefault(t => 
-            t.TabId.Equals("videos", StringComparison.OrdinalIgnoreCase))
+            t.RemoteTabId.Equals("videos", StringComparison.OrdinalIgnoreCase))
             ?? ChannelMetadata.AvailableTabs.FirstOrDefault();
 
         _logger.LogDebug("ChannelViewModel created for: {ChannelName}", channelDetails.Name);
@@ -52,12 +52,12 @@ public sealed class Channel : IDisposable
     /// <summary>
     /// The channel details.
     /// </summary>
-    public ChannelDetails ChannelMetadata { get; }
+    public Common.ProviderCore.Contracts.Channel ChannelMetadata { get; }
 
     /// <summary>
     /// The list of videos from the channel.
     /// </summary>
-    public ObservableCollection<VideoSummary> Videos { get; } = [];
+    public ObservableCollection<VideoMetadata> Videos { get; } = [];
 
     /// <summary>
     /// The currently selected tab.
@@ -94,7 +94,7 @@ public sealed class Channel : IDisposable
             return;
         }
 
-        await LoadVideosForTabAsync(SelectedTab.TabId, isInitial: true, cancellationToken);
+        await LoadVideosForTabAsync(SelectedTab.RemoteTabId, isInitial: true, cancellationToken);
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public sealed class Channel : IDisposable
         }
 
         var tab = ChannelMetadata.AvailableTabs.FirstOrDefault(t => 
-            t.TabId.Equals(tabId, StringComparison.OrdinalIgnoreCase));
+            t.RemoteTabId.Equals(tabId, StringComparison.OrdinalIgnoreCase));
         
         if (tab is null || tab == SelectedTab)
         {
@@ -132,7 +132,7 @@ public sealed class Channel : IDisposable
             return;
         }
 
-        await LoadVideosForTabAsync(SelectedTab.TabId, isInitial: false, cancellationToken);
+        await LoadVideosForTabAsync(SelectedTab.RemoteTabId, isInitial: false, cancellationToken);
     }
 
     private async Task LoadVideosForTabAsync(string tabId, bool isInitial, CancellationToken cancellationToken)

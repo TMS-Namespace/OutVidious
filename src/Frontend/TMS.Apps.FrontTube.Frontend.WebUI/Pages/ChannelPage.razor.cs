@@ -31,7 +31,7 @@ public partial class ChannelPage : ComponentBase, IDisposable
     [Parameter]
     public string? ChannelId { get; set; }
 
-    protected Channel? ViewModel { get; private set; }
+    protected Backend.Core.ViewModels.Channel? ViewModel { get; private set; }
 
     protected bool IsInitialLoading { get; private set; } = true;
 
@@ -136,9 +136,9 @@ public partial class ChannelPage : ComponentBase, IDisposable
         }
     }
 
-    protected async Task HandleVideoClick(VideoSummary video)
+    protected async Task HandleVideoClick(VideoMetadata video)
     {
-        var watchUrl = $"/watch/{video.VideoId}";
+        var watchUrl = $"/watch/{video.RemoteId}";
         NavigationManager.NavigateTo(watchUrl);
         await Task.CompletedTask;
     }
@@ -162,7 +162,7 @@ public partial class ChannelPage : ComponentBase, IDisposable
         }
 
         var tab = ViewModel.ChannelMetadata.AvailableTabs[tabIndex];
-        await ViewModel.SelectTabAsync(tab.TabId, _cts.Token);
+        await ViewModel.SelectTabAsync(tab.RemoteTabId, _cts.Token);
     }
 
     private void OnViewModelStateChanged(object? sender, EventArgs e)
@@ -186,7 +186,7 @@ public partial class ChannelPage : ComponentBase, IDisposable
             .FirstOrDefault();
 
         var avatar = preferred ?? avatars.First();
-        return Orchestrator.Super.BuildImageProxyUrl(avatar.Url);
+        return Orchestrator.Super.BuildImageProxyUrl(avatar.RemoteUrl);
     }
 
     private string? GetBestBanner()
@@ -205,7 +205,7 @@ public partial class ChannelPage : ComponentBase, IDisposable
             .FirstOrDefault();
 
         var banner = preferred ?? banners.First();
-        return Orchestrator.Super.BuildImageProxyUrl(banner.Url);
+        return Orchestrator.Super.BuildImageProxyUrl(banner.RemoteUrl);
     }
 
     public void Dispose()

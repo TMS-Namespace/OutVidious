@@ -4,12 +4,12 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// Represents a compact video summary for lists and grids.
 /// Contains only essential information for display in thumbnails.
 /// </summary>
-public sealed record VideoSummary
+public abstract record VideoBase
 {
     /// <summary>
     /// Unique identifier for the video.
     /// </summary>
-    public required string VideoId { get; init; }
+    public required string RemoteId { get; init; }
 
     /// <summary>
     /// Title of the video.
@@ -29,12 +29,14 @@ public sealed record VideoSummary
     /// <summary>
     /// Human-readable view count text (e.g., "1.5M views").
     /// </summary>
+    [Obsolete("Use ViewCount and format on client side")]
     public string? ViewCountText { get; init; }
 
     /// <summary>
     /// Human-readable published time (e.g., "2 days ago").
     /// </summary>
-    public string? PublishedTimeText { get; init; }
+    [Obsolete("Use PublishedAt and format on client side")]
+    public string? PublishedAgo { get; init; }
 
     /// <summary>
     /// When the video was published.
@@ -44,12 +46,12 @@ public sealed record VideoSummary
     /// <summary>
     /// Channel/author information.
     /// </summary>
-    public required ChannelInfo Channel { get; init; }
+    public required ChannelMetadata Channel { get; init; }
 
     /// <summary>
     /// Available thumbnails.
     /// </summary>
-    public IReadOnlyList<ThumbnailInfo> Thumbnails { get; init; } = [];
+    public IReadOnlyList<Image> Thumbnails { get; init; } = [];
 
     /// <summary>
     /// Whether the video is a live stream.
@@ -60,9 +62,4 @@ public sealed record VideoSummary
     /// Whether the video is an upcoming premiere.
     /// </summary>
     public bool IsUpcoming { get; init; }
-
-    /// <summary>
-    /// Whether this is a short-form video.
-    /// </summary>
-    public bool IsShort { get; init; }
 }

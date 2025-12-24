@@ -53,10 +53,10 @@
                 </MudText>
             }
             
-            @if (!string.IsNullOrWhiteSpace(Video?.PublishedTimeText))
+            @if (!string.IsNullOrWhiteSpace(Video?.PublishedAgo))
             {
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    • @Video.PublishedTimeText
+                    • @Video.PublishedAgo
                 </MudText>
             }
         </div>

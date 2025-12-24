@@ -6,7 +6,7 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 /// Interface for video providers that can fetch video information and generate playback URLs.
 /// All providers must implement this interface to be used by the application.
 /// </summary>
-public interface IVideoProvider : IProviderInfo, IDisposable
+public interface IProvider : IProviderMetadata, IDisposable
 {
     /// <summary>
     /// Gets detailed information about a video.
@@ -14,7 +14,7 @@ public interface IVideoProvider : IProviderInfo, IDisposable
     /// <param name="videoId">The video identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Video information or null if not found.</returns>
-    Task<VideoInfo?> GetVideoInfoAsync(string videoId, CancellationToken cancellationToken);
+    Task<Video?> GetVideoInfoAsync(string videoId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Gets the embed URL for a video.
@@ -64,7 +64,7 @@ public interface IVideoProvider : IProviderInfo, IDisposable
     /// <param name="channelId">The channel identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Channel details or null if not found.</returns>
-    Task<ChannelDetails?> GetChannelDetailsAsync(string channelId, CancellationToken cancellationToken);
+    Task<Channel?> GetChannelDetailsAsync(string channelId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Gets a page of videos from a channel.
@@ -74,7 +74,7 @@ public interface IVideoProvider : IProviderInfo, IDisposable
     /// <param name="continuationToken">Token for pagination. Null for the first page.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A page of videos with continuation token for next page.</returns>
-    Task<ChannelVideoPage?> GetChannelVideosAsync(
+    Task<VideosPage?> GetChannelVideosAsync(
         string channelId,
         string tab = "videos",
         string? continuationToken = null,

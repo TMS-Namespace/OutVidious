@@ -40,7 +40,7 @@ public sealed partial class InvidiousVideoProvider : VideoProviderBase
     public override string Description => "Privacy-focused YouTube frontend providing access to YouTube videos without tracking.";
 
     /// <inheritdoc />
-    public override async Task<VideoInfo?> GetVideoInfoAsync(string videoId, CancellationToken cancellationToken)
+    public override async Task<Video?> GetVideoInfoAsync(string videoId, CancellationToken cancellationToken)
     {
         ValidateVideoIdNotEmpty(videoId);
 
@@ -138,7 +138,7 @@ public sealed partial class InvidiousVideoProvider : VideoProviderBase
     }
 
     /// <inheritdoc />
-    public override async Task<ChannelDetails?> GetChannelDetailsAsync(string channelId, CancellationToken cancellationToken)
+    public override async Task<Channel?> GetChannelDetailsAsync(string channelId, CancellationToken cancellationToken)
     {
         ValidateChannelIdNotEmpty(channelId);
 
@@ -186,7 +186,7 @@ public sealed partial class InvidiousVideoProvider : VideoProviderBase
     }
 
     /// <inheritdoc />
-    public override async Task<ChannelVideoPage?> GetChannelVideosAsync(
+    public override async Task<VideosPage?> GetChannelVideosAsync(
         string channelId,
         string? tabId,
         string? continuationToken,
@@ -210,7 +210,7 @@ public sealed partial class InvidiousVideoProvider : VideoProviderBase
                     "Invidious API request failed with status {StatusCode} for channel videos {ChannelId}",
                     response.StatusCode,
                     channelId);
-                return ChannelVideoPage.Empty(channelId, tab);
+                return VideosPage.Empty(channelId, tab);
             }
 
             var dto = await response.Content.ReadFromJsonAsync<InvidiousChannelVideosResponseDto>(
@@ -220,12 +220,12 @@ public sealed partial class InvidiousVideoProvider : VideoProviderBase
             if (dto == null || dto.Videos == null)
             {
                 Logger.LogWarning("Invidious API returned null for channel videos {ChannelId}", channelId);
-                return ChannelVideoPage.Empty(channelId, tab);
+                return VideosPage.Empty(channelId, tab);
             }
 
             var videos = dto.Videos.Select(v => ChannelMapper.ToVideoSummary(v, BaseUrl)).ToList();
 
-            var page = new ChannelVideoPage
+            var page = new VideosPage
             {
                 ChannelId = channelId,
                 Tab = tab,

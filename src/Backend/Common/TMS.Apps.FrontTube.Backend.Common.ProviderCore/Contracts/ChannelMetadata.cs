@@ -3,12 +3,12 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// <summary>
 /// Represents basic channel/author information.
 /// </summary>
-public sealed record ChannelInfo
+public record ChannelMetadata
 {
     /// <summary>
     /// Unique identifier for the channel.
     /// </summary>
-    public required string ChannelId { get; init; }
+    public required string RemoteId { get; init; }
 
     /// <summary>
     /// Display name of the channel.
@@ -18,11 +18,13 @@ public sealed record ChannelInfo
     /// <summary>
     /// URL to the channel page.
     /// </summary>
+    [Obsolete("Use RemoteId instead")]
     public Uri? ChannelUrl { get; init; }
 
     /// <summary>
     /// Subscriber count text (e.g., "1.5M subscribers").
     /// </summary>
+    [Obsolete("Use SubscriberCount instead")]
     public string? SubscriberCountText { get; init; }
 
     /// <summary>
@@ -33,5 +35,5 @@ public sealed record ChannelInfo
     /// <summary>
     /// Available thumbnails for the channel avatar.
     /// </summary>
-    public IReadOnlyList<ThumbnailInfo> Thumbnails { get; init; } = [];
+    public IReadOnlyList<Image> Avatars { get; init; } = [];
 }

@@ -12,17 +12,17 @@ public static class StreamEntityMapper
     /// <summary>
     /// Converts a StreamEntity to a StreamInfo contract.
     /// </summary>
-    public static StreamInfo ToContract(StreamEntity entity)
+    public static Common.ProviderCore.Contracts.Stream ToContract(StreamEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        return new StreamInfo
+        return new Common.ProviderCore.Contracts.Stream
         {
             Type = (StreamType)entity.StreamTypeId,
-            Url = new Uri(entity.Url),
+            RemoteUrl = new Uri(entity.Url),
             Container = (VideoContainer)entity.ContainerId,
-            VideoCodec = entity.VideoCodecId.HasValue ? (VideoCodec)entity.VideoCodecId.Value : null,
-            AudioCodec = entity.AudioCodecId.HasValue ? (AudioCodec)entity.AudioCodecId.Value : null,
+            VideoCodec = entity.VideoCodecId.HasValue ? (global::TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums.VideoCodec)entity.VideoCodecId.Value : null,
+            AudioCodec = entity.AudioCodecId.HasValue ? (global::TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums.AudioCodec)entity.AudioCodecId.Value : null,
             QualityLabel = entity.QualityLabel,
             Width = entity.Width,
             Height = entity.Height,
@@ -31,7 +31,7 @@ public static class StreamEntityMapper
             ContentLength = entity.ContentLength,
             AudioSampleRate = entity.AudioSampleRate,
             AudioChannels = entity.AudioChannels,
-            AudioQualityLevel = entity.AudioQualityId.HasValue ? (AudioQuality)entity.AudioQualityId.Value : null,
+            AudioQualityLevel = entity.AudioQualityId.HasValue ? (global::TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums.AudioQuality)entity.AudioQualityId.Value : null,
             Projection = (ProjectionType)entity.ProjectionTypeId,
             MimeType = entity.MimeType,
             Itag = entity.Itag
@@ -41,14 +41,14 @@ public static class StreamEntityMapper
     /// <summary>
     /// Converts a StreamInfo contract to a StreamEntity for database storage.
     /// </summary>
-    public static StreamEntity ToEntity(StreamInfo contract, int videoId)
+    public static StreamEntity ToEntity(Common.ProviderCore.Contracts.Stream contract, int videoId)
     {
         ArgumentNullException.ThrowIfNull(contract);
 
         return new StreamEntity
         {
             VideoId = videoId,
-            Url = contract.Url.ToString(),
+            Url = contract.RemoteUrl.ToString(),
             StreamTypeId = (int)contract.Type,
             ContainerId = (int)contract.Container,
             VideoCodecId = contract.VideoCodec.HasValue ? (int)contract.VideoCodec.Value : null,
@@ -73,12 +73,12 @@ public static class StreamEntityMapper
     /// <summary>
     /// Updates an existing entity with data from a contract.
     /// </summary>
-    public static void UpdateEntity(StreamEntity entity, StreamInfo contract)
+    public static void UpdateEntity(StreamEntity entity, Common.ProviderCore.Contracts.Stream contract)
     {
         ArgumentNullException.ThrowIfNull(entity);
         ArgumentNullException.ThrowIfNull(contract);
 
-        entity.Url = contract.Url.ToString();
+        entity.Url = contract.RemoteUrl.ToString();
         entity.StreamTypeId = (int)contract.Type;
         entity.ContainerId = (int)contract.Container;
         entity.VideoCodecId = contract.VideoCodec.HasValue ? (int)contract.VideoCodec.Value : null;

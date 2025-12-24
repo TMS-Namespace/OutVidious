@@ -3,7 +3,7 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 /// <summary>
 /// Metadata about a video provider.
 /// </summary>
-public interface IProviderInfo
+public interface IProviderMetadata
 {
     /// <summary>
     /// Unique identifier for the provider.

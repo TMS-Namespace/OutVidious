@@ -16,7 +16,7 @@ public sealed class Super : IDisposable
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<Super> _logger;
     private readonly ICacheManager _dataRepository;
-    private readonly IVideoProvider _videoProvider;
+    private readonly IProvider _videoProvider;
     private readonly bool _ownsDataRepository;
     private bool _disposed;
 
@@ -25,7 +25,7 @@ public sealed class Super : IDisposable
     /// </summary>
     public Super(
         ILoggerFactory loggerFactory,
-        IVideoProvider videoProvider,
+        IProvider videoProvider,
         ICacheManager dataRepository)
     {
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
@@ -42,7 +42,7 @@ public sealed class Super : IDisposable
     /// </summary>
     public Super(
         ILoggerFactory loggerFactory,
-        IVideoProvider videoProvider,
+        IProvider videoProvider,
         CacheConfig dataRepositoryConfig)
     {
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
@@ -60,7 +60,7 @@ public sealed class Super : IDisposable
     /// <summary>
     /// Gets the underlying video provider.
     /// </summary>
-    public IVideoProvider VideoProvider => _videoProvider;
+    public IProvider VideoProvider => _videoProvider;
 
     /// <summary>
     /// Gets video information by remote ID and returns a VideoPlayerViewModel wrapping it.
@@ -156,7 +156,7 @@ public sealed class Super : IDisposable
     /// <param name="continuationToken">Pagination token.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A page of video summaries.</returns>
-    public async Task<ChannelVideoPage?> GetChannelVideosAsync(
+    public async Task<VideosPage?> GetChannelVideosAsync(
         string channelId,
         string tab,
         string? continuationToken,

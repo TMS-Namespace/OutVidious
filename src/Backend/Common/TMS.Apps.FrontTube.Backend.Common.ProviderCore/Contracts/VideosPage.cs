@@ -3,12 +3,12 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// <summary>
 /// Represents a paginated list of videos from a channel.
 /// </summary>
-public sealed record ChannelVideoPage
+public sealed record VideosPage
 {
     /// <summary>
     /// Empty page for error cases or when no results are found.
     /// </summary>
-    public static ChannelVideoPage Empty(string channelId, string tab = "videos") => new()
+    public static VideosPage Empty(string channelId, string tab = "videos") => new()
     {
         ChannelId = channelId,
         Tab = tab,
@@ -29,7 +29,7 @@ public sealed record ChannelVideoPage
     /// <summary>
     /// List of videos in this page.
     /// </summary>
-    public IReadOnlyList<VideoSummary> Videos { get; init; } = [];
+    public IReadOnlyList<VideoMetadata> Videos { get; init; } = [];
 
     /// <summary>
     /// Continuation token for fetching the next page.

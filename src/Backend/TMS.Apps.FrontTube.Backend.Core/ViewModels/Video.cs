@@ -21,14 +21,14 @@ public sealed class Video : IDisposable
     /// <param name="super">The parent Super ViewModel.</param>
     /// <param name="loggerFactory">Logger factory for creating loggers.</param>
     /// <param name="videoInfo">The video info contract to wrap.</param>
-    public Video(Super super, ILoggerFactory loggerFactory, VideoInfo videoInfo)
+    public Video(Super super, ILoggerFactory loggerFactory, Common.ProviderCore.Contracts.Video videoInfo)
     {
         _super = super ?? throw new ArgumentNullException(nameof(super));
         ArgumentNullException.ThrowIfNull(loggerFactory);
         _logger = loggerFactory.CreateLogger<Video>();
         
         VideoInfo = videoInfo ?? throw new ArgumentNullException(nameof(videoInfo));
-        VideoId = videoInfo.VideoId;
+        VideoId = videoInfo.RemoteId;
         LoadState = VideoLoadState.Loaded;
 
         UpdateAvailableQualities();
@@ -48,7 +48,7 @@ public sealed class Video : IDisposable
     /// <summary>
     /// Gets the current video information.
     /// </summary>
-    public VideoInfo VideoInfo { get; }
+    public Common.ProviderCore.Contracts.Video VideoInfo { get; }
 
     /// <summary>
     /// Gets the current video ID.
@@ -161,7 +161,7 @@ public sealed class Video : IDisposable
         var selectedStream = VideoInfo.CombinedStreams
             .FirstOrDefault(s => s.QualityLabel == SelectedQuality);
 
-        CurrentStreamUrl = selectedStream?.Url.ToString();
+        CurrentStreamUrl = selectedStream?.RemoteUrl.ToString();
         _logger.LogDebug("Stream URL updated for quality {Quality}: {HasUrl}", SelectedQuality, CurrentStreamUrl != null);
     }
 

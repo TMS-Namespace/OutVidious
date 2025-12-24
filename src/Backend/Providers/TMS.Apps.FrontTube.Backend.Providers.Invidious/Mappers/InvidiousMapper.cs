@@ -14,27 +14,27 @@ public static class InvidiousMapper
     /// <param name="dto">The Invidious video details DTO.</param>
     /// <param name="baseUrl">The base URL of the Invidious instance.</param>
     /// <returns>The mapped VideoInfo contract.</returns>
-    public static VideoInfo ToVideoInfo(InvidiousVideoDetailsDto dto, Uri baseUrl)
+    public static Video ToVideoInfo(InvidiousVideoDetailsDto dto, Uri baseUrl)
     {
         ArgumentNullException.ThrowIfNull(dto);
         ArgumentNullException.ThrowIfNull(baseUrl);
 
-        return new VideoInfo
+        return new Video
         {
-            VideoId = dto.VideoId,
+            RemoteId = dto.VideoId,
             Title = dto.Title,
-            Description = dto.Description,
+            DescriptionText = dto.Description,
             DescriptionHtml = dto.DescriptionHtml,
             Channel = MapChannel(dto, baseUrl),
             PublishedAt = dto.Published > 0 
                 ? DateTimeOffset.FromUnixTimeSeconds(dto.Published) 
                 : null,
-            PublishedTimeText = dto.PublishedText,
+            PublishedAgo = dto.PublishedText,
             Duration = TimeSpan.FromSeconds(dto.LengthSeconds),
             ViewCount = dto.ViewCount,
             LikeCount = dto.LikeCount,
             DislikeCount = dto.DislikeCount > 0 ? dto.DislikeCount : null,
-            Keywords = dto.Keywords,
+            Tags = dto.Keywords,
             Genre = !string.IsNullOrWhiteSpace(dto.Genre) ? dto.Genre : null,
             Thumbnails = dto.VideoThumbnails.Select(ThumbnailMapper.ToThumbnailInfo).ToList(),
             AdaptiveStreams = dto.AdaptiveFormats.Select(StreamMapper.ToStreamInfo).ToList(),
@@ -59,20 +59,20 @@ public static class InvidiousMapper
         };
     }
 
-    private static ChannelInfo MapChannel(InvidiousVideoDetailsDto dto, Uri baseUrl)
+    private static ChannelMetadata MapChannel(InvidiousVideoDetailsDto dto, Uri baseUrl)
     {
         var channelUrl = !string.IsNullOrWhiteSpace(dto.AuthorUrl)
             ? TryCreateUri($"{baseUrl.ToString().TrimEnd('/')}{dto.AuthorUrl}")
             : null;
 
-        return new ChannelInfo
+        return new ChannelMetadata
         {
-            ChannelId = dto.AuthorId,
+            RemoteId = dto.AuthorId,
             Name = dto.Author,
             ChannelUrl = channelUrl,
             SubscriberCountText = dto.SubCountText,
             SubscriberCount = ParseSubscriberCount(dto.SubCountText),
-            Thumbnails = dto.AuthorThumbnails
+            Avatars = dto.AuthorThumbnails
                 .Select(ThumbnailMapper.ToChannelThumbnailInfo)
                 .ToList()
         };

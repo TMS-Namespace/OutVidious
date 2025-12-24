@@ -14,22 +14,22 @@ public static class ChannelEntityMapper
     /// </summary>
     private static readonly IReadOnlyList<ChannelTab> DefaultChannelTabs =
     [
-        new ChannelTab { TabId = "videos", DisplayName = "Videos", IsAvailable = true },
-        new ChannelTab { TabId = "shorts", DisplayName = "Shorts", IsAvailable = true },
-        new ChannelTab { TabId = "streams", DisplayName = "Live", IsAvailable = true },
-        new ChannelTab { TabId = "playlists", DisplayName = "Playlists", IsAvailable = true }
+        new ChannelTab { RemoteTabId = "videos", Name = "Videos", IsAvailable = true },
+        new ChannelTab { RemoteTabId = "shorts", Name = "Shorts", IsAvailable = true },
+        new ChannelTab { RemoteTabId = "streams", Name = "Live", IsAvailable = true },
+        new ChannelTab { RemoteTabId = "playlists", Name = "Playlists", IsAvailable = true }
     ];
 
     /// <summary>
     /// Converts a ChannelEntity to a ChannelDetails contract.
     /// </summary>
-    public static ChannelDetails ToContract(ChannelEntity entity)
+    public static Channel ToContract(ChannelEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        return new ChannelDetails
+        return new Channel
         {
-            ChannelId = entity.RemoteId,
+            RemoteId = entity.RemoteId,
             Name = entity.Title,
             Description = entity.Description ?? string.Empty,
             DescriptionHtml = entity.DescriptionHtml,
@@ -41,7 +41,7 @@ public static class ChannelEntityMapper
                 ? new DateTimeOffset(entity.JoinedAt.Value, TimeSpan.Zero)
                 : null,
             IsVerified = entity.IsVerified,
-            Keywords = ParseKeywords(entity.Keywords),
+            Tags = ParseKeywords(entity.Keywords),
             Avatars = entity.Avatars
                 .Select(a => ImageEntityMapper.ToThumbnailInfo(a.Image))
                 .ToList(),
@@ -55,17 +55,17 @@ public static class ChannelEntityMapper
     /// <summary>
     /// Converts a ChannelEntity to a ChannelInfo contract (compact version).
     /// </summary>
-    public static ChannelInfo ToChannelInfo(ChannelEntity entity)
+    public static ChannelMetadata ToChannelInfo(ChannelEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        return new ChannelInfo
+        return new ChannelMetadata
         {
-            ChannelId = entity.RemoteId,
+            RemoteId = entity.RemoteId,
             Name = entity.Title,
             SubscriberCount = entity.SubscriberCount,
             SubscriberCountText = FormatSubscriberCount(entity.SubscriberCount),
-            Thumbnails = entity.Avatars
+            Avatars = entity.Avatars
                 .Select(a => ImageEntityMapper.ToThumbnailInfo(a.Image))
                 .ToList()
         };
@@ -74,13 +74,13 @@ public static class ChannelEntityMapper
     /// <summary>
     /// Converts a ChannelDetails contract to a ChannelEntity for database storage.
     /// </summary>
-    public static ChannelEntity ToEntity(ChannelDetails contract)
+    public static ChannelEntity ToEntity(Channel contract)
     {
         ArgumentNullException.ThrowIfNull(contract);
 
         return new ChannelEntity
         {
-            RemoteId = contract.ChannelId,
+            RemoteId = contract.RemoteId,
             Title = contract.Name,
             Description = contract.Description,
             DescriptionHtml = contract.DescriptionHtml,
@@ -89,7 +89,7 @@ public static class ChannelEntityMapper
             TotalViewCount = contract.TotalViewCount,
             JoinedAt = contract.JoinedAt?.UtcDateTime,
             IsVerified = contract.IsVerified,
-            Keywords = JoinKeywords(contract.Keywords),
+            Keywords = JoinKeywords(contract.Tags),
             CreatedAt = DateTime.UtcNow,
             LastSyncedAt = DateTime.UtcNow
         };
@@ -98,13 +98,13 @@ public static class ChannelEntityMapper
     /// <summary>
     /// Converts a ChannelInfo contract to a ChannelEntity (for video's channel reference).
     /// </summary>
-    public static ChannelEntity ToEntity(ChannelInfo contract)
+    public static ChannelEntity ToEntity(ChannelMetadata contract)
     {
         ArgumentNullException.ThrowIfNull(contract);
 
         return new ChannelEntity
         {
-            RemoteId = contract.ChannelId,
+            RemoteId = contract.RemoteId,
             Title = contract.Name,
             SubscriberCount = contract.SubscriberCount,
             CreatedAt = DateTime.UtcNow,
@@ -115,7 +115,7 @@ public static class ChannelEntityMapper
     /// <summary>
     /// Updates an existing entity with data from a contract.
     /// </summary>
-    public static void UpdateEntity(ChannelEntity entity, ChannelDetails contract)
+    public static void UpdateEntity(ChannelEntity entity, Channel contract)
     {
         ArgumentNullException.ThrowIfNull(entity);
         ArgumentNullException.ThrowIfNull(contract);
@@ -128,7 +128,7 @@ public static class ChannelEntityMapper
         entity.TotalViewCount = contract.TotalViewCount;
         entity.JoinedAt = contract.JoinedAt?.UtcDateTime;
         entity.IsVerified = contract.IsVerified;
-        entity.Keywords = JoinKeywords(contract.Keywords);
+        entity.Keywords = JoinKeywords(contract.Tags);
         entity.LastSyncedAt = DateTime.UtcNow;
     }
 

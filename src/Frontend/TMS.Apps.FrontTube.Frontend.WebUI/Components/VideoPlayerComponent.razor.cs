@@ -247,7 +247,7 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
             return null;
         }
 
-        return Orchestrator.Super.BuildImageProxyUrl(thumbnail.Url);
+        return Orchestrator.Super.BuildImageProxyUrl(thumbnail.RemoteUrl);
     }
 
     private string GetAuthorUrl()
@@ -257,7 +257,7 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
             return "#";
         }
 
-        return $"{ProviderBaseUrl}/channel/{ViewModel.VideoInfo.Channel.ChannelId}";
+        return $"{ProviderBaseUrl}/channel/{ViewModel.VideoInfo.Channel.RemoteId}";
     }
 
     private static string FormatViewCount(long count)

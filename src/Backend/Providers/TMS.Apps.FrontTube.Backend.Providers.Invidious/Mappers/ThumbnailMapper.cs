@@ -25,14 +25,14 @@ public static partial class ThumbnailMapper
     /// <summary>
     /// Maps an Invidious video thumbnail DTO to a ThumbnailInfo contract.
     /// </summary>
-    public static ThumbnailInfo ToThumbnailInfo(InvidiousVideoThumbnailDto dto)
+    public static Image ToThumbnailInfo(InvidiousVideoThumbnailDto dto)
     {
         var originalUrl = ExtractVideoThumbnailUrl(dto.Url);
 
-        return new ThumbnailInfo
+        return new Image
         {
             Quality = ParseThumbnailQuality(dto.Quality),
-            Url = originalUrl,
+            RemoteUrl = originalUrl,
             Width = dto.Width,
             Height = dto.Height
         };
@@ -41,23 +41,23 @@ public static partial class ThumbnailMapper
     /// <summary>
     /// Maps an Invidious author thumbnail DTO to a ThumbnailInfo contract.
     /// </summary>
-    public static ThumbnailInfo ToChannelThumbnailInfo(InvidiousAuthorThumbnailDto dto)
+    public static Image ToChannelThumbnailInfo(InvidiousAuthorThumbnailDto dto)
     {
         // Determine quality based on dimensions
         var quality = dto.Width switch
         {
-            >= 512 => ThumbnailQuality.MaxRes,
-            >= 176 => ThumbnailQuality.High,
-            >= 88 => ThumbnailQuality.Medium,
-            _ => ThumbnailQuality.Default
+            >= 512 => ImageQuality.MaxRes,
+            >= 176 => ImageQuality.High,
+            >= 88 => ImageQuality.Medium,
+            _ => ImageQuality.Default
         };
 
         var originalUrl = ExtractAvatarUrl(dto.Url);
 
-        return new ThumbnailInfo
+        return new Image
         {
             Quality = quality,
-            Url = originalUrl,
+            RemoteUrl = originalUrl,
             Width = dto.Width,
             Height = dto.Height
         };
@@ -131,16 +131,16 @@ public static partial class ThumbnailMapper
         return new Uri(providerUrl, UriKind.RelativeOrAbsolute);
     }
 
-    private static ThumbnailQuality ParseThumbnailQuality(string quality)
+    private static ImageQuality ParseThumbnailQuality(string quality)
     {
         return quality.ToLowerInvariant() switch
         {
-            "default" => ThumbnailQuality.Default,
-            "medium" => ThumbnailQuality.Medium,
-            "high" => ThumbnailQuality.High,
-            "standard" or "sd" or "sddefault" => ThumbnailQuality.Standard,
-            "maxres" or "maxresdefault" => ThumbnailQuality.MaxRes,
-            _ => ThumbnailQuality.Unknown
+            "default" => ImageQuality.Default,
+            "medium" => ImageQuality.Medium,
+            "high" => ImageQuality.High,
+            "standard" or "sd" or "sddefault" => ImageQuality.Standard,
+            "maxres" or "maxresdefault" => ImageQuality.MaxRes,
+            _ => ImageQuality.Unknown
         };
     }
 }

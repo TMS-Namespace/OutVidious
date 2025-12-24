@@ -13,12 +13,12 @@ namespace TMS.Apps.FrontTube.Frontend.WebUI.Controllers;
 public class ImageProxyController : ControllerBase
 {
     private readonly ICacheManager _dataRepository;
-    private readonly IVideoProvider _videoProvider;
+    private readonly IProvider _videoProvider;
     private readonly ILogger<ImageProxyController> _logger;
 
     public ImageProxyController(
         ICacheManager dataRepository,
-        IVideoProvider videoProvider,
+        IProvider videoProvider,
         ILogger<ImageProxyController> logger)
     {
         _dataRepository = dataRepository;

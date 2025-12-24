@@ -8,5 +8,5 @@ public enum StreamType
     Unknown = 0,
     Video,
     Audio,
-    VideoAndAudio
+    Mutex
 }

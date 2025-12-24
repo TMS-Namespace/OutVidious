@@ -16,7 +16,7 @@ public sealed class Orchestrator : IDisposable
 
     public Orchestrator(
         ILoggerFactory loggerFactory,
-        IVideoProvider videoProvider,
+        IProvider videoProvider,
         ICacheManager dataRepository)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);

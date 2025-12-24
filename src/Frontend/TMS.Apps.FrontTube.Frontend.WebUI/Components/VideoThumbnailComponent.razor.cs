@@ -19,7 +19,7 @@ public partial class VideoThumbnailComponentBase : ComponentBase
     /// The video summary to display.
     /// </summary>
     [Parameter]
-    public VideoSummary? Video { get; set; }
+    public VideoMetadata? Video { get; set; }
 
     /// <summary>
     /// Whether to show the channel name.
@@ -37,13 +37,13 @@ public partial class VideoThumbnailComponentBase : ComponentBase
     /// Callback when the video is clicked.
     /// </summary>
     [Parameter]
-    public EventCallback<VideoSummary> OnVideoClick { get; set; }
+    public EventCallback<VideoMetadata> OnVideoClick { get; set; }
 
     /// <summary>
     /// Callback when the channel name is clicked.
     /// </summary>
     [Parameter]
-    public EventCallback<ChannelInfo> OnChannelClicked { get; set; }
+    public EventCallback<ChannelMetadata> OnChannelClicked { get; set; }
 
     protected string ThumbnailContainerId => _containerId;
 
@@ -75,10 +75,10 @@ public partial class VideoThumbnailComponentBase : ComponentBase
         // Prefer Medium or High quality for thumbnails
         var preferredQualities = new[] 
         { 
-            ThumbnailQuality.Medium, 
-            ThumbnailQuality.High, 
-            ThumbnailQuality.Standard,
-            ThumbnailQuality.Default
+            ImageQuality.Medium, 
+            ImageQuality.High, 
+            ImageQuality.Standard,
+            ImageQuality.Default
         };
 
         foreach (var quality in preferredQualities)
@@ -87,13 +87,13 @@ public partial class VideoThumbnailComponentBase : ComponentBase
             
             if (thumbnail is not null)
             {
-                return Orchestrator.Super.BuildImageProxyUrl(thumbnail.Url);
+                return Orchestrator.Super.BuildImageProxyUrl(thumbnail.RemoteUrl);
             }
         }
 
         // Fall back to the first available thumbnail
         var fallback = Video.Thumbnails.First();
-        return Orchestrator.Super.BuildImageProxyUrl(fallback.Url);
+        return Orchestrator.Super.BuildImageProxyUrl(fallback.RemoteUrl);
     }
 
     private static string FormatDuration(TimeSpan duration)

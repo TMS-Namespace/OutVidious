@@ -51,7 +51,7 @@ try
     // Configure Invidious video provider
     var invidiousBaseUrl = new Uri("https://youtube.srv1.tms.com");
 
-    builder.Services.AddHttpClient<IVideoProvider, InvidiousVideoProvider>(client =>
+    builder.Services.AddHttpClient<IProvider, InvidiousVideoProvider>(client =>
     {
         client.BaseAddress = invidiousBaseUrl;
         client.DefaultRequestHeaders.Add("Accept", "application/json");
@@ -63,10 +63,10 @@ try
         ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
     });
 
-    builder.Services.AddSingleton<IVideoProvider>(sp =>
+    builder.Services.AddSingleton<IProvider>(sp =>
     {
         var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-        var httpClient = httpClientFactory.CreateClient(nameof(IVideoProvider));
+        var httpClient = httpClientFactory.CreateClient(nameof(IProvider));
         var logger = sp.GetRequiredService<ILogger<InvidiousVideoProvider>>();
         return new InvidiousVideoProvider(httpClient, logger, invidiousBaseUrl);
     });
@@ -115,7 +115,7 @@ try
     app.UseAntiforgery();
 
     // Proxy endpoint for DASH manifest to avoid CORS issues (supports both GET and HEAD)
-    app.MapMethods("/api/proxy/dash/{videoId}", new[] { "GET", "HEAD" }, async (string videoId, IVideoProvider videoProvider, HttpContext context) =>
+    app.MapMethods("/api/proxy/dash/{videoId}", new[] { "GET", "HEAD" }, async (string videoId, IProvider videoProvider, HttpContext context) =>
     {
         Log.Debug("DASH manifest proxy request: {Method} {VideoId}", context.Request.Method, videoId);
         
@@ -179,24 +179,24 @@ try
 
     // Proxy endpoint for video playback segments to avoid CORS issues
     // This handles both /api/proxy/videoplayback and legacy /videoplayback paths
-    app.MapMethods("/api/proxy/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IVideoProvider videoProvider) =>
+    app.MapMethods("/api/proxy/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IProvider videoProvider) =>
     {
         await ProxyVideoPlaybackAsync(context, videoProvider);
     });
     
     // Also support /videoplayback for backwards compatibility and any edge cases
-    app.MapMethods("/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IVideoProvider videoProvider) =>
+    app.MapMethods("/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IProvider videoProvider) =>
     {
         await ProxyVideoPlaybackAsync(context, videoProvider);
     });
     
     // Handle /companion/videoplayback URLs that might appear in manifests
-    app.MapMethods("/companion/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IVideoProvider videoProvider) =>
+    app.MapMethods("/companion/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IProvider videoProvider) =>
     {
         await ProxyVideoPlaybackAsync(context, videoProvider);
     });
 
-    async Task ProxyVideoPlaybackAsync(HttpContext context, IVideoProvider videoProvider)
+    async Task ProxyVideoPlaybackAsync(HttpContext context, IProvider videoProvider)
     {
         var queryString = context.Request.QueryString.Value ?? "";
         

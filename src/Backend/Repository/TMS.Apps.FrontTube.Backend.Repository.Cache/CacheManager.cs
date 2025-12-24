@@ -23,8 +23,8 @@ public sealed class CacheManager : ICacheManager
     private readonly string _connectionString;
     private readonly DevModeSeeder? _devModeSeeder;
 
-    private readonly ICache<string, CachedItem<VideoInfo>> _videoCache;
-    private readonly ICache<string, CachedItem<ChannelDetails>> _channelCache;
+    private readonly ICache<string, CachedItem<Video>> _videoCache;
+    private readonly ICache<string, CachedItem<Channel>> _channelCache;
     private readonly ICache<string, CachedItem<CachedImage>> _imageCache;
     private readonly HttpClient _httpClient;
 
@@ -47,12 +47,12 @@ public sealed class CacheManager : ICacheManager
         }
 
         // Initialize caches with expiration
-        _videoCache = new ConcurrentLruBuilder<string, CachedItem<VideoInfo>>()
+        _videoCache = new ConcurrentLruBuilder<string, CachedItem<Video>>()
             .WithCapacity(_config.VideoMemoryCacheCapacity)
             .WithExpireAfterWrite(_config.MemoryCacheTtl)
             .Build();
 
-        _channelCache = new ConcurrentLruBuilder<string, CachedItem<ChannelDetails>>()
+        _channelCache = new ConcurrentLruBuilder<string, CachedItem<Channel>>()
             .WithCapacity(_config.ChannelMemoryCacheCapacity)
             .WithExpireAfterWrite(_config.MemoryCacheTtl)
             .Build();
@@ -124,7 +124,7 @@ public sealed class CacheManager : ICacheManager
     }
 
     /// <inheritdoc />
-    public async Task<VideoInfo?> GetVideoAsync(string remoteId, IVideoProvider provider, CancellationToken cancellationToken)
+    public async Task<Video?> GetVideoAsync(string remoteId, IProvider provider, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(remoteId);
         ArgumentNullException.ThrowIfNull(provider);
@@ -187,7 +187,7 @@ public sealed class CacheManager : ICacheManager
     }
 
     /// <inheritdoc />
-    public async Task<ChannelDetails?> GetChannelAsync(string remoteId, IVideoProvider provider, CancellationToken cancellationToken)
+    public async Task<Channel?> GetChannelAsync(string remoteId, IProvider provider, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(remoteId);
         ArgumentNullException.ThrowIfNull(provider);
@@ -251,11 +251,11 @@ public sealed class CacheManager : ICacheManager
     }
 
     /// <inheritdoc />
-    public async Task<ChannelVideoPage?> GetChannelVideosAsync(
+    public async Task<VideosPage?> GetChannelVideosAsync(
         string channelId,
         string tab,
         string? continuationToken,
-        IVideoProvider provider,
+        IProvider provider,
         CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(channelId);
@@ -293,7 +293,7 @@ public sealed class CacheManager : ICacheManager
         return page;
     }
 
-    private async Task UpsertVideoSummariesAsync(string channelId, IReadOnlyList<VideoSummary> videos, CancellationToken cancellationToken)
+    private async Task UpsertVideoSummariesAsync(string channelId, IReadOnlyList<VideoMetadata> videos, CancellationToken cancellationToken)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
 
@@ -307,7 +307,7 @@ public sealed class CacheManager : ICacheManager
         {
             // Check if video already exists
             var existingVideo = await dbContext.Videos
-                .FirstOrDefaultAsync(v => v.RemoteId == video.VideoId, cancellationToken);
+                .FirstOrDefaultAsync(v => v.RemoteId == video.RemoteId, cancellationToken);
 
             VideoEntity videoEntity;
 
@@ -378,17 +378,17 @@ public sealed class CacheManager : ICacheManager
         return DateTime.UtcNow - lastSyncedAt > threshold;
     }
 
-    private void PutVideoInCache(string remoteId, VideoInfo video, DateTime lastSyncedAt)
+    private void PutVideoInCache(string remoteId, Video video, DateTime lastSyncedAt)
     {
-        _videoCache.AddOrUpdate(remoteId, new CachedItem<VideoInfo>(video, lastSyncedAt));
+        _videoCache.AddOrUpdate(remoteId, new CachedItem<Video>(video, lastSyncedAt));
     }
 
-    private void PutChannelInCache(string remoteId, ChannelDetails channel, DateTime lastSyncedAt)
+    private void PutChannelInCache(string remoteId, Channel channel, DateTime lastSyncedAt)
     {
-        _channelCache.AddOrUpdate(remoteId, new CachedItem<ChannelDetails>(channel, lastSyncedAt));
+        _channelCache.AddOrUpdate(remoteId, new CachedItem<Channel>(channel, lastSyncedAt));
     }
 
-    private async Task UpsertVideoAsync(DataBaseContext dbContext, VideoEntity? existingEntity, VideoInfo video, CancellationToken cancellationToken)
+    private async Task UpsertVideoAsync(DataBaseContext dbContext, VideoEntity? existingEntity, Video video, CancellationToken cancellationToken)
     {
         try
         {
@@ -397,7 +397,7 @@ public sealed class CacheManager : ICacheManager
             if (video.Channel is not null)
             {
                 var channelEntity = await dbContext.Channels
-                    .FirstOrDefaultAsync(c => c.RemoteId == video.Channel.ChannelId, cancellationToken);
+                    .FirstOrDefaultAsync(c => c.RemoteId == video.Channel.RemoteId, cancellationToken);
 
                 if (channelEntity is null)
                 {
@@ -426,16 +426,16 @@ public sealed class CacheManager : ICacheManager
             // Upsert streams - delete old ones and add new ones
             await UpsertStreamsAsync(dbContext, videoId, video, cancellationToken);
 
-            _logger.LogDebug("Video upserted to database: {RemoteId}", video.VideoId);
+            _logger.LogDebug("Video upserted to database: {RemoteId}", video.RemoteId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to upsert video to database: {RemoteId}", video.VideoId);
+            _logger.LogError(ex, "Failed to upsert video to database: {RemoteId}", video.RemoteId);
             // Don't rethrow - we still have the data from provider
         }
     }
 
-    private async Task UpsertStreamsAsync(DataBaseContext dbContext, int videoId, VideoInfo video, CancellationToken cancellationToken)
+    private async Task UpsertStreamsAsync(DataBaseContext dbContext, int videoId, Video video, CancellationToken cancellationToken)
     {
         // Get existing streams for this video
         var existingStreams = await dbContext.Streams
@@ -472,10 +472,10 @@ public sealed class CacheManager : ICacheManager
         _logger.LogDebug(
             "Upserted {StreamCount} streams for video {VideoId}", 
             allStreams.Count, 
-            video.VideoId);
+            video.RemoteId);
     }
 
-    private async Task UpsertChannelAsync(DataBaseContext dbContext, ChannelEntity? existingEntity, ChannelDetails channel, CancellationToken cancellationToken)
+    private async Task UpsertChannelAsync(DataBaseContext dbContext, ChannelEntity? existingEntity, Channel channel, CancellationToken cancellationToken)
     {
         try
         {
@@ -516,11 +516,11 @@ public sealed class CacheManager : ICacheManager
                     cancellationToken);
             }
 
-            _logger.LogDebug("Channel upserted to database: {RemoteId}", channel.ChannelId);
+            _logger.LogDebug("Channel upserted to database: {RemoteId}", channel.RemoteId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to upsert channel to database: {RemoteId}", channel.ChannelId);
+            _logger.LogError(ex, "Failed to upsert channel to database: {RemoteId}", channel.RemoteId);
             // Don't rethrow - we still have the data from provider
         }
     }
@@ -528,13 +528,13 @@ public sealed class CacheManager : ICacheManager
     private async Task UpsertChannelImagesAsync(
         DataBaseContext dbContext,
         ChannelEntity channelEntity,
-        IReadOnlyList<ThumbnailInfo> images,
+        IReadOnlyList<Image> images,
         bool isAvatar,
         CancellationToken cancellationToken)
     {
         // Deduplicate images by URL to avoid duplicate key errors
         var uniqueImages = images
-            .GroupBy(i => i.Url.ToString())
+            .GroupBy(i => i.RemoteUrl.ToString())
             .Select(g => g.First())
             .ToList();
 
@@ -542,7 +542,7 @@ public sealed class CacheManager : ICacheManager
 
         foreach (var thumbnailInfo in uniqueImages)
         {
-            var remoteUrl = thumbnailInfo.Url.ToString();
+            var remoteUrl = thumbnailInfo.RemoteUrl.ToString();
 
             // Check memory cache first
             if (_imageCache.TryGet(remoteUrl, out var cached) && 
@@ -611,12 +611,12 @@ public sealed class CacheManager : ICacheManager
     private async Task UpsertVideoThumbnailsAsync(
         DataBaseContext dbContext,
         VideoEntity videoEntity,
-        IReadOnlyList<ThumbnailInfo> thumbnails,
+        IReadOnlyList<Image> thumbnails,
         CancellationToken cancellationToken)
     {
         // Deduplicate thumbnails by URL to avoid duplicate key errors
         var uniqueThumbnails = thumbnails
-            .GroupBy(t => t.Url.ToString())
+            .GroupBy(t => t.RemoteUrl.ToString())
             .Select(g => g.First())
             .ToList();
 
@@ -624,7 +624,7 @@ public sealed class CacheManager : ICacheManager
 
         foreach (var thumbnailInfo in uniqueThumbnails)
         {
-            var remoteUrl = thumbnailInfo.Url.ToString();
+            var remoteUrl = thumbnailInfo.RemoteUrl.ToString();
 
             // Check memory cache first
             if (_imageCache.TryGet(remoteUrl, out var cached) && 

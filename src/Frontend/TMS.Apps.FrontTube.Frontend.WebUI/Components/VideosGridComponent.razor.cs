@@ -12,7 +12,7 @@ public partial class VideosGridComponentBase : ComponentBase
     /// The list of videos to display.
     /// </summary>
     [Parameter]
-    public IReadOnlyList<VideoSummary>? Videos { get; set; }
+    public IReadOnlyList<VideoMetadata>? Videos { get; set; }
 
     /// <summary>
     /// Whether to show the channel name on each thumbnail.
@@ -60,13 +60,13 @@ public partial class VideosGridComponentBase : ComponentBase
     /// Callback when a video is clicked.
     /// </summary>
     [Parameter]
-    public EventCallback<VideoSummary> OnVideoClick { get; set; }
+    public EventCallback<VideoMetadata> OnVideoClick { get; set; }
 
     /// <summary>
     /// Callback when a channel name is clicked.
     /// </summary>
     [Parameter]
-    public EventCallback<ChannelInfo> OnChannelClick { get; set; }
+    public EventCallback<ChannelMetadata> OnChannelClick { get; set; }
 
     /// <summary>
     /// Callback when the load more button is clicked.
@@ -74,12 +74,12 @@ public partial class VideosGridComponentBase : ComponentBase
     [Parameter]
     public EventCallback OnLoadMore { get; set; }
 
-    protected async Task HandleVideoClick(VideoSummary video)
+    protected async Task HandleVideoClick(VideoMetadata video)
     {
         await OnVideoClick.InvokeAsync(video);
     }
 
-    protected async Task HandleChannelClick(ChannelInfo channel)
+    protected async Task HandleChannelClick(ChannelMetadata channel)
     {
         await OnChannelClick.InvokeAsync(channel);
     }

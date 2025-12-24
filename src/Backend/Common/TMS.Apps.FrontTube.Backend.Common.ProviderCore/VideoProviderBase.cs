@@ -7,7 +7,7 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore;
 /// <summary>
 /// Base class for video providers with common functionality.
 /// </summary>
-public abstract class VideoProviderBase : IVideoProvider
+public abstract class VideoProviderBase : IProvider
 {
     private bool _disposed;
 
@@ -37,7 +37,7 @@ public abstract class VideoProviderBase : IVideoProvider
     public virtual bool IsConfigured => BaseUrl.IsAbsoluteUri;
 
     /// <inheritdoc />
-    public abstract Task<VideoInfo?> GetVideoInfoAsync(string videoId, CancellationToken cancellationToken);
+    public abstract Task<Video?> GetVideoInfoAsync(string videoId, CancellationToken cancellationToken);
 
     /// <inheritdoc />
     public abstract Uri GetEmbedUrl(string videoId);
@@ -58,10 +58,10 @@ public abstract class VideoProviderBase : IVideoProvider
     public abstract bool IsValidVideoId(string videoId);
 
     /// <inheritdoc />
-    public abstract Task<ChannelDetails?> GetChannelDetailsAsync(string channelId, CancellationToken cancellationToken);
+    public abstract Task<Channel?> GetChannelDetailsAsync(string channelId, CancellationToken cancellationToken);
 
     /// <inheritdoc />
-    public abstract Task<ChannelVideoPage?> GetChannelVideosAsync(
+    public abstract Task<VideosPage?> GetChannelVideosAsync(
         string channelId,
         string tab = "videos",
         string? continuationToken = null,

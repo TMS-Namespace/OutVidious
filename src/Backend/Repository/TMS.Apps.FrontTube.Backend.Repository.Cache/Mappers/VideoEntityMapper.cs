@@ -12,23 +12,23 @@ public static class VideoEntityMapper
     /// <summary>
     /// Converts a VideoEntity to a VideoInfo contract.
     /// </summary>
-    public static VideoInfo ToContract(VideoEntity entity)
+    public static Video ToContract(VideoEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
         var channelInfo = entity.Channel is not null
             ? ChannelEntityMapper.ToChannelInfo(entity.Channel)
-            : new ChannelInfo
+            : new ChannelMetadata
             {
-                ChannelId = entity.ChannelId?.ToString() ?? "unknown",
+                RemoteId = entity.ChannelId?.ToString() ?? "unknown",
                 Name = "Unknown Channel"
             };
 
-        return new VideoInfo
+        return new Video
         {
-            VideoId = entity.RemoteId,
+            RemoteId = entity.RemoteId,
             Title = entity.Title,
-            Description = entity.Description ?? string.Empty,
+            DescriptionText = entity.Description ?? string.Empty,
             DescriptionHtml = entity.DescriptionHtml,
             Channel = channelInfo,
             PublishedAt = entity.PublishedAt.HasValue
@@ -38,7 +38,7 @@ public static class VideoEntityMapper
             ViewCount = entity.ViewCount,
             LikeCount = entity.LikesCount ?? 0,
             DislikeCount = entity.DislikesCount,
-            Keywords = ParseKeywords(entity.Keywords),
+            Tags = ParseKeywords(entity.Keywords),
             Genre = entity.Genre,
             Thumbnails = entity.Thumbnails
                 .Select(t => ImageEntityMapper.ToThumbnailInfo(t.Image))
@@ -51,7 +51,7 @@ public static class VideoEntityMapper
                 .Select(StreamEntityMapper.ToContract)
                 .ToList(),
             CombinedStreams = entity.Streams
-                .Where(s => s.StreamTypeId == (int)StreamType.VideoAndAudio)
+                .Where(s => s.StreamTypeId == (int)StreamType.Mutex)
                 .Select(StreamEntityMapper.ToContract)
                 .ToList(),
             IsLive = entity.IsLive,
@@ -62,15 +62,15 @@ public static class VideoEntityMapper
     /// <summary>
     /// Converts a VideoInfo contract to a VideoEntity for database storage.
     /// </summary>
-    public static VideoEntity ToEntity(VideoInfo contract, int? channelId = null)
+    public static VideoEntity ToEntity(Video contract, int? channelId = null)
     {
         ArgumentNullException.ThrowIfNull(contract);
 
         return new VideoEntity
         {
-            RemoteId = contract.VideoId,
+            RemoteId = contract.RemoteId,
             Title = contract.Title,
-            Description = contract.Description,
+            Description = contract.DescriptionText,
             DescriptionHtml = contract.DescriptionHtml,
             DurationSeconds = (long)contract.Duration.TotalSeconds,
             ViewCount = contract.ViewCount,
@@ -78,7 +78,7 @@ public static class VideoEntityMapper
             DislikesCount = contract.DislikeCount,
             PublishedAt = contract.PublishedAt?.UtcDateTime,
             Genre = contract.Genre,
-            Keywords = JoinKeywords(contract.Keywords),
+            Keywords = JoinKeywords(contract.Tags),
             IsLive = contract.IsLive,
             IsUpcoming = contract.IsUpcoming,
             IsShort = false, // Not available in VideoInfo
@@ -91,13 +91,13 @@ public static class VideoEntityMapper
     /// <summary>
     /// Updates an existing entity with data from a contract.
     /// </summary>
-    public static void UpdateEntity(VideoEntity entity, VideoInfo contract, int? channelId = null)
+    public static void UpdateEntity(VideoEntity entity, Video contract, int? channelId = null)
     {
         ArgumentNullException.ThrowIfNull(entity);
         ArgumentNullException.ThrowIfNull(contract);
 
         entity.Title = contract.Title;
-        entity.Description = contract.Description;
+        entity.Description = contract.DescriptionText;
         entity.DescriptionHtml = contract.DescriptionHtml;
         entity.DurationSeconds = (long)contract.Duration.TotalSeconds;
         entity.ViewCount = contract.ViewCount;
@@ -105,7 +105,7 @@ public static class VideoEntityMapper
         entity.DislikesCount = contract.DislikeCount;
         entity.PublishedAt = contract.PublishedAt?.UtcDateTime;
         entity.Genre = contract.Genre;
-        entity.Keywords = JoinKeywords(contract.Keywords);
+        entity.Keywords = JoinKeywords(contract.Tags);
         entity.IsLive = contract.IsLive;
         entity.IsUpcoming = contract.IsUpcoming;
         entity.LastSyncedAt = DateTime.UtcNow;
@@ -119,13 +119,13 @@ public static class VideoEntityMapper
     /// <summary>
     /// Converts a VideoSummary to a VideoEntity (for channel video listings).
     /// </summary>
-    public static VideoEntity ToEntity(VideoSummary contract, int? channelId = null)
+    public static VideoEntity ToEntity(VideoMetadata contract, int? channelId = null)
     {
         ArgumentNullException.ThrowIfNull(contract);
 
         return new VideoEntity
         {
-            RemoteId = contract.VideoId,
+            RemoteId = contract.RemoteId,
             Title = contract.Title,
             DurationSeconds = (long)contract.Duration.TotalSeconds,
             ViewCount = contract.ViewCount,
