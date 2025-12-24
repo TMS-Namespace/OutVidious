@@ -14,7 +14,7 @@ namespace TMS.Apps.FrontTube.Backend.Providers.Invidious;
 /// <summary>
 /// Video provider implementation for Invidious instances.
 /// </summary>
-public sealed partial class InvidiousVideoProvider : VideoProviderBase
+public sealed partial class InvidiousVideoProvider : ProviderBase
 {
     private readonly JsonSerializerOptions _jsonOptions;
 

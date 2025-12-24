@@ -7,14 +7,14 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore;
 /// <summary>
 /// Base class for video providers with common functionality.
 /// </summary>
-public abstract class VideoProviderBase : IProvider
+public abstract class ProviderBase : IProvider
 {
     private bool _disposed;
 
     protected readonly HttpClient HttpClient;
     protected readonly ILogger Logger;
 
-    protected VideoProviderBase(HttpClient httpClient, ILogger logger, Uri baseUrl)
+    protected ProviderBase(HttpClient httpClient, ILogger logger, Uri baseUrl)
     {
         HttpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));

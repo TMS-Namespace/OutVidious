@@ -54,6 +54,7 @@ The app uses **Super** pattern. All business logic lives in ViewModels of `Core`
 - **Razor/HTML formatting**: Always format Blazor/HTML code with proper indentation and line breaks for better readability. Always put each attribute in an aligned new line. Separate components with empty lines.
 - **Resiliency**: Use `Polly` for transient fault handling in all external calls (e.g., HTTP requests to Invidious instances), with configurable retries count, exponential backoff, and circuit breakers as appropriate.
 - **No Hard-Coding**: No hard-coded strings, URLs, paths, or configuration values. Use enums, configuration files, or clearly defined constants.
+- **Namespaces Aliases**: Use namespace aliases in case of conflicts or for better clarity.
 
 ## Critical Patterns
 
@@ -71,7 +72,7 @@ The app uses **Super** pattern. All business logic lives in ViewModels of `Core`
 - UI components subscribe to these events to update the UI accordingly.
 - `ViewModels` should not swallow exceptions silently; they must log errors and propagate them to the UI for user-friendly handling.
 - `Super` shall be a singleton for the whole UI app, created once via the `Orchestrator` service.
-- `Super` receives only `ILoggerFactory` in its constructor, and exposes it an internal property to other VMs. Each view model creates its own `ILogger<T>` from it during construction.
+- `Super` receives only `ILoggerFactory` and `IHttpClientFactory` in its constructor, and exposes it an internal property to other VMs. Each view model creates its own `ILogger<T>` from it during construction.
 - All view models has reference to `Super`.
 
 ### Blazor Components Rules
