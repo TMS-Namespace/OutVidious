@@ -14,7 +14,7 @@ public class DataBaseContextFactory : IDesignTimeDbContextFactory<DataBaseContex
         
         // Default connection string for development/migrations
         // In production, this should come from configuration
-        var connectionString = "Host=localhost;Port=5656;Database=ftube;Username=root;Password=password";
+        var connectionString = "Host=localhost;Port=5656;Database=front_tube;Username=root;Password=password";
         
         optionsBuilder.UseNpgsql(connectionString);
 

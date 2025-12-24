@@ -21,11 +21,10 @@ try
         .AddCacheManager(
             host: "localhost",
             port: 5656,
-            databaseName: "front-tube",
+            databaseName: "front_tube",
             username: "root",
             password: "password")
-        .AddOrchestrator()
-        .AddApiControllers();
+        .AddOrchestrator();
 
     var app = builder.Build();
 

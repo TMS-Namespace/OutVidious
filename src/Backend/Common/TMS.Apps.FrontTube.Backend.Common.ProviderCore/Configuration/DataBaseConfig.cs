@@ -19,7 +19,7 @@ public sealed record DataBaseConfig
 
     /// <summary>
     /// Database name.
-    /// Default: ftube.
+    /// Default: front_tube.
     /// </summary>
     public string DatabaseName { get; init; } = "front_tube";
 

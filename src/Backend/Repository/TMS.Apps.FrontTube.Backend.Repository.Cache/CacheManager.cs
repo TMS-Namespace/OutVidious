@@ -85,7 +85,7 @@ public sealed class CacheManager : ICacheManager
     }
 
     /// <summary>
-    /// Creates a new FTubeDbContext instance using the configured connection string.
+    /// Creates a new front_tubeDbContext instance using the configured connection string.
     /// Ensures the database schema is created on first use and seeds dev user if enabled.
     /// </summary>
     private async Task<DataBaseContext> CreateDbContextAsync(CancellationToken cancellationToken)
@@ -108,7 +108,7 @@ public sealed class CacheManager : ICacheManager
     }
 
     /// <summary>
-    /// Creates a new FTubeDbContext instance synchronously.
+    /// Creates a new front_tubeDbContext instance synchronously.
     /// Ensures the database schema is created on first use.
     /// </summary>
     private DataBaseContext CreateDbContext()
@@ -768,22 +768,25 @@ public sealed class CacheManager : ICacheManager
         // 4. Put in cache immediately so UI gets the image fast
         PutImageInCache(remoteUrl, fetchedImage, DateTime.UtcNow);
 
-        // 5. Upsert to database - save immediately to ensure data is persisted
-        try
+        // 5. Upsert to database in the background - don't wait for it to complete
+        _ = Task.Run(async () =>
         {
-            _logger.LogDebug("About to upsert image to database: {RemoteUrl}", remoteUrl);
-            
-            // Re-fetch entity in new context for the save operation
-            await using var saveContext = await CreateDbContextAsync(CancellationToken.None);
-            var saveEntity = await saveContext.Images
-                .FirstOrDefaultAsync(i => i.RemoteUrl == remoteUrl, CancellationToken.None);
-            
-            await UpsertImageAsync(saveContext, saveEntity, fetchedImage, remoteUrl, CancellationToken.None);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to save image to database: {RemoteUrl}", remoteUrl);
-        }
+            try
+            {
+                _logger.LogDebug("Background: About to upsert image to database: {RemoteUrl}", remoteUrl);
+                
+                // Create new context for the background save operation
+                await using var saveContext = await CreateDbContextAsync(CancellationToken.None);
+                var saveEntity = await saveContext.Images
+                    .FirstOrDefaultAsync(i => i.RemoteUrl == remoteUrl, CancellationToken.None);
+                
+                await UpsertImageAsync(saveContext, saveEntity, fetchedImage, remoteUrl, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Background: Failed to save image to database: {RemoteUrl}", remoteUrl);
+            }
+        }, CancellationToken.None);
 
         _logger.LogDebug("Image fetched and cached: {RemoteUrl}", remoteUrl);
         return fetchedImage;

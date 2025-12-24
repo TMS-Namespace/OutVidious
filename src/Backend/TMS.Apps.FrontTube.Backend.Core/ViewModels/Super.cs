@@ -44,7 +44,7 @@ public sealed class Super : IDisposable
         _logger = loggerFactory.CreateLogger<Super>();
         _ownsDataRepository = false;
 
-        Proxy = new Proxy(loggerFactory, httpClientFactory, videoProvider.BaseUrl, proxyHandlerConfigurator);
+        Proxy = new Proxy(loggerFactory, httpClientFactory, videoProvider.BaseUrl, dataRepository, proxyHandlerConfigurator);
 
         _logger.LogDebug("Super initialized with shared DataRepository and provider: {ProviderType}", videoProvider.GetType().Name);
     }

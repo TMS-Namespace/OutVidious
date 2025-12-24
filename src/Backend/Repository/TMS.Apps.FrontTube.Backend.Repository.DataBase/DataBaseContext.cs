@@ -5,7 +5,7 @@ using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Enums;
 namespace TMS.Apps.FrontTube.Backend.Repository.DataBase;
 
 /// <summary>
-/// Database context for FTube application.
+/// Database context for front_tube application.
 /// </summary>
 public class DataBaseContext : DbContext
 {

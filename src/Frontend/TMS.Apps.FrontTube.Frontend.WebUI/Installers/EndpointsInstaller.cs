@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Installers;
@@ -12,11 +13,8 @@ internal static class EndpointsInstaller
     /// </summary>
     internal static WebApplication MapApplicationEndpoints(this WebApplication app)
     {
-        // Map proxy endpoints for video playback
+        // Map proxy endpoints for video and image playback
         app.MapProxyEndpoints();
-        
-        // Map API controllers (like ImageProxyController)
-        app.MapControllers();
         
         // Map Blazor components
         app.MapRazorComponents<App>()
@@ -26,7 +24,7 @@ internal static class EndpointsInstaller
     }
 
     /// <summary>
-    /// Maps proxy endpoints for DASH manifests and video playback.
+    /// Maps proxy endpoints for DASH manifests, video playback, and images.
     /// </summary>
     private static WebApplication MapProxyEndpoints(this WebApplication app)
     {
@@ -58,6 +56,17 @@ internal static class EndpointsInstaller
             {
                 await orchestrator.Super.Proxy.ProxyVideoPlaybackAsync(context, cancellationToken);
             });
+
+        // Image proxy endpoint with caching support
+        app.MapGet("/api/ImageProxy", async (
+            [FromQuery] string originalUrl,
+            [FromQuery] string fetchUrl,
+            Orchestrator orchestrator,
+            HttpContext context,
+            CancellationToken cancellationToken) =>
+        {
+            return await orchestrator.Super.Proxy.ProxyImageAsync(originalUrl, fetchUrl, context, cancellationToken);
+        });
 
         return app;
     }

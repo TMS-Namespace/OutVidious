@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
 
 namespace TMS.Apps.FrontTube.Backend.Core.Tools;
 
@@ -14,12 +15,19 @@ public sealed partial class Proxy
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly Uri _providerBaseUrl;
     private readonly Action<HttpClientHandler>? _httpHandlerConfigurator;
+    private readonly ICacheManager _cacheManager;
 
-    public Proxy(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, Uri providerBaseUrl, Action<HttpClientHandler>? httpHandlerConfigurator = null)
+    public Proxy(
+        ILoggerFactory loggerFactory,
+        IHttpClientFactory httpClientFactory,
+        Uri providerBaseUrl,
+        ICacheManager cacheManager,
+        Action<HttpClientHandler>? httpHandlerConfigurator = null)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _providerBaseUrl = providerBaseUrl ?? throw new ArgumentNullException(nameof(providerBaseUrl));
+        _cacheManager = cacheManager ?? throw new ArgumentNullException(nameof(cacheManager));
         _httpHandlerConfigurator = httpHandlerConfigurator;
         
         _logger = loggerFactory.CreateLogger<Proxy>();
@@ -291,6 +299,59 @@ public sealed partial class Proxy
             _logger.LogError(ex, "Failed to proxy video playback: {Url}", proxyUrl);
             context.Response.StatusCode = 500;
             await context.Response.WriteAsync($"Failed to proxy video: {ex.Message}", cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Proxies an image request through the caching layer (memory → DB → web).
+    /// Gets an image by its original URL and fetch URL, using the caching layer.
+    /// </summary>
+    /// <param name="originalUrl">The original URL of the image (YouTube CDN URL).</param>
+    /// <param name="fetchUrl">The URL to fetch the image from (provider proxy URL).</param>
+    /// <param name="context">The HTTP context.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>IResult for the endpoint response.</returns>
+    public async Task<IResult> ProxyImageAsync(string originalUrl, string fetchUrl, HttpContext context, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(originalUrl) || !Uri.TryCreate(originalUrl, UriKind.Absolute, out var original))
+        {
+            return Results.BadRequest("Valid original URL is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(fetchUrl) || !Uri.TryCreate(fetchUrl, UriKind.Absolute, out var fetch))
+        {
+            return Results.BadRequest("Valid fetch URL is required.");
+        }
+
+        try
+        {
+            _logger.LogDebug("ImageProxy: Fetching image: {OriginalUrl} via {FetchUrl}", originalUrl, fetchUrl);
+
+            var cachedImage = await _cacheManager.GetImageAsync(original, fetch, cancellationToken);
+
+            if (cachedImage is null)
+            {
+                _logger.LogWarning("ImageProxy: Failed to fetch image: {OriginalUrl}", originalUrl);
+                return Results.NotFound();
+            }
+
+            _logger.LogDebug("ImageProxy: Returning image: {OriginalUrl}, MimeType: {MimeType}, Size: {Size} bytes", 
+                originalUrl, cachedImage.MimeType, cachedImage.Data.Length);
+
+            // Set cache headers
+            context.Response.Headers.CacheControl = "public, max-age=86400";
+            
+            return Results.File(cachedImage.Data, cachedImage.MimeType);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogDebug("ImageProxy: Request cancelled for: {OriginalUrl}", originalUrl);
+            return Results.StatusCode(499); // Client Closed Request
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "ImageProxy: Error fetching image: {OriginalUrl}", originalUrl);
+            return Results.Problem("Failed to fetch image.", statusCode: 500);
         }
     }
 
