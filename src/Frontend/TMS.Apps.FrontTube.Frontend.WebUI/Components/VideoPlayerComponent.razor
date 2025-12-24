@@ -17,7 +17,7 @@ else if (ViewModel.LoadState == VideoLoadState.Error)
         @(ViewModel.ErrorMessage ?? "Failed to load video. Please try again.")
     </MudAlert>
 }
-else if (ViewModel.LoadState == VideoLoadState.Loaded && ViewModel.VideoInfo != null)
+else if (ViewModel.LoadState == VideoLoadState.Loaded)
 {
     <MudPaper Class="pa-4" Elevation="1">
         @* Player Controls *@
@@ -152,37 +152,37 @@ else if (ViewModel.LoadState == VideoLoadState.Loaded && ViewModel.VideoInfo != 
         </MudPaper>
 
         @* Video Info *@
-        <MudText Typo="Typo.h5" Class="mb-2">@ViewModel.VideoInfo.Title</MudText>
+        <MudText Typo="Typo.h5" Class="mb-2">@ViewModel.Title</MudText>
         
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                 <MudAvatar Size="Size.Medium" Color="Color.Primary">
-                    @(ViewModel.VideoInfo.Channel.Name?.FirstOrDefault().ToString().ToUpperInvariant() ?? "?")
+                    @(ViewModel.ChannelName?.FirstOrDefault().ToString().ToUpperInvariant() ?? "?")
                 </MudAvatar>
                 <MudLink Href="@GetAuthorUrl()" Target="_blank" Typo="Typo.subtitle1">
-                    @ViewModel.VideoInfo.Channel.Name
+                    @ViewModel.ChannelName
                 </MudLink>
             </MudStack>
 
             <MudStack Row="true" Spacing="3">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                     <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" />
-                    <MudText Typo="Typo.body2">@FormatViewCount(ViewModel.VideoInfo.ViewCount) views</MudText>
+                    <MudText Typo="Typo.body2">@FormatViewCount(ViewModel.ViewCount) views</MudText>
                 </MudStack>
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                     <MudIcon Icon="@Icons.Material.Filled.ThumbUp" Size="Size.Small" />
-                    <MudText Typo="Typo.body2">@FormatViewCount(ViewModel.VideoInfo.LikeCount)</MudText>
+                    <MudText Typo="Typo.body2">@FormatViewCount(ViewModel.LikeCount)</MudText>
                 </MudStack>
             </MudStack>
         </MudStack>
 
         @* Description *@
-        @if (!string.IsNullOrEmpty(ViewModel.VideoInfo.DescriptionText))
+        @if (!string.IsNullOrEmpty(ViewModel.Description))
         {
             <MudExpansionPanels>
                 <MudExpansionPanel Text="Description">
                     <MudText Typo="Typo.body2" Style="white-space: pre-wrap;">
-                        @ViewModel.VideoInfo.DescriptionText
+                        @ViewModel.Description
                     </MudText>
                 </MudExpansionPanel>
             </MudExpansionPanels>

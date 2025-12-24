@@ -1,5 +1,3 @@
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Services;
@@ -14,17 +12,10 @@ public sealed class Orchestrator : IDisposable
     private readonly Lazy<Super> _super;
     private bool _disposed;
 
-    public Orchestrator(
-        ILoggerFactory loggerFactory,
-        IHttpClientFactory httpClientFactory,
-        IProvider videoProvider,
-        ICacheManager dataRepository,
-        Action<HttpClientHandler>? proxyHandlerConfigurator = null)
+    public Orchestrator(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
         ArgumentNullException.ThrowIfNull(httpClientFactory);
-        ArgumentNullException.ThrowIfNull(videoProvider);
-        ArgumentNullException.ThrowIfNull(dataRepository);
 
         _logger = loggerFactory.CreateLogger<Orchestrator>();
 
@@ -32,7 +23,7 @@ public sealed class Orchestrator : IDisposable
         _super = new Lazy<Super>(() =>
         {
             _logger.LogDebug("Creating Super instance");
-            return new Super(loggerFactory, httpClientFactory, videoProvider, dataRepository, proxyHandlerConfigurator);
+            return new Super(loggerFactory, httpClientFactory);
         });
 
         _logger.LogDebug("Orchestrator initialized");

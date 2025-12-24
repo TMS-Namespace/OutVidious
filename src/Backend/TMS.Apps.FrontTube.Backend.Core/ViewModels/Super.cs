@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Repository.Cache;
 using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 using TMS.Apps.FrontTube.Backend.Core.Tools;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious;
 
 namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
@@ -19,8 +19,12 @@ public sealed class Super : IDisposable
     private readonly ILogger<Super> _logger;
     private readonly ICacheManager _dataRepository;
     private readonly IProvider _videoProvider;
-    private readonly bool _ownsDataRepository;
     private bool _disposed;
+
+    /// <summary>
+    /// Gets the logger factory for creating loggers in child ViewModels.
+    /// </summary>
+    internal ILoggerFactory LoggerFactory => _loggerFactory;
 
     /// <summary>
     /// Gets the proxy for video playback, DASH manifests, and image fetching.
@@ -28,25 +32,52 @@ public sealed class Super : IDisposable
     public Proxy Proxy { get; }
 
     /// <summary>
-    /// Creates a Super instance with an existing IDataRepository (recommended for shared caching).
+    /// Gets the application configurations.
+    /// UI can modify these to change application behavior.
     /// </summary>
-    public Super(
-        ILoggerFactory loggerFactory,
-        IHttpClientFactory httpClientFactory,
-        IProvider videoProvider,
-        ICacheManager dataRepository,
-        Action<HttpClientHandler>? proxyHandlerConfigurator = null)
+    public Configurations Configurations { get; }
+
+    /// <summary>
+    /// Creates a Super instance with default configurations.
+    /// All dependencies are created internally.
+    /// </summary>
+    public Super(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory)
     {
-        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-        _videoProvider = videoProvider ?? throw new ArgumentNullException(nameof(videoProvider));
-        _dataRepository = dataRepository ?? throw new ArgumentNullException(nameof(dataRepository));
+        ArgumentNullException.ThrowIfNull(loggerFactory);
+        ArgumentNullException.ThrowIfNull(httpClientFactory);
+
+        _loggerFactory = loggerFactory;
+        _httpClientFactory = httpClientFactory;
         _logger = loggerFactory.CreateLogger<Super>();
-        _ownsDataRepository = false;
 
-        Proxy = new Proxy(loggerFactory, httpClientFactory, videoProvider.BaseUrl, dataRepository, proxyHandlerConfigurator);
+        // Initialize configurations with defaults
+        Configurations = new Configurations();
 
-        _logger.LogDebug("Super initialized with shared DataRepository and provider: {ProviderType}", videoProvider.GetType().Name);
+        // Create CacheManager
+        _dataRepository = new CacheManager(
+            Configurations.Cache,
+            Configurations.DataBase,
+            loggerFactory);
+
+        // Create InvidiousVideoProvider
+        _videoProvider = new InvidiousVideoProvider(
+            loggerFactory,
+            httpClientFactory,
+            Configurations.Provider);
+
+        // Create Proxy with SSL bypass handler if configured
+        Action<HttpClientHandler>? proxyHandlerConfigurator = Configurations.Provider.BypassSslValidation
+            ? handler => handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            : null;
+
+        Proxy = new Proxy(
+            loggerFactory,
+            httpClientFactory,
+            _videoProvider.BaseUrl,
+            _dataRepository,
+            proxyHandlerConfigurator);
+
+        _logger.LogDebug("Super initialized with provider: {ProviderType}", _videoProvider.GetType().Name);
     }
 
     /// <summary>
@@ -246,11 +277,8 @@ public sealed class Super : IDisposable
             return;
         }
 
-        // Only dispose the DataRepository if we created it ourselves
-        if (_ownsDataRepository)
-        {
-            _dataRepository.Dispose();
-        }
+        _dataRepository.Dispose();
+        _videoProvider.Dispose();
 
         _disposed = true;
         _logger.LogDebug("Super disposed");

@@ -14,11 +14,12 @@
     <PackageReference Include="Serilog.Sinks.File" />
   </ItemGroup>
 
-
   <ItemGroup>
-    <ProjectReference Include="../../Backend/Providers/TMS.Apps.FrontTube.Backend.Providers.Invidious/TMS.Apps.FrontTube.Backend.Providers.Invidious.csproj" />
-    <ProjectReference Include="../../Backend/Repository/TMS.Apps.FrontTube.Backend.Repository.Cache/TMS.Apps.FrontTube.Backend.Repository.Cache.csproj" />
     <ProjectReference Include="../../Backend/TMS.Apps.FrontTube.Backend.Core/TMS.Apps.FrontTube.Backend.Core.csproj" />
   </ItemGroup>
+
+    <PropertyGroup>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    </PropertyGroup>
 
 </Project>

@@ -5,11 +5,6 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 /// </summary>
 public sealed record CacheConfig
 {
-    /// <summary>
-    /// Database connection configuration.
-    /// </summary>
-    public required DataBaseConfig DataBase { get; init; }
-
     // ─────────────────────────────────────────────────────────────────────────────
     // Staleness Thresholds
     // ─────────────────────────────────────────────────────────────────────────────

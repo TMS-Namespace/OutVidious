@@ -15,16 +15,10 @@ try
 
     // Add services to the container
     builder.Services
+        .AddHttpClient()
         .AddBlazorComponents()
         .AddMudBlazor()
-        .AddInvidiousProvider(new Uri("https://youtube.srv1.tms.com"))
-        .AddCacheManager(
-            host: "localhost",
-            port: 5656,
-            databaseName: "front_tube",
-            username: "root",
-            password: "password")
-        .AddOrchestrator();
+        .AddServices();
 
     var app = builder.Build();
 
@@ -41,7 +35,7 @@ try
     app.UseAntiforgery();
 
     // Map all application endpoints
-    app.MapApplicationEndpoints();
+    app.AddEndpoints();
 
     app.Run();
 }

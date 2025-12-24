@@ -80,7 +80,7 @@ public partial class Home : ComponentBase, IDisposable
             
             if (_videoPlayerVm is not null)
             {
-                Logger.LogInformation("VideoPlayerViewModel created. Title: {Title}", _videoPlayerVm.VideoInfo.Title);
+                Logger.LogInformation("VideoPlayerViewModel created. Title: {Title}", _videoPlayerVm.Title);
                 Logger.LogInformation("Current Stream URL: {Url}", _videoPlayerVm.CurrentStreamUrl ?? "(null)");
             }
             else

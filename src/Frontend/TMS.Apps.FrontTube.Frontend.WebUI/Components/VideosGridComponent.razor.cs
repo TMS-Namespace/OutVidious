@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Components;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Components;
 
@@ -12,7 +12,7 @@ public partial class VideosGridComponentBase : ComponentBase
     /// The list of videos to display.
     /// </summary>
     [Parameter]
-    public IReadOnlyList<VideoMetadata>? Videos { get; set; }
+    public IReadOnlyList<Video>? Videos { get; set; }
 
     /// <summary>
     /// Whether to show the channel name on each thumbnail.
@@ -60,13 +60,13 @@ public partial class VideosGridComponentBase : ComponentBase
     /// Callback when a video is clicked.
     /// </summary>
     [Parameter]
-    public EventCallback<VideoMetadata> OnVideoClick { get; set; }
+    public EventCallback<Video> OnVideoClick { get; set; }
 
     /// <summary>
     /// Callback when a channel name is clicked.
     /// </summary>
     [Parameter]
-    public EventCallback<ChannelMetadata> OnChannelClick { get; set; }
+    public EventCallback<string> OnChannelClick { get; set; }
 
     /// <summary>
     /// Callback when the load more button is clicked.
@@ -74,14 +74,14 @@ public partial class VideosGridComponentBase : ComponentBase
     [Parameter]
     public EventCallback OnLoadMore { get; set; }
 
-    protected async Task HandleVideoClick(VideoMetadata video)
+    protected async Task HandleVideoClick(Video video)
     {
         await OnVideoClick.InvokeAsync(video);
     }
 
-    protected async Task HandleChannelClick(ChannelMetadata channel)
+    protected async Task HandleChannelClick(string channelRemoteId)
     {
-        await OnChannelClick.InvokeAsync(channel);
+        await OnChannelClick.InvokeAsync(channelRemoteId);
     }
 
     protected async Task HandleLoadMore()

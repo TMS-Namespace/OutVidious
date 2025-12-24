@@ -20,7 +20,7 @@ public sealed class CacheManager : ICacheManager
     private readonly CacheConfig _config;
     private readonly ILogger<CacheManager> _logger;
     private readonly ILoggerFactory _loggerFactory;
-    private readonly string _connectionString;
+    private readonly DataBaseContextPool _pool;
     private readonly DevModeSeeder? _devModeSeeder;
 
     private readonly ICache<string, CachedItem<Video>> _videoCache;
@@ -32,16 +32,23 @@ public sealed class CacheManager : ICacheManager
     private bool _devUserSeeded;
 
     public CacheManager(
-        CacheConfig config,
+        CacheConfig cacheConfig,
+        DataBaseConfig dataBaseConfig,
         ILoggerFactory loggerFactory)
     {
-        _config = config ?? throw new ArgumentNullException(nameof(config));
-        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        ArgumentNullException.ThrowIfNull(cacheConfig);
+        ArgumentNullException.ThrowIfNull(dataBaseConfig);
+        ArgumentNullException.ThrowIfNull(loggerFactory);
+
+        _config = cacheConfig;
+        _loggerFactory = loggerFactory;
         _logger = loggerFactory.CreateLogger<CacheManager>();
-        _connectionString = config.DataBase.BuildConnectionString();
+
+        // Initialize database context pool
+        _pool = new DataBaseContextPool(dataBaseConfig, loggerFactory);
 
         // Initialize dev mode seeder if enabled
-        if (config.DataBase.IsDevMode)
+        if (dataBaseConfig.IsDevMode)
         {
             _devModeSeeder = new DevModeSeeder(loggerFactory);
         }
@@ -85,14 +92,12 @@ public sealed class CacheManager : ICacheManager
     }
 
     /// <summary>
-    /// Creates a new front_tubeDbContext instance using the configured connection string.
+    /// Gets a database context from the pool.
     /// Ensures the database schema is created on first use and seeds dev user if enabled.
     /// </summary>
     private async Task<DataBaseContext> CreateDbContextAsync(CancellationToken cancellationToken)
     {
-        var optionsBuilder = new DbContextOptionsBuilder<DataBaseContext>();
-        optionsBuilder.UseNpgsql(_connectionString);
-        var context = new DataBaseContext(optionsBuilder.Options);
+        var context = await _pool.GetContextAsync(cancellationToken);
 
         // Ensure database schema is created (code-first)
         await context.Database.EnsureCreatedAsync(cancellationToken);
@@ -108,14 +113,12 @@ public sealed class CacheManager : ICacheManager
     }
 
     /// <summary>
-    /// Creates a new front_tubeDbContext instance synchronously.
+    /// Gets a database context from the pool synchronously.
     /// Ensures the database schema is created on first use.
     /// </summary>
     private DataBaseContext CreateDbContext()
     {
-        var optionsBuilder = new DbContextOptionsBuilder<DataBaseContext>();
-        optionsBuilder.UseNpgsql(_connectionString);
-        var context = new DataBaseContext(optionsBuilder.Options);
+        var context = _pool.GetContextAsync(CancellationToken.None).GetAwaiter().GetResult();
 
         // Ensure database schema is created (code-first)
         context.Database.EnsureCreated();
@@ -681,6 +684,7 @@ public sealed class CacheManager : ICacheManager
         }
 
         _httpClient.Dispose();
+        _pool.Dispose();
         _disposed = true;
     }
 

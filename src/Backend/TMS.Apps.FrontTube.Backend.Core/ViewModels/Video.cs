@@ -6,29 +6,42 @@ using TMS.Apps.FrontTube.Backend.Core.Enums;
 namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
 /// <summary>
-/// ViewModel for managing video player state and interactions.
-/// Wraps a VideoInfo contract loaded via Super.
+/// ViewModel for managing video data and player state.
+/// Can wrap either full Video or VideoMetadata (summary).
 /// </summary>
 public sealed class Video : IDisposable
 {
     private readonly Super _super;
     private readonly ILogger<Video> _logger;
+    private readonly Common.ProviderCore.Contracts.Video? _videoInfo;
+    private readonly VideoMetadata? _metadata;
     private bool _disposed;
 
     /// <summary>
-    /// Creates a new VideoPlayerViewModel wrapping the provided video info.
+    /// Creates a Video ViewModel wrapping full video info.
     /// </summary>
-    /// <param name="super">The parent Super ViewModel.</param>
-    /// <param name="loggerFactory">Logger factory for creating loggers.</param>
-    /// <param name="videoInfo">The video info contract to wrap.</param>
-    public Video(Super super, ILoggerFactory loggerFactory, Common.ProviderCore.Contracts.Video videoInfo)
+    internal Video(Super super, ILoggerFactory loggerFactory, Common.ProviderCore.Contracts.Video videoInfo)
     {
         _super = super ?? throw new ArgumentNullException(nameof(super));
         ArgumentNullException.ThrowIfNull(loggerFactory);
         _logger = loggerFactory.CreateLogger<Video>();
         
-        VideoInfo = videoInfo ?? throw new ArgumentNullException(nameof(videoInfo));
-        VideoId = videoInfo.RemoteId;
+        _videoInfo = videoInfo ?? throw new ArgumentNullException(nameof(videoInfo));
+        RemoteId = videoInfo.RemoteId;
+        Title = videoInfo.Title;
+        Description = videoInfo.DescriptionText;
+        Duration = videoInfo.Duration;
+        ViewCount = videoInfo.ViewCount;
+        ViewCountText = videoInfo.ViewCountText;
+        LikeCount = videoInfo.LikeCount;
+        PublishedAt = videoInfo.PublishedAt;
+        PublishedAgo = videoInfo.PublishedAgo;
+        Thumbnails = videoInfo.Thumbnails;
+        ChannelName = videoInfo.Channel.Name;
+        ChannelRemoteId = videoInfo.Channel.RemoteId;
+        ChannelAvatars = videoInfo.Channel.Avatars;
+        IsLive = videoInfo.IsLive;
+        IsUpcoming = videoInfo.IsUpcoming;
         LoadState = VideoLoadState.Loaded;
 
         UpdateAvailableQualities();
@@ -37,7 +50,38 @@ public sealed class Video : IDisposable
         UpdateEmbedUrl();
         UpdateDashManifestUrl();
 
-        _logger.LogDebug("VideoPlayerViewModel created for: {Title}", videoInfo.Title);
+        _logger.LogDebug("Video ViewModel created for full video: {Title}", videoInfo.Title);
+    }
+
+    /// <summary>
+    /// Creates a Video ViewModel wrapping video metadata (summary).
+    /// </summary>
+    internal Video(Super super, ILoggerFactory loggerFactory, VideoMetadata metadata)
+    {
+        _super = super ?? throw new ArgumentNullException(nameof(super));
+        ArgumentNullException.ThrowIfNull(loggerFactory);
+        _logger = loggerFactory.CreateLogger<Video>();
+        
+        _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+        RemoteId = metadata.RemoteId;
+        Title = metadata.Title;
+        Description = null;
+        Duration = metadata.Duration;
+        ViewCount = metadata.ViewCount;
+        ViewCountText = metadata.ViewCountText;
+        LikeCount = 0;
+        PublishedAt = metadata.PublishedAt;
+        PublishedAgo = metadata.PublishedAgo;
+        Thumbnails = metadata.Thumbnails;
+        ChannelName = metadata.Channel.Name;
+        ChannelRemoteId = metadata.Channel.RemoteId;
+        ChannelAvatars = metadata.Channel.Avatars;
+        IsLive = metadata.IsLive;
+        IsUpcoming = metadata.IsUpcoming;
+        IsShort = metadata.IsShort;
+        LoadState = VideoLoadState.NotLoaded;
+
+        _logger.LogDebug("Video ViewModel created for metadata: {Title}", metadata.Title);
     }
 
     /// <summary>
@@ -46,14 +90,86 @@ public sealed class Video : IDisposable
     public event EventHandler? StateChanged;
 
     /// <summary>
-    /// Gets the current video information.
+    /// The video's remote identifier.
     /// </summary>
-    public Common.ProviderCore.Contracts.Video VideoInfo { get; }
+    public string RemoteId { get; }
 
     /// <summary>
-    /// Gets the current video ID.
+    /// The video title.
     /// </summary>
-    public string VideoId { get; }
+    public string Title { get; }
+
+    /// <summary>
+    /// The video description.
+    /// </summary>
+    public string Description { get; } = string.Empty;
+
+    /// <summary>
+    /// The video duration.
+    /// </summary>
+    public TimeSpan Duration { get; }
+
+    /// <summary>
+    /// The view count.
+    /// </summary>
+    public long ViewCount { get; }
+
+    /// <summary>
+    /// The like count.
+    /// </summary>
+    public long LikeCount { get; }
+
+    /// <summary>
+    /// The formatted view count text.
+    /// </summary>
+    [Obsolete("Use ViewCount and format on client side")]
+    public string? ViewCountText { get; }
+
+    /// <summary>
+    /// The date/time the video was published.
+    /// </summary>
+    public DateTimeOffset? PublishedAt { get; }
+
+    /// <summary>
+    /// Human-friendly "published ago" text.
+    /// </summary>
+    [Obsolete("Use PublishedAt and format on client side")]
+    public string? PublishedAgo { get; }
+
+    /// <summary>
+    /// Video thumbnails.
+    /// </summary>
+    public IReadOnlyList<Common.ProviderCore.Contracts.Image> Thumbnails { get; }
+
+    /// <summary>
+    /// Channel name.
+    /// </summary>
+    public string ChannelName { get; }
+
+    /// <summary>
+    /// Channel remote ID.
+    /// </summary>
+    public string ChannelRemoteId { get; }
+
+    /// <summary>
+    /// Channel avatar images.
+    /// </summary>
+    public IReadOnlyList<Common.ProviderCore.Contracts.Image> ChannelAvatars { get; }
+
+    /// <summary>
+    /// Whether this is a short-form video.
+    /// </summary>
+    public bool IsShort { get; }
+
+    /// <summary>
+    /// Whether the video is a live stream.
+    /// </summary>
+    public bool IsLive { get; }
+
+    /// <summary>
+    /// Whether the video is an upcoming premiere.
+    /// </summary>
+    public bool IsUpcoming { get; }
 
     /// <summary>
     /// Gets the current loading state.
@@ -64,7 +180,19 @@ public sealed class Video : IDisposable
     /// Gets the error message if loading failed.
     /// </summary>
     public string? ErrorMessage { get; }
+    /// <summary>
+    /// Gets the URL of the best available thumbnail for display.
+    /// </summary>
+    public string? GetBestThumbnailUrl()
+    {
+        if (Thumbnails.Count == 0)
+        {
+            return null;
+        }
 
+        var thumbnail = Thumbnails.OrderByDescending(t => t.Width).FirstOrDefault();
+        return thumbnail?.RemoteUrl.ToString();
+    }
     /// <summary>
     /// Gets the current player mode.
     /// </summary>
@@ -131,56 +259,20 @@ public sealed class Video : IDisposable
         OnStateChanged();
     }
 
-    // /// <summary>
-    // /// Gets the watch URL for this video.
-    // /// </summary>
-    // /// <returns>The watch URL.</returns>
-    // public Uri GetWatchUrl()
-    // {
-    //     return _super.Proxy.ProxyWatchVideoRemoteUrl(VideoId);
-    // }
-
-    // /// <summary>
-    // /// Gets the DASH manifest URL for this video.
-    // /// </summary>
-    // /// <returns>The DASH manifest URL.</returns>
-    // public Uri GetDashManifestUrl()
-    // {
-    //     return _super.Proxy.ProxyDashManifestRemoteUrl(VideoId);
-    // }
-
-    // /// <summary>
-    // /// Gets the proxied DASH manifest URL for this video (local proxy endpoint).
-    // /// </summary>
-    // /// <returns>The proxied DASH manifest URL.</returns>
-    // public Uri GetProxiedDashManifestUrl()
-    // {
-    //     return _super.Proxy.ProxyDashManifestLocalUrl(VideoId);
-    // }
-
-    // /// <summary>
-    // /// Gets the HLS manifest URL for this video.
-    // /// </summary>
-    // /// <returns>The HLS manifest URL.</returns>
-    // public Uri GetHlsManifestUrl()
-    // {
-    //     return _super.Proxy.ProxyHlsManifestRemoteUrl(VideoId);
-    // }
-
     private void UpdateAvailableQualities()
     {
-        if (VideoInfo.CombinedStreams.Count == 0)
+        if (_videoInfo?.CombinedStreams.Count == 0)
         {
             AvailableQualities = [];
             SelectedQuality = null;
             return;
         }
 
-        AvailableQualities = VideoInfo.CombinedStreams
+        AvailableQualities = _videoInfo?.CombinedStreams
             .Where(s => !string.IsNullOrEmpty(s.QualityLabel))
             .Select(s => s.QualityLabel!)
             .Distinct()
-            .ToList();
+            .ToList() ?? [];
 
         // Default to highest quality
         SelectedQuality = AvailableQualities.FirstOrDefault();
@@ -188,13 +280,13 @@ public sealed class Video : IDisposable
 
     private void UpdateStreamUrl()
     {
-        if (VideoInfo.CombinedStreams.Count == 0 || string.IsNullOrEmpty(SelectedQuality))
+        if (_videoInfo?.CombinedStreams.Count == 0 || string.IsNullOrEmpty(SelectedQuality))
         {
             CurrentStreamUrl = null;
             return;
         }
 
-        var selectedStream = VideoInfo.CombinedStreams
+        var selectedStream = _videoInfo?.CombinedStreams
             .FirstOrDefault(s => s.QualityLabel == SelectedQuality);
 
         CurrentStreamUrl = selectedStream?.RemoteUrl.ToString();
@@ -203,45 +295,45 @@ public sealed class Video : IDisposable
 
     private void UpdateEmbedUrl()
     {
-        if (string.IsNullOrEmpty(VideoId))
+        if (string.IsNullOrEmpty(RemoteId))
         {
             EmbedUrl = null;
             return;
         }
 
-        EmbedUrl = _super.VideoProvider.GetEmbedUrl(VideoId).ToString();
+        EmbedUrl = _super.VideoProvider.GetEmbedUrl(RemoteId).ToString();
         _logger.LogDebug("Embed URL updated: {EmbedUrl}", EmbedUrl);
     }
 
     private void UpdateDashManifestUrl()
     {
-        if (string.IsNullOrEmpty(VideoId))
+        if (string.IsNullOrEmpty(RemoteId))
         {
             DashManifestUrl = null;
             return;
         }
 
         // Use proxied URL to avoid CORS issues
-        var proxiedUrl = _super.Proxy.ProxyDashManifestLocalUrl(VideoId);
+        var proxiedUrl = _super.Proxy.ProxyDashManifestLocalUrl(RemoteId);
         DashManifestUrl = proxiedUrl.ToString();
         _logger.LogDebug("DASH manifest URL updated: {DashUrl}", DashManifestUrl);
     }
 
     private void UpdateDashQualities()
     {
-        if (VideoInfo.AdaptiveStreams.Count == 0)
+        if (_videoInfo?.AdaptiveStreams.Count == 0)
         {
             AvailableDashQualities = [];
             return;
         }
 
         // Get video-only adaptive formats and extract quality labels
-        AvailableDashQualities = VideoInfo.AdaptiveStreams
+        AvailableDashQualities = _videoInfo?.AdaptiveStreams
             .Where(s => !string.IsNullOrEmpty(s.QualityLabel) && s.Type == StreamType.Video)
             .Select(s => s.QualityLabel!)
             .Distinct()
             .OrderByDescending(ParseQualityHeight)
-            .ToList();
+            .ToList() ?? [];
 
         _logger.LogDebug("Available DASH qualities: {Qualities}", string.Join(", ", AvailableDashQualities));
     }

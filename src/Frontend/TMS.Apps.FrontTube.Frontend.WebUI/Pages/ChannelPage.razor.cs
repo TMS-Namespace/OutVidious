@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
@@ -31,13 +30,13 @@ public partial class ChannelPage : ComponentBase, IDisposable
     [Parameter]
     public string? ChannelId { get; set; }
 
-    protected Backend.Core.ViewModels.Channel? ViewModel { get; private set; }
+    protected Channel? ViewModel { get; private set; }
 
     protected bool IsInitialLoading { get; private set; } = true;
 
     protected string? ErrorMessage { get; private set; }
 
-    protected string PageTitle => ViewModel?.ChannelMetadata.Name ?? "Channel";
+    protected string PageTitle => ViewModel?.Name ?? "Channel";
 
     protected int SelectedTabIndex
     {
@@ -112,7 +111,7 @@ public partial class ChannelPage : ComponentBase, IDisposable
 
             ViewModel.StateChanged += OnViewModelStateChanged;
 
-            Logger.LogDebug("Channel loaded: {ChannelName}", ViewModel.ChannelMetadata.Name);
+            Logger.LogDebug("Channel loaded: {ChannelName}", ViewModel.Name);
 
             // Mark initial load complete and show content - videos will load in background
             _initialLoadComplete = true;
@@ -136,7 +135,7 @@ public partial class ChannelPage : ComponentBase, IDisposable
         }
     }
 
-    protected async Task HandleVideoClick(VideoMetadata video)
+    protected async Task HandleVideoClick(Video video)
     {
         var watchUrl = $"/watch/{video.RemoteId}";
         NavigationManager.NavigateTo(watchUrl);
@@ -153,16 +152,16 @@ public partial class ChannelPage : ComponentBase, IDisposable
 
     private async Task OnTabChangedAsync(int tabIndex)
     {
-        if (ViewModel?.ChannelMetadata is null || 
+        if (ViewModel is null || 
             tabIndex < 0 || 
-            tabIndex >= ViewModel.ChannelMetadata.AvailableTabs.Count ||
+            tabIndex >= ViewModel.AvailableTabs.Count ||
             _cts is null)
         {
             return;
         }
 
-        var tab = ViewModel.ChannelMetadata.AvailableTabs[tabIndex];
-        await ViewModel.SelectTabAsync(tab.RemoteTabId, _cts.Token);
+        var tabId = ViewModel.AvailableTabs[tabIndex];
+        await ViewModel.SelectTabAsync(tabId, _cts.Token);
     }
 
     private void OnViewModelStateChanged(object? sender, EventArgs e)
@@ -172,40 +171,24 @@ public partial class ChannelPage : ComponentBase, IDisposable
 
     private string? GetBestAvatar()
     {
-        var avatars = ViewModel?.ChannelMetadata.Avatars;
-        
-        if (avatars is null || avatars.Count == 0)
+        var avatarUrl = ViewModel?.GetBestAvatarUrl();
+        if (avatarUrl == null)
         {
             return null;
         }
 
-        // Prefer larger avatars for the channel header
-        var preferred = avatars
-            .Where(a => a.Width >= 88)
-            .OrderByDescending(a => a.Width)
-            .FirstOrDefault();
-
-        var avatar = preferred ?? avatars.First();
-        return Orchestrator.Super.BuildImageProxyUrl(avatar.RemoteUrl);
+        return Orchestrator.Super.BuildImageProxyUrl(new Uri(avatarUrl));
     }
 
     private string? GetBestBanner()
     {
-        var banners = ViewModel?.ChannelMetadata.Banners;
-        
-        if (banners is null || banners.Count == 0)
+        var bannerUrl = ViewModel?.GetBestBannerUrl();
+        if (bannerUrl == null)
         {
             return null;
         }
 
-        // Prefer a banner around 1280-1920 width
-        var preferred = banners
-            .Where(b => b.Width >= 1280 && b.Width <= 2560)
-            .OrderByDescending(b => b.Width)
-            .FirstOrDefault();
-
-        var banner = preferred ?? banners.First();
-        return Orchestrator.Super.BuildImageProxyUrl(banner.RemoteUrl);
+        return Orchestrator.Super.BuildImageProxyUrl(new Uri(bannerUrl));
     }
 
     public void Dispose()

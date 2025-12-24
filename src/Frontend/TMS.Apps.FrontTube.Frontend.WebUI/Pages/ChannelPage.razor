@@ -34,24 +34,24 @@
                 <MudAvatar Size="Size.Large" Class="channel-avatar">
                     <AsyncImageComponent 
                         ImageUrl="@AvatarUrl" 
-                        Alt="@ViewModel.ChannelMetadata.Name"
+                        Alt="@ViewModel.Name"
                         ObjectFit="ObjectFit.Cover"
                         UseAsyncLoading="false" />
                 </MudAvatar>
 
                 <div class="channel-details">
                     <MudText Typo="Typo.h4" Class="channel-name">
-                        @ViewModel.ChannelMetadata.Name
+                        @ViewModel.Name
                     </MudText>
 
                     <MudText Typo="Typo.body2" Color="Color.Secondary">
-                        @ViewModel.ChannelMetadata.SubscriberCountText
+                        @ViewModel.SubscriberCount.ToString("N0") subscribers
                     </MudText>
 
-                    @if (!string.IsNullOrWhiteSpace(ViewModel.ChannelMetadata.Description))
+                    @if (!string.IsNullOrWhiteSpace(ViewModel.Description))
                     {
                         <MudText Typo="Typo.body2" Class="channel-description mt-2">
-                            @ViewModel.ChannelMetadata.Description
+                            @ViewModel.Description
                         </MudText>
                     }
                 </div>
@@ -59,15 +59,15 @@
         </div>
 
         <!-- Tab Navigation -->
-        @if (ViewModel.ChannelMetadata.AvailableTabs.Count > 0)
+        @if (ViewModel.AvailableTabs.Count > 0)
         {
             <MudTabs @bind-ActivePanelIndex="SelectedTabIndex" 
                      Elevation="0" 
                      ApplyEffectsToContainer="true"
                      Class="channel-tabs">
-                @foreach (var tab in ViewModel.ChannelMetadata.AvailableTabs)
+                @foreach (var tabId in ViewModel.AvailableTabs)
                 {
-                    <MudTabPanel Text="@tab.Name" ID="@tab.RemoteTabId" />
+                    <MudTabPanel Text="@tabId" ID="@tabId" />
                 }
             </MudTabs>
         }

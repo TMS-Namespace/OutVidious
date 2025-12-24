@@ -237,27 +237,23 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
 
     private string? GetPosterUrl()
     {
-        // Get the highest quality thumbnail
-        var thumbnail = ViewModel?.VideoInfo?.Thumbnails
-            .OrderByDescending(t => t.Width * t.Height)
-            .FirstOrDefault();
-
-        if (thumbnail is null)
+        var thumbnailUrl = ViewModel?.GetBestThumbnailUrl();
+        if (thumbnailUrl == null)
         {
             return null;
         }
 
-        return Orchestrator.Super.BuildImageProxyUrl(thumbnail.RemoteUrl);
+        return Orchestrator.Super.BuildImageProxyUrl(new Uri(thumbnailUrl));
     }
 
     private string GetAuthorUrl()
     {
-        if (string.IsNullOrEmpty(ProviderBaseUrl) || ViewModel?.VideoInfo == null)
+        if (string.IsNullOrEmpty(ProviderBaseUrl) || ViewModel == null || string.IsNullOrEmpty(ViewModel.ChannelRemoteId))
         {
             return "#";
         }
 
-        return $"{ProviderBaseUrl}/channel/{ViewModel.VideoInfo.Channel.RemoteId}";
+        return $"{ProviderBaseUrl}/channel/{ViewModel.ChannelRemoteId}";
     }
 
     private static string FormatViewCount(long count)

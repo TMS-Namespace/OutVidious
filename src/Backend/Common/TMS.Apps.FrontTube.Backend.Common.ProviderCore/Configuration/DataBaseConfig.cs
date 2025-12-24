@@ -27,7 +27,7 @@ public sealed record DataBaseConfig
     /// Database username.
     /// Default: root.
     /// </summary>
-    public string Username { get; init; } = "root";
+    public string Username { get; init; } = string.Empty;
 
     /// <summary>
     /// Database password.
@@ -64,6 +64,12 @@ public sealed record DataBaseConfig
     /// Default: true.
     /// </summary>
     public bool IsDevMode { get; init; } = true;
+
+    /// <summary>
+    /// Whether to log all database queries to the logger.
+    /// Default: false (for production performance).
+    /// </summary>
+    public bool LogAllQueries { get; init; } = false;
 
     /// <summary>
     /// Builds a PostgreSQL connection string from the configured properties.

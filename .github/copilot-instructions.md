@@ -19,7 +19,7 @@ applyTo: '**'
   - **Repository** - Data access layer, handles local storage of cached objects etc.
     - **DataBase** - A Code first, `PostgreSQL` database access via EF Core, migrations, DbContext, entities.
     - **Cache** - Caching layer, abstracts caching logic, uses `DataBase` to persist cached data, and `Providers` to fetch data when not in cache.
-  - **Core** - Top level backend project, that abstracts all business logic in `ViewModels (VMs)` for UI consumption, and uses events to notify UI, It also manages configurations, orchestrates calls to `Providers` and `Repository`.
+  - **Core** - Top level backend project, fully self-contained (manages everything internally, and does not expose what it reference), and abstracts all business logic in `ViewModels (VMs)` for UI consumption, and uses events to notify UI, It also manages configurations, orchestrates calls to `Providers` and `Repository`.
 - **Frontend** - The end user UI implemented in various frameworks.
   - **WebUI** - Blazor based UI, consumes only `ViewModels` from backend (passed as parameters).
 
@@ -58,6 +58,14 @@ The app uses **Super** pattern. All business logic lives in ViewModels of `Core`
 
 ## Critical Patterns
 
+### Database design
+- Code-first approach using `Entity Framework Core` and `PostgreSQL`.
+- All SQL tables and entities are named using `snake_case`, and mapped via EF Core to `PascalCase` C# classes.
+- Used to cache data fetched from external providers, and user data (e.g., subscriptions, play lists, watch history etc...).
+- All entities have an `Id` primary key of type `Guid`.
+- All enum table names are prefixed with `enum_`.
+- All tables that are not shared between multiple users, has names prefixed with `scoped_` and have a `user_id` column to identify the owner user.
+
 ### Logging
 
 - Serilog writes to `logs/front-tube-YYYYMMDD.log` (rolling daily), and console.
@@ -67,19 +75,19 @@ The app uses **Super** pattern. All business logic lives in ViewModels of `Core`
 
 ### ViewModel Creation and Usage
 - All ViewModels are created and managed by the `Super`view model.
+- `Super` shall be a singleton for the whole UI app, created once via the `Orchestrator` singleton service.
+- `Super` receives only `ILoggerFactory` and `IHttpClientFactory` in its constructor, and exposes it an internal property to other VMs. Each view model creates its own `ILogger<T>` from it during construction.
+- All view models has reference to `Super`.
 - UI components receive ViewModels as parameters from their parent components or pages.
 - ViewModels expose events to notify the UI of state changes, data updates, or errors.
 - UI components subscribe to these events to update the UI accordingly.
 - `ViewModels` should not swallow exceptions silently; they must log errors and propagate them to the UI for user-friendly handling.
-- `Super` shall be a singleton for the whole UI app, created once via the `Orchestrator` service.
-- `Super` receives only `ILoggerFactory` and `IHttpClientFactory` in its constructor, and exposes it an internal property to other VMs. Each view model creates its own `ILogger<T>` from it during construction.
-- All view models has reference to `Super`.
 
 ### Blazor Components Rules
 
   - **NEVER** put C# code in `.razor` files - always use `.razor.cs` code-behind
   - **NEVER** use `@code`, `@inject`, `@using` in `.razor` files, prefer code behind or `_Imports.razor`
-  - We have only one service that can be injected into components `Orchestrator`, which is used to create the `Super` VM, manage and parse Urls, etc..
+  - We have only one singleton service that can be injected into components `Orchestrator`, which is used to create the `Super` VM, manage and parse Urls, etc..
   - `Orchestrator` service should contain all of the needed logic to manage and sync other components and services, all possible UI logic should be put in it, if is makes no sense for it to be in VMs, No other services should be created.
   - Components can receive `ViewModels` via `[Parameter]`.
   - Subscribe to `ViewModel` events in `OnParametersSet` or when needed, unsubscribe in `Dispose`
@@ -106,6 +114,7 @@ The app uses **Super** pattern. All business logic lives in ViewModels of `Core`
 - Caching is handled by the `Cache` project in the backend, which interacts with the database to store and retrieve cached data.
 - All of the cached object types have configurable expiration times, after which they are considered stale and will be refreshed upon the request.
 - All database operations that related to caching, shall be done in the background, and return the fetched data to the requester as soon as possible, without waiting for the data base operation to complete.
+- Object lookups should be performed using there unique identifiers (which is of `GUID` type) to ensure accurate retrieval.
 - The caching logic goes as follows:
   1. When data is requested, first check the in-memory cache.
   2. If data is found and is fresh (not expired), return it.

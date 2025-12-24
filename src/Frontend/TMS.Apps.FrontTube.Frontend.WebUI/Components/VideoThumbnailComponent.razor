@@ -32,7 +32,7 @@
             @Video?.Title
         </MudText>
         
-        @if (ShowChannelName && Video?.Channel is not null)
+        @if (ShowChannelName && !string.IsNullOrEmpty(Video?.ChannelName))
         {
             <span @onclick:stopPropagation="true">
                 <MudLink Typo="Typo.caption" 
@@ -40,7 +40,7 @@
                          Class="channel-name"
                          Href="@ChannelUrl"
                          @onclick="OnChannelClick">
-                    @Video.Channel.Name
+                    @Video.ChannelName
                 </MudLink>
             </span>
         }

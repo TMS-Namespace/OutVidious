@@ -11,7 +11,7 @@ internal static class EndpointsInstaller
     /// <summary>
     /// Maps all application endpoints including proxy endpoints, API controllers, and Blazor components.
     /// </summary>
-    internal static WebApplication MapApplicationEndpoints(this WebApplication app)
+    internal static WebApplication AddEndpoints(this WebApplication app)
     {
         // Map proxy endpoints for video and image playback
         app.MapProxyEndpoints();

@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.Converters;
@@ -17,9 +18,16 @@ public sealed class InvidiousVideoProvider : ProviderBase
 {
     private readonly JsonSerializerOptions _jsonOptions;
 
-    public InvidiousVideoProvider(HttpClient httpClient, ILogger<InvidiousVideoProvider> logger, Uri baseUrl)
-        : base(httpClient, logger, baseUrl)
+    public InvidiousVideoProvider(
+        ILoggerFactory loggerFactory,
+        IHttpClientFactory httpClientFactory,
+        ProviderConfig config)
+        : base(CreateHttpClient(config), loggerFactory.CreateLogger<InvidiousVideoProvider>(), config.BaseUri)
     {
+        ArgumentNullException.ThrowIfNull(loggerFactory);
+        ArgumentNullException.ThrowIfNull(httpClientFactory);
+        ArgumentNullException.ThrowIfNull(config);
+
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
@@ -27,6 +35,23 @@ public sealed class InvidiousVideoProvider : ProviderBase
             NumberHandling = JsonNumberHandling.AllowReadingFromString,
             Converters = { new FlexibleStringConverter() }
         };
+    }
+
+    private static HttpClient CreateHttpClient(ProviderConfig config)
+    {
+        var handler = new HttpClientHandler();
+
+        if (config.BypassSslValidation)
+        {
+            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+        }
+
+        var client = new HttpClient(handler)
+        {
+            Timeout = TimeSpan.FromSeconds(config.TimeoutSeconds)
+        };
+
+        return client;
     }
 
     /// <inheritdoc />

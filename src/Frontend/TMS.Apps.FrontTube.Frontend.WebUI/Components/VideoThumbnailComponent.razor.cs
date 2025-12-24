@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
+using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Components;
@@ -16,10 +15,10 @@ public partial class VideoThumbnailComponentBase : ComponentBase
     private Orchestrator Orchestrator { get; set; } = default!;
 
     /// <summary>
-    /// The video summary to display.
+    /// The video to display.
     /// </summary>
     [Parameter]
-    public VideoMetadata? Video { get; set; }
+    public Video? Video { get; set; }
 
     /// <summary>
     /// Whether to show the channel name.
@@ -37,13 +36,13 @@ public partial class VideoThumbnailComponentBase : ComponentBase
     /// Callback when the video is clicked.
     /// </summary>
     [Parameter]
-    public EventCallback<VideoMetadata> OnVideoClick { get; set; }
+    public EventCallback<Video> OnVideoClick { get; set; }
 
     /// <summary>
     /// Callback when the channel name is clicked.
     /// </summary>
     [Parameter]
-    public EventCallback<ChannelMetadata> OnChannelClicked { get; set; }
+    public EventCallback<string> OnChannelClicked { get; set; }
 
     protected string ThumbnailContainerId => _containerId;
 
@@ -51,7 +50,7 @@ public partial class VideoThumbnailComponentBase : ComponentBase
 
     protected string FormattedDuration => FormatDuration(Video?.Duration ?? TimeSpan.Zero);
 
-    protected string ChannelUrl => Video?.Channel?.ChannelUrl?.ToString() ?? "#";
+    protected string ChannelUrl => $"/channel/{Video?.ChannelRemoteId}";
 
     protected string CardStyle => Width.HasValue 
         ? $"width: {Width}px; cursor: pointer;" 
@@ -59,41 +58,26 @@ public partial class VideoThumbnailComponentBase : ComponentBase
 
     protected async Task OnChannelClick()
     {
-        if (Video?.Channel is not null)
+        if (!string.IsNullOrEmpty(Video?.ChannelRemoteId))
         {
-            await OnChannelClicked.InvokeAsync(Video.Channel);
+            await OnChannelClicked.InvokeAsync(Video.ChannelRemoteId);
         }
     }
 
     private string GetBestThumbnail()
     {
-        if (Video?.Thumbnails is null || Video.Thumbnails.Count == 0)
+        if (Video == null)
         {
             return "/images/placeholder-video.png";
         }
 
-        // Prefer Medium or High quality for thumbnails
-        var preferredQualities = new[] 
-        { 
-            ImageQuality.Medium, 
-            ImageQuality.High, 
-            ImageQuality.Standard,
-            ImageQuality.Default
-        };
-
-        foreach (var quality in preferredQualities)
+        var thumbnailUrl = Video.GetBestThumbnailUrl();
+        if (thumbnailUrl == null)
         {
-            var thumbnail = Video.Thumbnails.FirstOrDefault(t => t.Quality == quality);
-            
-            if (thumbnail is not null)
-            {
-                return Orchestrator.Super.BuildImageProxyUrl(thumbnail.RemoteUrl);
-            }
+            return "/images/placeholder-video.png";
         }
 
-        // Fall back to the first available thumbnail
-        var fallback = Video.Thumbnails.First();
-        return Orchestrator.Super.BuildImageProxyUrl(fallback.RemoteUrl);
+        return Orchestrator.Super.BuildImageProxyUrl(new Uri(thumbnailUrl));
     }
 
     private static string FormatDuration(TimeSpan duration)

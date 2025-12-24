@@ -1,34 +1,18 @@
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Installers;
 
 /// <summary>
-/// Configures the Orchestrator service.
+/// Configures the Orchestrator
 /// </summary>
 internal static class ServicesInstaller
 {
     /// <summary>
-    /// Adds Orchestrator as a scoped service with SSL bypass configuration for proxy.
+    /// Adds Orchestrator as a scoped service
     /// </summary>
-    internal static IServiceCollection AddOrchestrator(this IServiceCollection services)
+    internal static IServiceCollection AddServices(this IServiceCollection services)
     {
-        // Define the HTTP handler configurator for SSL bypass (for self-signed certificates in development)
-        static void ConfigureProxyHandler(HttpClientHandler handler)
-        {
-            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        }
-
-        services.AddScoped<Orchestrator>(sp =>
-        {
-            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-            var videoProvider = sp.GetRequiredService<IProvider>();
-            var dataRepository = sp.GetRequiredService<ICacheManager>();
-            
-            return new Orchestrator(loggerFactory, httpClientFactory, videoProvider, dataRepository, ConfigureProxyHandler);
-        });
+        services.AddSingleton<Orchestrator>();    
 
         return services;
     }
