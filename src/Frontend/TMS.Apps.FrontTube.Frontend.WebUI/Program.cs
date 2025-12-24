@@ -93,8 +93,22 @@ try
         return new CacheManager(config, loggerFactory);
     });
 
+    // Define the HTTP handler configurator for SSL bypass (for self-signed certificates in development)
+    static void ConfigureProxyHandler(HttpClientHandler handler)
+    {
+        handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+    }
+
     // Register Orchestrator as scoped service (one per user session)
-    builder.Services.AddScoped<Orchestrator>();
+    builder.Services.AddScoped<Orchestrator>(sp =>
+    {
+        var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+        var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+        var videoProvider = sp.GetRequiredService<IProvider>();
+        var dataRepository = sp.GetRequiredService<ICacheManager>();
+        
+        return new Orchestrator(loggerFactory, httpClientFactory, videoProvider, dataRepository, ConfigureProxyHandler);
+    });
 
     // Add API controllers support
     builder.Services.AddControllers();
@@ -115,178 +129,29 @@ try
     app.UseAntiforgery();
 
     // Proxy endpoint for DASH manifest to avoid CORS issues (supports both GET and HEAD)
-    app.MapMethods("/api/proxy/dash/{videoId}", new[] { "GET", "HEAD" }, async (string videoId, IProvider videoProvider, HttpContext context) =>
+    app.MapMethods("/api/proxy/dash/{videoId}", new[] { "GET", "HEAD" }, async (string videoId, Orchestrator orchestrator, HttpContext context, CancellationToken cancellationToken) =>
     {
-        Log.Debug("DASH manifest proxy request: {Method} {VideoId}", context.Request.Method, videoId);
-        
-        try
-        {
-            var dashUrl = videoProvider.GetDashManifestUrl(videoId);
-            if (dashUrl == null)
-            {
-                Log.Warning("Provider does not support DASH manifest for video: {VideoId}", videoId);
-                return Results.NotFound("DASH manifest not supported");
-            }
-            Log.Debug("Fetching DASH manifest from: {DashUrl}", dashUrl);
-            
-            using var httpClient = new HttpClient(new HttpClientHandler
-            {
-                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-            });
-            
-            var response = await httpClient.GetAsync(dashUrl);
-            Log.Debug("DASH manifest response: {StatusCode}", response.StatusCode);
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Log.Warning("DASH manifest fetch failed: {StatusCode} - {Content}", response.StatusCode, errorContent);
-                return Results.StatusCode((int)response.StatusCode);
-            }
-            
-            var content = await response.Content.ReadAsStringAsync();
-            Log.Debug("DASH manifest content length: {Length} chars", content.Length);
-            
-            // Replace all video URLs to route through our proxy
-            // The manifest contains URLs like https://host/videoplayback?... or /videoplayback?...
-            // We need to route them through our /api/proxy/videoplayback endpoint
-            var baseUrl = videoProvider.BaseUrl.ToString().TrimEnd('/');
-            
-            // Replace absolute URLs with our proxy
-            content = content.Replace($"{baseUrl}/videoplayback", "/api/proxy/videoplayback");
-            
-            // Replace relative URLs that might include host info in query params
-            // The manifest may have URLs like //host/videoplayback or just /videoplayback
-            content = System.Text.RegularExpressions.Regex.Replace(
-                content,
-                @"(https?:)?//[^/""']+/videoplayback",
-                "/api/proxy/videoplayback");
-            
-            Log.Debug("DASH manifest rewritten successfully");
-            
-            context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
-            context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-            context.Response.Headers.Append("Access-Control-Allow-Headers", "Range, Content-Type");
-            
-            return Results.Content(content, "application/dash+xml");
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to proxy DASH manifest for video {VideoId}", videoId);
-            return Results.Problem($"Failed to fetch DASH manifest: {ex.Message}");
-        }
+        return await orchestrator.Super.Proxy.ProxyDashManifestAsync(videoId, context, cancellationToken);
     });
 
     // Proxy endpoint for video playback segments to avoid CORS issues
     // This handles both /api/proxy/videoplayback and legacy /videoplayback paths
-    app.MapMethods("/api/proxy/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IProvider videoProvider) =>
+    app.MapMethods("/api/proxy/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, Orchestrator orchestrator, CancellationToken cancellationToken) =>
     {
-        await ProxyVideoPlaybackAsync(context, videoProvider);
+        await orchestrator.Super.Proxy.ProxyVideoPlaybackAsync(context, cancellationToken);
     });
     
     // Also support /videoplayback for backwards compatibility and any edge cases
-    app.MapMethods("/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IProvider videoProvider) =>
+    app.MapMethods("/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, Orchestrator orchestrator, CancellationToken cancellationToken) =>
     {
-        await ProxyVideoPlaybackAsync(context, videoProvider);
+        await orchestrator.Super.Proxy.ProxyVideoPlaybackAsync(context, cancellationToken);
     });
     
     // Handle /companion/videoplayback URLs that might appear in manifests
-    app.MapMethods("/companion/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, IProvider videoProvider) =>
+    app.MapMethods("/companion/videoplayback", new[] { "GET", "HEAD", "OPTIONS" }, async (HttpContext context, Orchestrator orchestrator, CancellationToken cancellationToken) =>
     {
-        await ProxyVideoPlaybackAsync(context, videoProvider);
+        await orchestrator.Super.Proxy.ProxyVideoPlaybackAsync(context, cancellationToken);
     });
-
-    async Task ProxyVideoPlaybackAsync(HttpContext context, IProvider videoProvider)
-    {
-        var queryString = context.Request.QueryString.Value ?? "";
-        
-        // Check if there's a host parameter in the query string (used by YouTube CDN)
-        var hostMatch = System.Text.RegularExpressions.Regex.Match(queryString, @"[&?]host=([^&]+)");
-        string proxyUrl;
-        
-        if (hostMatch.Success)
-        {
-            // Use the host from query parameter for direct YouTube CDN access
-            var cdnHost = System.Net.WebUtility.UrlDecode(hostMatch.Groups[1].Value);
-            proxyUrl = $"https://{cdnHost}/videoplayback{queryString}";
-            Log.Debug("Video proxy using CDN host: {CdnHost}, Method: {Method}", cdnHost, context.Request.Method);
-        }
-        else
-        {
-            // Fallback to provider proxy
-            var baseUrl = videoProvider.BaseUrl.ToString().TrimEnd('/');
-            proxyUrl = $"{baseUrl}/videoplayback{queryString}";
-            Log.Debug("Video proxy using provider: {BaseUrl}, Method: {Method}", baseUrl, context.Request.Method);
-        }
-        
-        // Handle CORS preflight
-        if (context.Request.Method == "OPTIONS")
-        {
-            context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
-            context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-            context.Response.Headers.Append("Access-Control-Allow-Headers", "Range, Content-Type");
-            context.Response.Headers.Append("Access-Control-Max-Age", "86400");
-            context.Response.StatusCode = 204;
-            return;
-        }
-        
-        try
-        {
-            using var httpClient = new HttpClient(new HttpClientHandler
-            {
-                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-            });
-            httpClient.Timeout = TimeSpan.FromSeconds(60);
-            
-            var method = context.Request.Method == "HEAD" ? HttpMethod.Head : HttpMethod.Get;
-            var request = new HttpRequestMessage(method, proxyUrl);
-            
-            // Forward range headers for video seeking
-            if (context.Request.Headers.TryGetValue("Range", out var rangeHeader))
-            {
-                request.Headers.TryAddWithoutValidation("Range", rangeHeader.ToString());
-                Log.Debug("Forwarding Range header: {Range}", rangeHeader.ToString());
-            }
-            
-            var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-            Log.Debug("Video proxy response: {StatusCode} {ReasonPhrase}", (int)response.StatusCode, response.ReasonPhrase);
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                Log.Warning("Video proxy failed: {StatusCode} for URL: {Url}", (int)response.StatusCode, proxyUrl);
-            }
-            
-            context.Response.StatusCode = (int)response.StatusCode;
-            context.Response.ContentType = response.Content.Headers.ContentType?.ToString() ?? "video/mp4";
-            
-            // Forward relevant headers
-            if (response.Content.Headers.ContentLength.HasValue)
-            {
-                context.Response.Headers.ContentLength = response.Content.Headers.ContentLength.Value;
-            }
-            if (response.Content.Headers.ContentRange != null)
-            {
-                context.Response.Headers.Append("Content-Range", response.Content.Headers.ContentRange.ToString());
-            }
-            context.Response.Headers.Append("Accept-Ranges", "bytes");
-            context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
-            context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-            context.Response.Headers.Append("Access-Control-Allow-Headers", "Range, Content-Type");
-            context.Response.Headers.Append("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges");
-            
-            // Only copy body for GET requests
-            if (method == HttpMethod.Get)
-            {
-                await response.Content.CopyToAsync(context.Response.Body);
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to proxy video playback: {Url}", proxyUrl);
-            context.Response.StatusCode = 500;
-            await context.Response.WriteAsync($"Failed to proxy video: {ex.Message}");
-        }
-    }
 
     // Map API controllers (like ImageProxyController)
     app.MapControllers();

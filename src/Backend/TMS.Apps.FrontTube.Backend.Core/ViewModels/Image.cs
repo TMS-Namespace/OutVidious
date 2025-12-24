@@ -79,6 +79,15 @@ public sealed class Image : IDisposable
     /// </summary>
     public string DisplayUrl => DataUrl ?? PlaceholderDataUrl ?? FetchUrl.ToString();
 
+    // /// <summary>
+    // /// Gets the provider fetch URL for this image.
+    // /// </summary>
+    // /// <returns>The provider-specific fetch URL.</returns>
+    // public Uri GetImageFetchUrl()
+    // {
+    //     return _super.Proxy.ProxyImageRemoteUrl(OriginalUrl);
+    // }
+
     /// <summary>
     /// Loads the image asynchronously.
     /// </summary>

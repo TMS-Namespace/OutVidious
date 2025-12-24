@@ -24,41 +24,6 @@ public interface IProvider : IProviderMetadata, IDisposable
     Uri GetEmbedUrl(string videoId);
 
     /// <summary>
-    /// Gets the watch/player URL for a video.
-    /// </summary>
-    /// <param name="videoId">The video identifier.</param>
-    /// <returns>The watch URL.</returns>
-    Uri GetWatchUrl(string videoId);
-
-    /// <summary>
-    /// Gets the DASH manifest URL for adaptive streaming.
-    /// </summary>
-    /// <param name="videoId">The video identifier.</param>
-    /// <returns>The DASH manifest URL or null if not supported.</returns>
-    Uri? GetDashManifestUrl(string videoId);
-
-    /// <summary>
-    /// Gets the HLS manifest URL for adaptive streaming.
-    /// </summary>
-    /// <param name="videoId">The video identifier.</param>
-    /// <returns>The HLS manifest URL or null if not supported.</returns>
-    Uri? GetHlsManifestUrl(string videoId);
-
-    /// <summary>
-    /// Gets a proxied DASH manifest URL that bypasses CORS restrictions.
-    /// </summary>
-    /// <param name="videoId">The video identifier.</param>
-    /// <returns>The proxied DASH manifest URL or null if not supported.</returns>
-    Uri? GetProxiedDashManifestUrl(string videoId);
-
-    /// <summary>
-    /// Validates whether a video ID is in the correct format for this provider.
-    /// </summary>
-    /// <param name="videoId">The video identifier to validate.</param>
-    /// <returns>True if the video ID format is valid.</returns>
-    bool IsValidVideoId(string videoId);
-
-    /// <summary>
     /// Gets detailed information about a channel.
     /// </summary>
     /// <param name="channelId">The channel identifier.</param>
@@ -79,25 +44,4 @@ public interface IProvider : IProviderMetadata, IDisposable
         string tab = "videos",
         string? continuationToken = null,
         CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Gets the URL to a channel page.
-    /// </summary>
-    /// <param name="channelId">The channel identifier.</param>
-    /// <returns>The channel page URL.</returns>
-    Uri GetChannelUrl(string channelId);
-
-    /// <summary>
-    /// Validates whether a channel ID is in the correct format for this provider.
-    /// </summary>
-    /// <param name="channelId">The channel identifier to validate.</param>
-    /// <returns>True if the channel ID format is valid.</returns>
-    bool IsValidChannelId(string channelId);
-
-    /// <summary>
-    /// Constructs the provider-specific fetch URL for an image from its original YouTube URL.
-    /// </summary>
-    /// <param name="originalUrl">The original YouTube CDN URL (e.g., https://i.ytimg.com/vi/VIDEO_ID/quality.jpg).</param>
-    /// <returns>The provider URL to fetch the image from.</returns>
-    Uri GetImageFetchUrl(Uri originalUrl);
 }

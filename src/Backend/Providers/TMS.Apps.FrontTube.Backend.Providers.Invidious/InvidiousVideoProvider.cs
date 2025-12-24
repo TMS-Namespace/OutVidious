@@ -1,7 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
@@ -14,7 +13,7 @@ namespace TMS.Apps.FrontTube.Backend.Providers.Invidious;
 /// <summary>
 /// Video provider implementation for Invidious instances.
 /// </summary>
-public sealed partial class InvidiousVideoProvider : ProviderBase
+public sealed class InvidiousVideoProvider : ProviderBase
 {
     private readonly JsonSerializerOptions _jsonOptions;
 
@@ -42,7 +41,10 @@ public sealed partial class InvidiousVideoProvider : ProviderBase
     /// <inheritdoc />
     public override async Task<Video?> GetVideoInfoAsync(string videoId, CancellationToken cancellationToken)
     {
-        ValidateVideoIdNotEmpty(videoId);
+        if (string.IsNullOrWhiteSpace(videoId))
+        {
+            throw new ArgumentException("Video ID cannot be empty.", nameof(videoId));
+        }
 
         var apiUrl = $"{BaseUrl.ToString().TrimEnd('/')}/api/v1/videos/{Uri.EscapeDataString(videoId)}";
         Logger.LogDebug("Fetching video details from Invidious: {ApiUrl}", apiUrl);
@@ -90,57 +92,21 @@ public sealed partial class InvidiousVideoProvider : ProviderBase
     /// <inheritdoc />
     public override Uri GetEmbedUrl(string videoId)
     {
-        ValidateVideoIdNotEmpty(videoId);
-        return CreateUri($"embed/{Uri.EscapeDataString(videoId)}?autoplay=1&local=true");
-    }
-
-    /// <inheritdoc />
-    public override Uri GetWatchUrl(string videoId)
-    {
-        ValidateVideoIdNotEmpty(videoId);
-        return CreateUri($"watch?v={Uri.EscapeDataString(videoId)}");
-    }
-
-    /// <inheritdoc />
-    public override Uri? GetDashManifestUrl(string videoId)
-    {
-        ValidateVideoIdNotEmpty(videoId);
-        // Use local=true for proxying through Invidious (avoids CORS issues)
-        // Use unique_res=1 to ensure unique resolutions in the manifest
-        return CreateUri($"api/manifest/dash/id/{Uri.EscapeDataString(videoId)}?local=true&unique_res=1");
-    }
-
-    /// <inheritdoc />
-    public override Uri? GetHlsManifestUrl(string videoId)
-    {
-        ValidateVideoIdNotEmpty(videoId);
-        return CreateUri($"api/manifest/hls_variant/{Uri.EscapeDataString(videoId)}");
-    }
-
-    /// <inheritdoc />
-    public override Uri? GetProxiedDashManifestUrl(string videoId)
-    {
-        ValidateVideoIdNotEmpty(videoId);
-        // Returns a local proxy endpoint to avoid CORS issues
-        return new Uri($"/api/proxy/dash/{Uri.EscapeDataString(videoId)}", UriKind.Relative);
-    }
-
-    /// <inheritdoc />
-    public override bool IsValidVideoId(string videoId)
-    {
         if (string.IsNullOrWhiteSpace(videoId))
         {
-            return false;
+            throw new ArgumentException("Video ID cannot be empty.", nameof(videoId));
         }
-
-        // YouTube video IDs are 11 characters, containing letters, numbers, underscores, and hyphens
-        return YoutubeVideoIdRegex().IsMatch(videoId);
+        
+        return CreateUri($"embed/{Uri.EscapeDataString(videoId)}?autoplay=1&local=true");
     }
 
     /// <inheritdoc />
     public override async Task<Channel?> GetChannelDetailsAsync(string channelId, CancellationToken cancellationToken)
     {
-        ValidateChannelIdNotEmpty(channelId);
+        if (string.IsNullOrWhiteSpace(channelId))
+        {
+            throw new ArgumentException("Channel ID cannot be empty.", nameof(channelId));
+        }
 
         var apiUrl = $"{BaseUrl.ToString().TrimEnd('/')}/api/v1/channels/{Uri.EscapeDataString(channelId)}";
         Logger.LogDebug("Fetching channel details from Invidious: {ApiUrl}", apiUrl);
@@ -192,7 +158,10 @@ public sealed partial class InvidiousVideoProvider : ProviderBase
         string? continuationToken,
         CancellationToken cancellationToken)
     {
-        ValidateChannelIdNotEmpty(channelId);
+        if (string.IsNullOrWhiteSpace(channelId))
+        {
+            throw new ArgumentException("Channel ID cannot be empty.", nameof(channelId));
+        }
 
         // Default to "videos" tab if not specified
         var tab = string.IsNullOrWhiteSpace(tabId) ? "videos" : tabId;
@@ -254,60 +223,6 @@ public sealed partial class InvidiousVideoProvider : ProviderBase
         }
     }
 
-    /// <inheritdoc />
-    public override Uri GetChannelUrl(string channelId)
-    {
-        ValidateChannelIdNotEmpty(channelId);
-        return CreateUri($"channel/{Uri.EscapeDataString(channelId)}");
-    }
-
-    /// <inheritdoc />
-    public override bool IsValidChannelId(string channelId)
-    {
-        if (string.IsNullOrWhiteSpace(channelId))
-        {
-            return false;
-        }
-
-        // YouTube channel IDs are 24 characters starting with "UC"
-        // Also accept custom handles starting with "@"
-        return YoutubeChannelIdRegex().IsMatch(channelId) || 
-               YoutubeChannelHandleRegex().IsMatch(channelId);
-    }
-
-    /// <inheritdoc />
-    public override Uri GetImageFetchUrl(Uri originalUrl)
-    {
-        ArgumentNullException.ThrowIfNull(originalUrl);
-
-        var host = originalUrl.Host.ToLowerInvariant();
-        var path = originalUrl.AbsolutePath;
-
-        // Video thumbnails from i.ytimg.com: /vi/VIDEO_ID/quality.jpg -> {baseUrl}/vi/VIDEO_ID/quality.jpg
-        if (host is "i.ytimg.com" or "i1.ytimg.com" or "i2.ytimg.com" or "i3.ytimg.com" or "i4.ytimg.com")
-        {
-            // Path already has /vi/..., just append to base URL
-            return CreateUri(path.TrimStart('/'));
-        }
-
-        // Channel images from yt3.ggpht.com: /... -> {baseUrl}/ggpht/...
-        if (host == "yt3.ggpht.com")
-        {
-            return CreateUri($"ggpht{path}");
-        }
-
-        // For other URLs (e.g., googleusercontent), construct ggpht proxy path
-        if (host.EndsWith("googleusercontent.com"))
-        {
-            // Extract the path after the domain and construct ggpht proxy
-            return CreateUri($"ggpht{path}");
-        }
-
-        // Fallback: try to proxy as-is (may not work for all URLs)
-        Logger.LogWarning("Unknown image URL host, attempting direct proxy: {OriginalUrl}", originalUrl);
-        return originalUrl;
-    }
-
     private string BuildChannelVideosUrl(string channelId, string tab, string? continuationToken)
     {
         var baseApiUrl = $"{BaseUrl.ToString().TrimEnd('/')}/api/v1/channels/{Uri.EscapeDataString(channelId)}/{tab}";
@@ -319,13 +234,4 @@ public sealed partial class InvidiousVideoProvider : ProviderBase
 
         return baseApiUrl;
     }
-
-    [GeneratedRegex(@"^[a-zA-Z0-9_-]{11}$")]
-    private static partial Regex YoutubeVideoIdRegex();
-
-    [GeneratedRegex(@"^UC[a-zA-Z0-9_-]{22}$")]
-    private static partial Regex YoutubeChannelIdRegex();
-
-    [GeneratedRegex(@"^@[a-zA-Z0-9_.-]{3,30}$")]
-    private static partial Regex YoutubeChannelHandleRegex();
 }

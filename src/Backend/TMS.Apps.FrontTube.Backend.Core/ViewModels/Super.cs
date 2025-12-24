@@ -4,6 +4,7 @@ using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
+using TMS.Apps.FrontTube.Backend.Core.Tools;
 
 namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
@@ -14,6 +15,7 @@ namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 public sealed class Super : IDisposable
 {
     private readonly ILoggerFactory _loggerFactory;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<Super> _logger;
     private readonly ICacheManager _dataRepository;
     private readonly IProvider _videoProvider;
@@ -21,40 +23,30 @@ public sealed class Super : IDisposable
     private bool _disposed;
 
     /// <summary>
+    /// Gets the proxy for video playback, DASH manifests, and image fetching.
+    /// </summary>
+    public Proxy Proxy { get; }
+
+    /// <summary>
     /// Creates a Super instance with an existing IDataRepository (recommended for shared caching).
     /// </summary>
     public Super(
         ILoggerFactory loggerFactory,
+        IHttpClientFactory httpClientFactory,
         IProvider videoProvider,
-        ICacheManager dataRepository)
+        ICacheManager dataRepository,
+        Action<HttpClientHandler>? proxyHandlerConfigurator = null)
     {
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _videoProvider = videoProvider ?? throw new ArgumentNullException(nameof(videoProvider));
         _dataRepository = dataRepository ?? throw new ArgumentNullException(nameof(dataRepository));
         _logger = loggerFactory.CreateLogger<Super>();
         _ownsDataRepository = false;
 
+        Proxy = new Proxy(loggerFactory, httpClientFactory, videoProvider.BaseUrl, proxyHandlerConfigurator);
+
         _logger.LogDebug("Super initialized with shared DataRepository and provider: {ProviderType}", videoProvider.GetType().Name);
-    }
-
-    /// <summary>
-    /// Creates a Super instance with a new DataRepository (legacy - creates its own instance).
-    /// </summary>
-    public Super(
-        ILoggerFactory loggerFactory,
-        IProvider videoProvider,
-        CacheConfig dataRepositoryConfig)
-    {
-        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-        _videoProvider = videoProvider ?? throw new ArgumentNullException(nameof(videoProvider));
-        _logger = loggerFactory.CreateLogger<Super>();
-
-        ArgumentNullException.ThrowIfNull(dataRepositoryConfig);
-
-        _dataRepository = new CacheManager(dataRepositoryConfig, loggerFactory);
-        _ownsDataRepository = true;
-
-        _logger.LogDebug("Super initialized with provider: {ProviderType}", videoProvider.GetType().Name);
     }
 
     /// <summary>
@@ -201,7 +193,7 @@ public sealed class Super : IDisposable
     /// <returns>The provider-specific fetch URL.</returns>
     public Uri GetImageFetchUrl(Uri originalUrl)
     {
-        return _videoProvider.GetImageFetchUrl(originalUrl);
+        return Proxy.ProxyImageRemoteUrl(originalUrl);
     }
 
     /// <summary>
@@ -212,7 +204,7 @@ public sealed class Super : IDisposable
     /// <returns>A URL to the local image proxy endpoint.</returns>
     public string BuildImageProxyUrl(Uri originalUrl)
     {
-        var fetchUrl = _videoProvider.GetImageFetchUrl(originalUrl);
+        var fetchUrl = Proxy.ProxyImageRemoteUrl(originalUrl);
         var encodedOriginalUrl = Uri.EscapeDataString(originalUrl.ToString());
         var encodedFetchUrl = Uri.EscapeDataString(fetchUrl.ToString());
         return $"/api/ImageProxy?originalUrl={encodedOriginalUrl}&fetchUrl={encodedFetchUrl}";

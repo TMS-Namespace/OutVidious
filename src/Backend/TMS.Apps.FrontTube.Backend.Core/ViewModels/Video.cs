@@ -131,6 +131,42 @@ public sealed class Video : IDisposable
         OnStateChanged();
     }
 
+    // /// <summary>
+    // /// Gets the watch URL for this video.
+    // /// </summary>
+    // /// <returns>The watch URL.</returns>
+    // public Uri GetWatchUrl()
+    // {
+    //     return _super.Proxy.ProxyWatchVideoRemoteUrl(VideoId);
+    // }
+
+    // /// <summary>
+    // /// Gets the DASH manifest URL for this video.
+    // /// </summary>
+    // /// <returns>The DASH manifest URL.</returns>
+    // public Uri GetDashManifestUrl()
+    // {
+    //     return _super.Proxy.ProxyDashManifestRemoteUrl(VideoId);
+    // }
+
+    // /// <summary>
+    // /// Gets the proxied DASH manifest URL for this video (local proxy endpoint).
+    // /// </summary>
+    // /// <returns>The proxied DASH manifest URL.</returns>
+    // public Uri GetProxiedDashManifestUrl()
+    // {
+    //     return _super.Proxy.ProxyDashManifestLocalUrl(VideoId);
+    // }
+
+    // /// <summary>
+    // /// Gets the HLS manifest URL for this video.
+    // /// </summary>
+    // /// <returns>The HLS manifest URL.</returns>
+    // public Uri GetHlsManifestUrl()
+    // {
+    //     return _super.Proxy.ProxyHlsManifestRemoteUrl(VideoId);
+    // }
+
     private void UpdateAvailableQualities()
     {
         if (VideoInfo.CombinedStreams.Count == 0)
@@ -186,8 +222,8 @@ public sealed class Video : IDisposable
         }
 
         // Use proxied URL to avoid CORS issues
-        var proxiedUrl = _super.VideoProvider.GetProxiedDashManifestUrl(VideoId);
-        DashManifestUrl = proxiedUrl?.ToString();
+        var proxiedUrl = _super.Proxy.ProxyDashManifestLocalUrl(VideoId);
+        DashManifestUrl = proxiedUrl.ToString();
         _logger.LogDebug("DASH manifest URL updated: {DashUrl}", DashManifestUrl);
     }
 

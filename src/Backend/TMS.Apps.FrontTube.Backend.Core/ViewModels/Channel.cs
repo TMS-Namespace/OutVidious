@@ -85,6 +85,15 @@ public sealed class Channel : IDisposable
     public string? ErrorMessage { get; private set; }
 
     /// <summary>
+    /// Gets the channel URL for this channel.
+    /// </summary>
+    /// <returns>The channel URL.</returns>
+    public Uri GetChannelUrl()
+    {
+        return _super.Proxy.ProxyChannelUrl(ChannelId);
+    }
+
+    /// <summary>
     /// Loads the initial videos for the current tab.
     /// </summary>
     public async Task LoadInitialVideosAsync(CancellationToken cancellationToken)

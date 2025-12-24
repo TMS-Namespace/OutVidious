@@ -16,10 +16,13 @@ public sealed class Orchestrator : IDisposable
 
     public Orchestrator(
         ILoggerFactory loggerFactory,
+        IHttpClientFactory httpClientFactory,
         IProvider videoProvider,
-        ICacheManager dataRepository)
+        ICacheManager dataRepository,
+        Action<HttpClientHandler>? proxyHandlerConfigurator = null)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
+        ArgumentNullException.ThrowIfNull(httpClientFactory);
         ArgumentNullException.ThrowIfNull(videoProvider);
         ArgumentNullException.ThrowIfNull(dataRepository);
 
@@ -29,7 +32,7 @@ public sealed class Orchestrator : IDisposable
         _super = new Lazy<Super>(() =>
         {
             _logger.LogDebug("Creating Super instance");
-            return new Super(loggerFactory, videoProvider, dataRepository);
+            return new Super(loggerFactory, httpClientFactory, videoProvider, dataRepository, proxyHandlerConfigurator);
         });
 
         _logger.LogDebug("Orchestrator initialized");
@@ -43,7 +46,7 @@ public sealed class Orchestrator : IDisposable
     /// <summary>
     /// Gets the video provider base URL.
     /// </summary>
-    public string ProviderBaseUrl => Super.VideoProvider.BaseUrl.ToString().TrimEnd('/');
+    public string ProviderBaseUrl => Super.Proxy.ProviderBaseUrl.ToString().TrimEnd('/');
 
     public void Dispose()
     {
