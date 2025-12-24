@@ -13,7 +13,7 @@ public static class ImageEntityMapper
     /// Converts an ImageEntity to a ThumbnailInfo contract.
     /// Quality is inferred from dimensions.
     /// </summary>
-    public static Image ToThumbnailInfo(ImageEntity entity)
+    public static Image ToCommon(ImageEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 

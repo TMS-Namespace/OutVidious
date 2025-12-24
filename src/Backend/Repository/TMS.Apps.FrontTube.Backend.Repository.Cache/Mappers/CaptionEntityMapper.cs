@@ -11,7 +11,7 @@ public static class CaptionEntityMapper
     /// <summary>
     /// Converts a VideoCaptionEntity to a CaptionInfo contract.
     /// </summary>
-    public static Caption ToContract(VideoCaptionEntity entity)
+    public static Caption ToCommon(VideoCaptionEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 

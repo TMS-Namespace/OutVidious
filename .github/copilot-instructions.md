@@ -62,9 +62,14 @@ The app uses **Super** pattern. All business logic lives in ViewModels of `Core`
 - Code-first approach using `Entity Framework Core` and `PostgreSQL`.
 - All SQL tables and entities are named using `snake_case`, and mapped via EF Core to `PascalCase` C# classes.
 - Used to cache data fetched from external providers, and user data (e.g., subscriptions, play lists, watch history etc...).
-- All entities have an `Id` primary key of type `Guid`.
+- All time like columns use `DateTime` with no zone (always assumed to be `UTC`).
+- All entities have an `Id` primary key of type `integer`, with auto generated serial values.
 - All enum table names are prefixed with `enum_`.
 - All tables that are not shared between multiple users, has names prefixed with `scoped_` and have a `user_id` column to identify the owner user.
+- All entities that are cached from external providers, should have the following columns always:
+  - Not nullable `remote_url`, for the original source URL.
+  - Not nullable and unique `hash` column for lookup, that uses `XxHash64` hash.
+  - Nullable `last_synced_at` `DateTime` column to track when it was last fetched.
 
 ### Logging
 
@@ -110,11 +115,11 @@ The app uses **Super** pattern. All business logic lives in ViewModels of `Core`
 ### Caching Mechanism
 
 - We are caching all of the data fetched from external providers, first in an in-memory cache for fast access, then in a persistent database cache for long-term storage.
-- The cached data includes videos, channels, images, and any other relevant metadata.
+- The cached data includes videos, channels, images, and any other relevant metadata (we cache database entities).
 - Caching is handled by the `Cache` project in the backend, which interacts with the database to store and retrieve cached data.
 - All of the cached object types have configurable expiration times, after which they are considered stale and will be refreshed upon the request.
 - All database operations that related to caching, shall be done in the background, and return the fetched data to the requester as soon as possible, without waiting for the data base operation to complete.
-- Object lookups should be performed using there unique identifiers (which is of `GUID` type) to ensure accurate retrieval.
+- Object lookups should be performed using there unique identifiers (which is the Hash) to ensure accurate retrieval.
 - The caching logic goes as follows:
   1. When data is requested, first check the in-memory cache.
   2. If data is found and is fresh (not expired), return it.

@@ -9,15 +9,12 @@ namespace TMS.Apps.FrontTube.Backend.Repository.Cache.Mappers;
 /// </summary>
 public static class VideoEntityMapper
 {
-    /// <summary>
-    /// Converts a VideoEntity to a VideoInfo contract.
-    /// </summary>
-    public static Video ToContract(VideoEntity entity)
+    public static Video ToCommon(VideoEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
         var channelInfo = entity.Channel is not null
-            ? ChannelEntityMapper.ToChannelInfo(entity.Channel)
+            ? ChannelEntityMapper.ToCommonMetadata(entity.Channel)
             : new ChannelMetadata
             {
                 RemoteId = entity.ChannelId?.ToString() ?? "unknown",
@@ -41,18 +38,18 @@ public static class VideoEntityMapper
             Tags = ParseKeywords(entity.Keywords),
             Genre = entity.Genre,
             Thumbnails = entity.Thumbnails
-                .Select(t => ImageEntityMapper.ToThumbnailInfo(t.Image))
+                .Select(t => ImageEntityMapper.ToCommon(t.Image))
                 .ToList(),
             Captions = entity.Captions
-                .Select(CaptionEntityMapper.ToContract)
+                .Select(CaptionEntityMapper.ToCommon)
                 .ToList(),
             AdaptiveStreams = entity.Streams
                 .Where(s => s.StreamTypeId == (int)StreamType.Video || s.StreamTypeId == (int)StreamType.Audio)
-                .Select(StreamEntityMapper.ToContract)
+                .Select(StreamEntityMapper.ToCommon)
                 .ToList(),
             CombinedStreams = entity.Streams
                 .Where(s => s.StreamTypeId == (int)StreamType.Mutex)
-                .Select(StreamEntityMapper.ToContract)
+                .Select(StreamEntityMapper.ToCommon)
                 .ToList(),
             IsLive = entity.IsLive,
             IsUpcoming = entity.IsUpcoming

@@ -12,7 +12,7 @@ public static class StreamEntityMapper
     /// <summary>
     /// Converts a StreamEntity to a StreamInfo contract.
     /// </summary>
-    public static Common.ProviderCore.Contracts.Stream ToContract(StreamEntity entity)
+    public static Common.ProviderCore.Contracts.Stream ToCommon(StreamEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 

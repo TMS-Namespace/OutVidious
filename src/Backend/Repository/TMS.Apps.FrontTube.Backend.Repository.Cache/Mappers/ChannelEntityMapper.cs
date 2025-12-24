@@ -23,7 +23,7 @@ public static class ChannelEntityMapper
     /// <summary>
     /// Converts a ChannelEntity to a ChannelDetails contract.
     /// </summary>
-    public static Channel ToContract(ChannelEntity entity)
+    public static Channel ToCommon(ChannelEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
@@ -43,10 +43,10 @@ public static class ChannelEntityMapper
             IsVerified = entity.IsVerified,
             Tags = ParseKeywords(entity.Keywords),
             Avatars = entity.Avatars
-                .Select(a => ImageEntityMapper.ToThumbnailInfo(a.Image))
+                .Select(a => ImageEntityMapper.ToCommon(a.Image))
                 .ToList(),
             Banners = entity.Banners
-                .Select(b => ImageEntityMapper.ToThumbnailInfo(b.Image))
+                .Select(b => ImageEntityMapper.ToCommon(b.Image))
                 .ToList(),
             AvailableTabs = DefaultChannelTabs // Use default tabs when loading from DB
         };
@@ -55,7 +55,7 @@ public static class ChannelEntityMapper
     /// <summary>
     /// Converts a ChannelEntity to a ChannelInfo contract (compact version).
     /// </summary>
-    public static ChannelMetadata ToChannelInfo(ChannelEntity entity)
+    public static ChannelMetadata ToCommonMetadata(ChannelEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
@@ -66,7 +66,7 @@ public static class ChannelEntityMapper
             SubscriberCount = entity.SubscriberCount,
             SubscriberCountText = FormatSubscriberCount(entity.SubscriberCount),
             Avatars = entity.Avatars
-                .Select(a => ImageEntityMapper.ToThumbnailInfo(a.Image))
+                .Select(a => ImageEntityMapper.ToCommon(a.Image))
                 .ToList()
         };
     }

@@ -170,7 +170,7 @@ public sealed class CacheManager : ICacheManager
                 .Include(v => v.Streams)
                 .FirstOrDefaultAsync(v => v.RemoteId == remoteId, cancellationToken);
                 
-            return entityFallback is not null ? VideoEntityMapper.ToContract(entityFallback) : null;
+            return entityFallback is not null ? VideoEntityMapper.ToCommon(entityFallback) : null;
         }
 
         // 3. Check database for existing entity to update
@@ -224,7 +224,7 @@ public sealed class CacheManager : ICacheManager
 
             if (!IsStale(entity.LastSyncedAt, _config.ChannelStalenessThreshold))
             {
-                var channelDetails = ChannelEntityMapper.ToContract(entity);
+                var channelDetails = ChannelEntityMapper.ToCommon(entity);
                 PutChannelInCache(remoteId, channelDetails, entity.LastSyncedAt);
                 _logger.LogDebug("Channel is fresh in DB, returning: {RemoteId}", remoteId);
                 return channelDetails;
@@ -240,7 +240,7 @@ public sealed class CacheManager : ICacheManager
         if (providerChannel is null)
         {
             _logger.LogWarning("Provider returned null for channel: {RemoteId}", remoteId);
-            return entity is not null ? ChannelEntityMapper.ToContract(entity) : null;
+            return entity is not null ? ChannelEntityMapper.ToCommon(entity) : null;
         }
 
         // 4. Upsert to database
