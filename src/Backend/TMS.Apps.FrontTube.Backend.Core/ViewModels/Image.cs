@@ -1,33 +1,9 @@
 using Microsoft.Extensions.Logging;
+using TMS.Apps.FrontTube.Backend.Core.Enums;
 using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
 
 namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
-/// <summary>
-/// Represents the loading state of an image.
-/// </summary>
-public enum ImageLoadState
-{
-    /// <summary>
-    /// Image has not started loading.
-    /// </summary>
-    NotLoaded,
-
-    /// <summary>
-    /// Image is currently being loaded.
-    /// </summary>
-    Loading,
-
-    /// <summary>
-    /// Image has been successfully loaded.
-    /// </summary>
-    Loaded,
-
-    /// <summary>
-    /// Image loading failed.
-    /// </summary>
-    Failed
-}
 
 /// <summary>
 /// ViewModel for managing async image loading with caching.
@@ -86,7 +62,7 @@ public sealed class Image : IDisposable
     /// <summary>
     /// The current loading state.
     /// </summary>
-    public ImageLoadState LoadState { get; private set; } = ImageLoadState.NotLoaded;
+    public LoadingState LoadState { get; private set; } = LoadingState.NotLoaded;
 
     /// <summary>
     /// The loaded image data as a data URL (base64 encoded).
@@ -121,7 +97,7 @@ public sealed class Image : IDisposable
         _loadCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var token = _loadCts.Token;
 
-        LoadState = ImageLoadState.Loading;
+        LoadState = LoadingState.Loading;
         OnStateChanged();
 
         try
@@ -133,14 +109,14 @@ public sealed class Image : IDisposable
             if (cachedImage is null)
             {
                 _logger.LogWarning("Failed to load image: {OriginalUrl}", OriginalUrl);
-                LoadState = ImageLoadState.Failed;
+                LoadState = LoadingState.Failed;
                 OnStateChanged();
                 return false;
             }
 
             CachedImage = cachedImage;
             DataUrl = $"data:{cachedImage.MimeType};base64,{Convert.ToBase64String(cachedImage.Data)}";
-            LoadState = ImageLoadState.Loaded;
+            LoadState = LoadingState.Loaded;
 
             _logger.LogDebug("Image loaded successfully: {OriginalUrl}, size: {Size} bytes", 
                 OriginalUrl, cachedImage.Data.Length);
@@ -151,14 +127,14 @@ public sealed class Image : IDisposable
         catch (OperationCanceledException)
         {
             _logger.LogDebug("Image loading cancelled: {OriginalUrl}", OriginalUrl);
-            LoadState = ImageLoadState.NotLoaded;
+            LoadState = LoadingState.NotLoaded;
             OnStateChanged();
             return false;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading image: {OriginalUrl}", OriginalUrl);
-            LoadState = ImageLoadState.Failed;
+            LoadState = LoadingState.Failed;
             OnStateChanged();
             return false;
         }

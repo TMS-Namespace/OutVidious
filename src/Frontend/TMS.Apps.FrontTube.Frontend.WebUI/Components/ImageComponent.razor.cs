@@ -70,11 +70,11 @@ public partial class ImageComponent : ComponentBase, IDisposable
     [Parameter]
     public string? PlaceholderUrl { get; set; }
 
-    protected bool IsLoading => _imageViewModel?.LoadState == ImageLoadState.Loading;
+    protected bool IsLoading => _imageViewModel?.LoadState == LoadingState.Loading;
 
-    protected bool HasFailed => _imageViewModel?.LoadState == ImageLoadState.Failed;
+    protected bool HasFailed => _imageViewModel?.LoadState == LoadingState.Failed;
 
-    protected bool IsLoaded => _imageViewModel?.LoadState == ImageLoadState.Loaded;
+    protected bool IsLoaded => _imageViewModel?.LoadState == LoadingState.Loaded;
 
     protected string DisplayUrl
     {
