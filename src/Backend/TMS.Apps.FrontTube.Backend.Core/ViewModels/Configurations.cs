@@ -16,7 +16,7 @@ public sealed class Configurations
     /// <summary>
     /// Configuration for database connection.
     /// </summary>
-    public DataBaseConfig DataBase { get; set; } = new DataBaseConfig() with 
+    public DatabaseConfig DataBase { get; set; } = new DatabaseConfig() with 
     {
         Host= "localhost",
         Port = 5656,

@@ -17,9 +17,9 @@ public sealed class Super : IDisposable
     private readonly ILoggerFactory _loggerFactory;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<Super> _logger;
-    private readonly ICacheManager _cacheManager;
+    //private readonly ICacheManager _cacheManager;
     private readonly IProvider _videoProvider;
-    private readonly DataBaseContextPool _pool;
+    //private readonly DataBaseContextPool _pool;
     private bool _disposed;
 
     /// <summary>
@@ -63,7 +63,7 @@ public sealed class Super : IDisposable
             Configurations.Provider);
 
         // Create database context pool
-        _pool = new DataBaseContextPool(Configurations.DataBase, loggerFactory);
+        //_pool = new DataBaseContextPool(Configurations.DataBase, Configurations.Cache, loggerFactory);
 
         // create RepositoryManager
         RepositoryManager = new RepositoryManager(this, _videoProvider);
@@ -202,7 +202,7 @@ public sealed class Super : IDisposable
             return;
         }
 
-        _cacheManager.Dispose();
+        //_cacheManager.Dispose();
         _videoProvider.Dispose();
 
         _disposed = true;

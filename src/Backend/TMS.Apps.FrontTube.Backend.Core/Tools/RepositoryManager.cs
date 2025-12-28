@@ -44,7 +44,7 @@ namespace TMS.Apps.FrontTube.Backend.Core.Tools;
             _super = super;
 
 
-            _pool = new DataBaseContextPool(_super.Configurations.DataBase, _super.LoggerFactory);
+            _pool = new DataBaseContextPool(_super.Configurations.DataBase,_super.Configurations.Cache, _super.LoggerFactory);
 
 
             _logger = _super.LoggerFactory.CreateLogger<RepositoryManager>();
@@ -88,7 +88,8 @@ namespace TMS.Apps.FrontTube.Backend.Core.Tools;
 
         public async Task InitAsync(CancellationToken cancellationToken)
         {
-            var dbContext = _pool.GetContext();
+            var dbContext = await _pool.GetContextAsync(cancellationToken
+            );
             await dbContext!.Database.EnsureCreatedAsync(cancellationToken);
             _logger.LogDebug("Database initialized/ensured created");
 
@@ -107,7 +108,7 @@ namespace TMS.Apps.FrontTube.Backend.Core.Tools;
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(imageIdentity.AbsoluteRemoteUrlString);
 
-        var dbContext = _pool.GetContext();
+        var dbContext = await _pool.GetContextAsync(cancellationToken);
 
         var imageEntity = await dbContext!
             .Images
@@ -274,7 +275,8 @@ namespace TMS.Apps.FrontTube.Backend.Core.Tools;
             _logger.LogDebug("Video found in cache as existing: {@VideoIdentity}", videoIdentity);
 
                 // re-fetch video from DB to include navigation properties
-                var db = _pool.GetContext(); // to ensure context is created
+                var db = await _pool.GetContextAsync(cancellationToken
+                ); // to ensure context is created
                 var videoEntity = await db!
                     .Videos
                     .Include(v => v.Thumbnails)
@@ -411,7 +413,7 @@ namespace TMS.Apps.FrontTube.Backend.Core.Tools;
                 _logger.LogDebug("Channel found to be existing: {@ChannelIdentity}", channelIdentity);
 
                 // re-fetch channel from DB to include navigation properties
-                var db = _pool.GetContext(); // to ensure context is created
+                var db = await _pool.GetContextAsync(cancellationToken); // to ensure context is created
                 
                 var channelEntity = await db!
                     .Channels

@@ -73,10 +73,10 @@ public sealed class CacheManager : ICacheManager
 
         var threshold = domain switch
         {
-            VideoEntity => _config.VideoStalenessThreshold,
-            ChannelEntity => _config.ChannelStalenessThreshold,
-            ImageEntity => _config.ImageStalenessThreshold,
-            _ => _config.VideoStalenessThreshold
+            VideoEntity => _config.StalenessConfigs.VideoStalenessThreshold,
+            ChannelEntity => _config.StalenessConfigs.ChannelStalenessThreshold,
+            ImageEntity => _config.StalenessConfigs.ImageStalenessThreshold,
+            _ => _config.StalenessConfigs.VideoStalenessThreshold
         };
 
         return DateTime.UtcNow - domain.LastSyncedAt.Value > threshold;
