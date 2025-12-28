@@ -3,9 +3,9 @@ namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 /// <summary>
 /// Represents a local playlist scoped to a user.
 /// </summary>
-public class ScopedLocalPlaylistEntity
+public class ScopedLocalPlaylistEntity: TrackableEntitiesBase
 {
-    public int Id { get; set; }
+    //public int Id { get; set; }
 
     /// <summary>
     /// User who owns this playlist.

@@ -100,7 +100,7 @@ public partial class ChannelPage : ComponentBase, IDisposable
                 ViewModel.Dispose();
             }
 
-            ViewModel = await Orchestrator.Super.GetChannelDetailsByRemoteIdAsync(channelId, _cts.Token);
+            ViewModel = await Orchestrator.Super.GetChannelByIdAsync(channelId, _cts.Token);
 
             if (ViewModel is null)
             {
@@ -137,7 +137,7 @@ public partial class ChannelPage : ComponentBase, IDisposable
 
     protected async Task HandleVideoClick(Video video)
     {
-        var watchUrl = $"/watch/{video.RemoteId}";
+        var watchUrl = $"/watch?url={Uri.EscapeDataString(video.AbsoluteRemoteUrl.ToString())}";
         NavigationManager.NavigateTo(watchUrl);
         await Task.CompletedTask;
     }

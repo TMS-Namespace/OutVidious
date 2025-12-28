@@ -1,17 +1,23 @@
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Enums;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
 /// <summary>
 /// Represents a media stream (video, audio, or combined) for a video.
 /// </summary>
-public class StreamEntity
+public class StreamEntity : TrackableEntitiesBase, ICacheableEntity
 {
-    public int Id { get; set; }
+    //public int Id { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
-    public DateTime LastSyncedAt { get; set; }
+    public DateTime? LastSyncedAt { get; set; }
+
+    /// <summary>
+    /// XxHash64 hash of the absolute remote URL for unique lookup.
+    /// </summary>
+    public required long Hash { get; set; }
 
     /// <summary>
     /// Reference to the video this stream belongs to.
@@ -19,9 +25,9 @@ public class StreamEntity
     public int VideoId { get; set; }
 
     /// <summary>
-    /// URL to the stream.
+    /// Absolute URL to the stream.
     /// </summary>
-    public required string Url { get; set; }
+    public required string AbsoluteRemoteUrl { get; set; }
 
     /// <summary>
     /// Stream type ID (references enum_stream_type).

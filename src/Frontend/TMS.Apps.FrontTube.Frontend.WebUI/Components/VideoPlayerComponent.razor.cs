@@ -59,13 +59,13 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
         await base.OnAfterRenderAsync(firstRender);
 
         // Initialize Shaka Player when in DASH mode (only once per manifest URL)
-        if (ViewModel?.PlayerMode == PlayerMode.Dash && 
+        if (ViewModel?.Streams?.PlayerMode == PlayerMode.Dash && 
             ViewModel.LoadState == VideoLoadState.Loaded &&
-            !string.IsNullOrEmpty(ViewModel.DashManifestUrl) &&
+            !string.IsNullOrEmpty(ViewModel.Streams.DashManifestUrl) &&
             !_shakaPlayerLoading &&
             !_shakaPlayerInitialized &&
             string.IsNullOrEmpty(_shakaPlayerError) &&
-            _lastInitializedManifestUrl != ViewModel.DashManifestUrl)
+            _lastInitializedManifestUrl != ViewModel.Streams.DashManifestUrl)
         {
             await InitializeShakaPlayerAsync();
         }
@@ -78,17 +78,17 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
 
     private async Task OnPlayerModeChangedAsync(PlayerMode mode)
     {
-        Logger.LogDebug("Player mode changing from {OldMode} to {NewMode}", ViewModel?.PlayerMode, mode);
+        Logger.LogDebug("Player mode changing from {OldMode} to {NewMode}", ViewModel?.Streams?.PlayerMode, mode);
         
         // Clean up Shaka player when switching away from DASH mode
-        if (ViewModel?.PlayerMode == PlayerMode.Dash && mode != PlayerMode.Dash)
+        if (ViewModel?.Streams?.PlayerMode == PlayerMode.Dash && mode != PlayerMode.Dash)
         {
             await DestroyShakaPlayerAsync();
             _shakaPlayerInitialized = false;
             _lastInitializedManifestUrl = null;
         }
 
-        ViewModel?.SetPlayerMode(mode);
+        ViewModel?.Streams?.SetPlayerMode(mode);
         _shakaPlayerError = null;
         _currentDashQuality = null;
         
@@ -97,7 +97,7 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
 
     private void OnQualityChanged(string quality)
     {
-        ViewModel?.SetQuality(quality);
+        ViewModel?.Streams?.SetQuality(quality);
     }
 
     private async Task OnDashQualityChangedAsync(string quality)
@@ -121,12 +121,12 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
 
     private async Task InitializeShakaPlayerAsync()
     {
-        if (ViewModel?.DashManifestUrl == null)
+        if (ViewModel?.Streams?.DashManifestUrl == null)
         {
             return;
         }
 
-        Logger.LogDebug("Initializing Shaka Player for manifest: {ManifestUrl}", ViewModel.DashManifestUrl);
+        Logger.LogDebug("Initializing Shaka Player for manifest: {ManifestUrl}", ViewModel.Streams.DashManifestUrl);
         
         _shakaPlayerLoading = true;
         _shakaPlayerError = null;
@@ -142,19 +142,19 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
             var success = await JsRuntime.InvokeAsync<bool>(
                 "shakaPlayerInterop.initialize",
                 ShakaVideoElementId,
-                ViewModel.DashManifestUrl,
+                ViewModel.Streams.DashManifestUrl,
                 _dotNetRef);
 
             if (success)
             {
                 _shakaPlayerInitialized = true;
-                _lastInitializedManifestUrl = ViewModel.DashManifestUrl;
-                Logger.LogDebug("Shaka Player initialized successfully for: {ManifestUrl}", ViewModel.DashManifestUrl);
+                _lastInitializedManifestUrl = ViewModel.Streams.DashManifestUrl;
+                Logger.LogDebug("Shaka Player initialized successfully for: {ManifestUrl}", ViewModel.Streams.DashManifestUrl);
             }
             else
             {
                 _shakaPlayerError = "Failed to initialize DASH player. Your browser may not support this feature.";
-                Logger.LogWarning("Shaka Player initialization failed for: {ManifestUrl}", ViewModel.DashManifestUrl);
+                Logger.LogWarning("Shaka Player initialization failed for: {ManifestUrl}", ViewModel.Streams.DashManifestUrl);
             }
         }
         catch (JSException ex)
@@ -238,32 +238,43 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
     private string? GetPosterUrl()
     {
         var thumbnailUrl = ViewModel?.GetBestThumbnailUrl();
-        if (thumbnailUrl == null)
+        
+        if (string.IsNullOrEmpty(thumbnailUrl))
         {
             return null;
         }
 
-        return Orchestrator.Super.BuildImageProxyUrl(new Uri(thumbnailUrl));
+        // Convert YouTube URL to Invidious proxy URL, then proxy through our image cache
+        var originalUri = new Uri(thumbnailUrl);
+        var invidiousProxyUrl = Orchestrator.Super.GetImageFetchUrl(originalUri);
+        
+        // Now proxy it through our local image proxy endpoint for caching
+        return Orchestrator.Super.BuildImageProxyUrl(originalUri);
     }
 
     private string GetAuthorUrl()
     {
-        if (string.IsNullOrEmpty(ProviderBaseUrl) || ViewModel == null || string.IsNullOrEmpty(ViewModel.ChannelRemoteId))
+        if (string.IsNullOrEmpty(ProviderBaseUrl) || ViewModel?.ChannelAbsoluteRemoteUrl is null)
         {
             return "#";
         }
 
-        return $"{ProviderBaseUrl}/channel/{ViewModel.ChannelRemoteId}";
+        return $"/channel?url={Uri.EscapeDataString(ViewModel.ChannelAbsoluteRemoteUrl.ToString())}";
     }
 
-    private static string FormatViewCount(long count)
+    private static string FormatViewCount(long? count)
     {
+        if (count == null)
+        {
+            return "N/A";
+        }
+
         return count switch
         {
             >= 1_000_000_000 => $"{count / 1_000_000_000.0:F1}B",
             >= 1_000_000 => $"{count / 1_000_000.0:F1}M",
             >= 1_000 => $"{count / 1_000.0:F1}K",
-            _ => count.ToString("N0")
+            _ => count!.Value.ToString("N0")
         };
     }
 

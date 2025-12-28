@@ -1,41 +1,30 @@
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Core.Enums;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
+using TMS.Apps.FrontTube.Backend.Core.Tools;
+using TMS.Apps.FrontTube.Backend.Repository.Cache.Models;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
 namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
-
 /// <summary>
 /// ViewModel for managing async image loading with caching.
-/// Handles the memory → DB → web caching pattern via repository.
+/// Wraps ImageEntity internally and handles the memory → DB → web caching pattern.
 /// </summary>
-public sealed class Image : IDisposable
+public sealed class Image : ViewModelBase
 {
-    private readonly Super _super;
     private readonly ILogger<Image> _logger;
     private CancellationTokenSource? _loadCts;
     private bool _disposed;
 
-    /// <summary>
-    /// Creates a new ImageViewModel for loading an image.
-    /// </summary>
-    /// <param name="super">The parent Super ViewModel.</param>
-    /// <param name="logger">Logger for debugging.</param>
-    /// <param name="originalUrl">The original URL of the image (YouTube CDN URL).</param>
-    /// <param name="fetchUrl">The URL to fetch the image from (may be provider proxy).</param>
-    /// <param name="placeholderDataUrl">Optional placeholder data URL to show while loading.</param>
-    public Image(
+    internal CacheResult<ImageEntity> CacheResult { get; }
+
+    internal Image(
         Super super,
-        ILogger<Image> logger,
-        Uri originalUrl,
-        Uri fetchUrl,
-        string? placeholderDataUrl = null)
+        CacheResult<ImageEntity> cacheResult)
+        : base(super)
     {
-        _super = super ?? throw new ArgumentNullException(nameof(super));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        OriginalUrl = originalUrl ?? throw new ArgumentNullException(nameof(originalUrl));
-        FetchUrl = fetchUrl ?? throw new ArgumentNullException(nameof(fetchUrl));
-        PlaceholderDataUrl = placeholderDataUrl;
+        _logger = Super.LoggerFactory.CreateLogger<Image>();
+        CacheResult = cacheResult ?? throw new ArgumentNullException(nameof(cacheResult));
     }
 
     /// <summary>
@@ -47,17 +36,14 @@ public sealed class Image : IDisposable
     /// The original URL of the image (e.g., YouTube CDN URL).
     /// This is the unique identifier for the image.
     /// </summary>
-    public Uri OriginalUrl { get; }
+    public Uri? OriginalUrl => CacheResult.Entity?.AbsoluteRemoteUrl != null 
+        ? new Uri(CacheResult.Entity.AbsoluteRemoteUrl) 
+        : null;
 
     /// <summary>
-    /// The URL to fetch the image from (may be different from OriginalUrl, e.g., provider proxy).
+    /// The hash of the original URL, used as cache key.
     /// </summary>
-    public Uri FetchUrl { get; }
-
-    /// <summary>
-    /// Optional placeholder to show while loading.
-    /// </summary>
-    public string? PlaceholderDataUrl { get; }
+    public long? Hash => CacheResult.Entity?.Hash;
 
     /// <summary>
     /// The current loading state.
@@ -70,84 +56,31 @@ public sealed class Image : IDisposable
     public string? DataUrl { get; private set; }
 
     /// <summary>
-    /// The cached image data.
+    /// The binary image data (only available after loading).
     /// </summary>
-    public CachedImage? CachedImage { get; private set; }
+    public byte[]? Data => CacheResult.Entity?.Data;
 
     /// <summary>
-    /// Gets the URL to display - either the loaded data URL, placeholder, or fetch URL.
+    /// The MIME type of the image (only available after loading).
     /// </summary>
-    public string DisplayUrl => DataUrl ?? PlaceholderDataUrl ?? FetchUrl.ToString();
-
-    // /// <summary>
-    // /// Gets the provider fetch URL for this image.
-    // /// </summary>
-    // /// <returns>The provider-specific fetch URL.</returns>
-    // public Uri GetImageFetchUrl()
-    // {
-    //     return _super.Proxy.ProxyImageRemoteUrl(OriginalUrl);
-    // }
+    public string? MimeType => CacheResult.Entity?.MimeType;
 
     /// <summary>
-    /// Loads the image asynchronously.
+    /// Image width in pixels (only available after loading).
     /// </summary>
-    /// <param name="cancellationToken">External cancellation token.</param>
-    /// <returns>True if loading succeeded.</returns>
-    public async Task<bool> LoadAsync(CancellationToken cancellationToken)
-    {
-        if (_disposed)
-        {
-            return false;
-        }
+    public int? Width => CacheResult.Entity?.Width;
 
-        // Cancel any pending load
-        CancelPendingLoad();
+    /// <summary>
+    /// Image height in pixels (only available after loading).
+    /// </summary>
+    public int? Height => CacheResult.Entity?.Height;
 
-        _loadCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var token = _loadCts.Token;
+    /// <summary>
+    /// Gets the URL to display - either the loaded data URL or the original URL.
+    /// </summary>
+    public string? DisplayUrl => DataUrl ?? CacheResult.Entity?.AbsoluteRemoteUrl;
 
-        LoadState = LoadingState.Loading;
-        OnStateChanged();
-
-        try
-        {
-            _logger.LogDebug("Loading image: {OriginalUrl}", OriginalUrl);
-
-            var cachedImage = await _super.GetImageAsync(OriginalUrl, FetchUrl, token);
-
-            if (cachedImage is null)
-            {
-                _logger.LogWarning("Failed to load image: {OriginalUrl}", OriginalUrl);
-                LoadState = LoadingState.Failed;
-                OnStateChanged();
-                return false;
-            }
-
-            CachedImage = cachedImage;
-            DataUrl = $"data:{cachedImage.MimeType};base64,{Convert.ToBase64String(cachedImage.Data)}";
-            LoadState = LoadingState.Loaded;
-
-            _logger.LogDebug("Image loaded successfully: {OriginalUrl}, size: {Size} bytes", 
-                OriginalUrl, cachedImage.Data.Length);
-
-            OnStateChanged();
-            return true;
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogDebug("Image loading cancelled: {OriginalUrl}", OriginalUrl);
-            LoadState = LoadingState.NotLoaded;
-            OnStateChanged();
-            return false;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error loading image: {OriginalUrl}", OriginalUrl);
-            LoadState = LoadingState.Failed;
-            OnStateChanged();
-            return false;
-        }
-    }
+    public string? AbsoluteRemoteUrl => CacheResult.Entity?.AbsoluteRemoteUrl;
 
     /// <summary>
     /// Cancels any pending image load operation.
@@ -167,7 +100,7 @@ public sealed class Image : IDisposable
         StateChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         if (_disposed)
         {

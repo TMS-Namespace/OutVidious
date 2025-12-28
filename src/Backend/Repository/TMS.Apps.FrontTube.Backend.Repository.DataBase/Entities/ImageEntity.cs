@@ -1,22 +1,29 @@
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
+
 namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
 /// <summary>
 /// Represents an image stored in the database.
 /// Can be a thumbnail, avatar, or banner.
 /// </summary>
-public class ImageEntity
+public class ImageEntity : TrackableEntitiesBase, ICacheableEntity
 {
-    public int Id { get; set; }
+    //public int Id { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 
     public DateTime? LastSyncedAt { get; set; }
 
     /// <summary>
-    /// URL to the original image source (e.g., YouTube CDN URL like https://i.ytimg.com/...).
-    /// This is the unique identifier for the image.
+    /// XxHash64 hash of the absolute remote URL for unique lookup.
     /// </summary>
-    public required string RemoteUrl { get; set; }
+    public required long Hash { get; set; }
+
+    /// <summary>
+    /// Absolute URL to the original image source (e.g., https://i.ytimg.com/...).
+    /// Used as the unique identifier for the image.
+    /// </summary>
+    public required string AbsoluteRemoteUrl { get; set; }
 
     /// <summary>
     /// Binary image data (if cached locally).

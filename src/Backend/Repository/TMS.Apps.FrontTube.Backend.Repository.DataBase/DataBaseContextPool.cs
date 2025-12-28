@@ -37,6 +37,13 @@ public sealed class DataBaseContextPool : IDisposable
             _logger.LogInformation("Database query logging enabled");
         }
 
+        // Enable sensitive data logging if configured
+        if (config.SensitiveDataLogging)
+        {
+            optionsBuilder.EnableSensitiveDataLogging();
+            _logger.LogInformation("Sensitive data logging enabled (parameters and error details will be logged)");
+        }
+
         _options = optionsBuilder.Options;
 
         _logger.LogInformation("DataBaseContextPool created successfully");
@@ -58,6 +65,19 @@ public sealed class DataBaseContextPool : IDisposable
         _logger.LogDebug("Context created from pool");
 
         return Task.FromResult(context);
+    }
+
+    public DataBaseContext GetContext()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        _logger.LogDebug("Creating context from pool");
+
+        var context = new DataBaseContext(_options);
+
+        _logger.LogDebug("Context created from pool");
+
+        return context;
     }
 
     public void Dispose()

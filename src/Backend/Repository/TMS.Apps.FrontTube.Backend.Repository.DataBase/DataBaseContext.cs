@@ -21,7 +21,7 @@ public class DataBaseContext : DbContext
 
     public DbSet<ImageEntity> Images => Set<ImageEntity>();
 
-    public DbSet<VideoCaptionEntity> VideoCaptions => Set<VideoCaptionEntity>();
+    public DbSet<CaptionEntity> Captions => Set<CaptionEntity>();
 
     public DbSet<ChannelAvatarMapEntity> ChannelAvatarMaps => Set<ChannelAvatarMapEntity>();
 
@@ -76,7 +76,7 @@ public class DataBaseContext : DbContext
         ConfigureChannel(modelBuilder);
         ConfigureVideo(modelBuilder);
         ConfigureImage(modelBuilder);
-        ConfigureVideoCaption(modelBuilder);
+        ConfigureCaption(modelBuilder);
         ConfigureStream(modelBuilder);
         ConfigureChannelAvatarMap(modelBuilder);
         ConfigureChannelBannerMap(modelBuilder);
@@ -127,7 +127,8 @@ public class DataBaseContext : DbContext
                 .HasDefaultValueSql("now()");
 
             entity.Property(e => e.LastSyncedAt).HasColumnName("last_synced_at");
-            entity.Property(e => e.RemoteId).HasColumnName("remote_id").HasMaxLength(24).IsRequired();
+            entity.Property(e => e.Hash).HasColumnName("hash").IsRequired();
+            entity.Property(e => e.AbsoluteRemoteUrl).HasColumnName("absolute_remote_url").HasMaxLength(500).IsRequired();
             entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(255).IsRequired();
             entity.Property(e => e.Alias).HasColumnName("alias").HasMaxLength(255);
             entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(5000);
@@ -140,7 +141,7 @@ public class DataBaseContext : DbContext
             entity.Property(e => e.IsVerified).HasColumnName("is_verified");
             entity.Property(e => e.Keywords).HasColumnName("keywords").HasMaxLength(1000);
 
-            entity.HasIndex(e => e.RemoteId).IsUnique();
+            entity.HasIndex(e => e.Hash).IsUnique();
             entity.HasIndex(e => e.Handle);
         });
     }
@@ -159,7 +160,8 @@ public class DataBaseContext : DbContext
                 .HasDefaultValueSql("now()");
 
             entity.Property(e => e.LastSyncedAt).HasColumnName("last_synced_at");
-            entity.Property(e => e.RemoteId).HasColumnName("remote_id").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Hash).HasColumnName("hash").IsRequired();
+            entity.Property(e => e.AbsoluteRemoteUrl).HasColumnName("absolute_remote_url").HasMaxLength(500).IsRequired();
             entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(255).IsRequired();
             entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(5000);
             entity.Property(e => e.DescriptionHtml).HasColumnName("description_html");
@@ -176,7 +178,7 @@ public class DataBaseContext : DbContext
             entity.Property(e => e.IsWatched).HasColumnName("is_watched");
             entity.Property(e => e.ChannelId).HasColumnName("channel_id");
 
-            entity.HasIndex(e => e.RemoteId).IsUnique();
+            entity.HasIndex(e => e.Hash).IsUnique();
             entity.HasIndex(e => e.ChannelId);
             entity.HasIndex(e => e.PublishedAt);
 
@@ -198,32 +200,40 @@ public class DataBaseContext : DbContext
 
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.LastSyncedAt).HasColumnName("last_synced_at");
-            entity.Property(e => e.RemoteUrl).HasColumnName("remote_url").HasMaxLength(2000).IsRequired();
+            entity.Property(e => e.Hash).HasColumnName("hash").IsRequired();
+            entity.Property(e => e.AbsoluteRemoteUrl).HasColumnName("absolute_remote_url").HasMaxLength(2000).IsRequired();
             entity.Property(e => e.Data).HasColumnName("data");
             entity.Property(e => e.Width).HasColumnName("width");
             entity.Property(e => e.Height).HasColumnName("height");
             entity.Property(e => e.MimeType).HasColumnName("mime_type").HasMaxLength(50);
 
-            entity.HasIndex(e => e.RemoteUrl).IsUnique();
+            entity.HasIndex(e => e.Hash).IsUnique();
         });
     }
 
-    private static void ConfigureVideoCaption(ModelBuilder modelBuilder)
+    private static void ConfigureCaption(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<VideoCaptionEntity>(entity =>
+        modelBuilder.Entity<CaptionEntity>(entity =>
         {
-            entity.ToTable("video_caption");
+            entity.ToTable("caption");
 
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
 
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("now()");
+
+            entity.Property(e => e.LastSyncedAt).HasColumnName("last_synced_at");
+            entity.Property(e => e.Hash).HasColumnName("hash");
             entity.Property(e => e.VideoId).HasColumnName("video_id");
             entity.Property(e => e.Label).HasColumnName("label").HasMaxLength(100).IsRequired();
             entity.Property(e => e.LanguageCode).HasColumnName("language_code").HasMaxLength(10).IsRequired();
             entity.Property(e => e.IsAutoGenerated).HasColumnName("is_auto_generated");
-            entity.Property(e => e.RemoteUrl).HasColumnName("remote_url").HasMaxLength(2000);
-            entity.Property(e => e.CachedContent).HasColumnName("cached_content");
+            entity.Property(e => e.AbsoluteRemoteUrl).HasColumnName("absolute_remote_url").HasMaxLength(2000);
+            entity.Property(e => e.Text).HasColumnName("text");
 
+            entity.HasIndex(e => e.Hash);
             entity.HasIndex(e => e.VideoId);
             entity.HasIndex(e => new { e.VideoId, e.LanguageCode });
 
@@ -670,8 +680,9 @@ public class DataBaseContext : DbContext
                 .HasDefaultValueSql("now()");
 
             entity.Property(e => e.LastSyncedAt).HasColumnName("last_synced_at");
+            entity.Property(e => e.Hash).HasColumnName("hash").IsRequired();
             entity.Property(e => e.VideoId).HasColumnName("video_id");
-            entity.Property(e => e.Url).HasColumnName("url").HasMaxLength(2000).IsRequired();
+            entity.Property(e => e.AbsoluteRemoteUrl).HasColumnName("absolute_remote_url").HasMaxLength(2000).IsRequired();
             entity.Property(e => e.StreamTypeId).HasColumnName("stream_type_id");
             entity.Property(e => e.ContainerId).HasColumnName("container_id");
             entity.Property(e => e.VideoCodecId).HasColumnName("video_codec_id");
@@ -689,8 +700,9 @@ public class DataBaseContext : DbContext
             entity.Property(e => e.MimeType).HasColumnName("mime_type").HasMaxLength(100);
             entity.Property(e => e.Itag).HasColumnName("itag");
 
+            entity.HasIndex(e => e.Hash).IsUnique();
             entity.HasIndex(e => e.VideoId);
-            entity.HasIndex(e => new { e.VideoId, e.Itag }).IsUnique();
+            entity.HasIndex(e => new { e.VideoId, e.Itag });
 
             entity.HasOne(e => e.Video)
                 .WithMany(v => v.Streams)

@@ -1,6 +1,9 @@
 using System.Collections.ObjectModel;
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Core.Tools;
+using TMS.Apps.FrontTube.Backend.Repository.Cache.Models;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
 namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
@@ -8,45 +11,46 @@ namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 /// ViewModel for displaying a channel and its content.
 /// Wraps a ChannelDetails contract loaded via Super.
 /// </summary>
-public sealed class Channel : IDisposable
+public sealed class Channel : ViewModelBase
 {
     private readonly Super _super;
     private readonly ILogger<Channel> _logger;
-    private readonly Common.ProviderCore.Contracts.Channel _channelDetails;
+    //private readonly Common.ProviderCore.Contracts.Channel _channelDetails;
     private CancellationTokenSource? _loadCts;
     private string? _currentContinuationToken;
     private string? _selectedTab;
     private bool _isDisposed;
 
-    /// <summary>
-    /// Creates a new ChannelViewModel wrapping the provided channel details.
-    /// </summary>
-    /// <param name="super">The parent Super ViewModel.</param>
-    /// <param name="loggerFactory">Logger factory for creating loggers.</param>
-    /// <param name="channelDetails">The channel details contract to wrap.</param>
-    public Channel(Super super, ILoggerFactory loggerFactory, Common.ProviderCore.Contracts.Channel channelDetails)
+    internal CacheResult<ChannelEntity> CacheResult { get; }
+
+    internal Channel(Super super, CacheResult<ChannelEntity> channelCachingResult, IReadOnlyList<Image> avatars, IReadOnlyList<Image> banners)
+    : base(super)
     {
         _super = super ?? throw new ArgumentNullException(nameof(super));
-        ArgumentNullException.ThrowIfNull(loggerFactory);
-        _logger = loggerFactory.CreateLogger<Channel>();
+        CacheResult = channelCachingResult ?? throw new ArgumentNullException(nameof(channelCachingResult));
+        _logger = super.LoggerFactory.CreateLogger<Channel>();
         
-        _channelDetails = channelDetails ?? throw new ArgumentNullException(nameof(channelDetails));
-        RemoteId = channelDetails.RemoteId;
-        Name = channelDetails.Name;
-        Description = channelDetails.Description;
-        SubscriberCount = channelDetails.SubscriberCount ?? 0;
-        SubscriberCountText = channelDetails.SubscriberCountText;
-        Avatars = channelDetails.Avatars;
-        Banners = channelDetails.Banners;
-
-        // Select the videos tab by default (use RemoteTabId for API calls)
-#pragma warning disable CS0618 // Type or member is obsolete - RemoteTabId is the correct API identifier
-        _selectedTab = _channelDetails.AvailableTabs
-            .FirstOrDefault(t => t.RemoteTabId.Equals("videos", StringComparison.OrdinalIgnoreCase))?.RemoteTabId
-            ?? _channelDetails.AvailableTabs.FirstOrDefault()?.RemoteTabId;
+        Avatars = avatars;
+        Banners = banners;
+        
+        // Initialize properties - prefer Entity over Common (Entity is always available, Common only for new fetches)
+        var channelEntity = CacheResult.Entity;
+        var channelCommon = CacheResult.Common as Common.ProviderCore.Contracts.Channel;
+        
+        AbsoluteRemoteUrl = new Uri(CacheResult.Identity.AbsoluteRemoteUrlString);
+        Name = channelEntity?.Title ?? channelCommon?.Name ?? string.Empty;
+        Description = channelEntity?.Description ?? channelCommon?.Description ?? string.Empty;
+        SubscriberCount = channelEntity?.SubscriberCount ?? channelCommon?.SubscriberCount ?? 0;
+#pragma warning disable CS0618
+        SubscriberCountText = channelCommon?.SubscriberCountText;
 #pragma warning restore CS0618
-
-        _logger.LogDebug("ChannelViewModel created for: {ChannelName}", channelDetails.Name);
+        
+        // Auto-select the first available tab (defaults to "videos" for cached channels)
+        var availableTabs = AvailableTabs;
+        if (availableTabs.Count > 0)
+        {
+            _selectedTab = availableTabs[0];
+        }
     }
 
     /// <summary>
@@ -55,9 +59,9 @@ public sealed class Channel : IDisposable
     public event EventHandler? StateChanged;
 
     /// <summary>
-    /// The channel's remote identifier.
+    /// The channel's absolute remote URL on the original platform.
     /// </summary>
-    public string RemoteId { get; }
+    public Uri AbsoluteRemoteUrl { get; }
 
     /// <summary>
     /// The channel name.
@@ -83,26 +87,39 @@ public sealed class Channel : IDisposable
     /// <summary>
     /// Channel avatar images.
     /// </summary>
-    public IReadOnlyList<Common.ProviderCore.Contracts.Image> Avatars { get; }
+    public IReadOnlyList<Image> Avatars { get; }
 
     /// <summary>
     /// Channel banner images.
     /// </summary>
-    public IReadOnlyList<Common.ProviderCore.Contracts.Image> Banners { get; }
+    public IReadOnlyList<Image> Banners { get; }
 
     /// <summary>
     /// Available channel tab IDs (e.g., "videos", "shorts", "streams").
     /// </summary>
-#pragma warning disable CS0618 // Type or member is obsolete - RemoteTabId is the correct API identifier
-    public IReadOnlyList<string> AvailableTabs => _channelDetails.AvailableTabs
-        .Select(t => t.RemoteTabId)
-        .ToList();
+    public IReadOnlyList<string> AvailableTabs
+    {
+        get
+        {
+            var channelCommon = CacheResult.Common as Common.ProviderCore.Contracts.Channel;
+            if (channelCommon is null)
+            {
+                // For existing cached channels, default to "videos" tab
+                return ["videos"];  
+            }
+#pragma warning disable CS0618
+            return channelCommon.AvailableTabs
+                .Select(t => t.RemoteTabId)
+                .ToList();
 #pragma warning restore CS0618
+            
+        }
+    }
 
     /// <summary>
     /// The list of video ViewModels from the channel.
     /// </summary>
-    public ObservableCollection<Video> Videos { get; } = [];
+    public IReadOnlyList<Video> Videos { get; private set; } = [];
 
     /// <summary>
     /// The currently selected tab ID.
@@ -139,7 +156,8 @@ public sealed class Channel : IDisposable
     /// <returns>The channel URL.</returns>
     public Uri GetChannelUrl()
     {
-        return _super.Proxy.ProxyChannelUrl(RemoteId);
+        var channelId = YouTubeValidator.ExtractChannelIdFromUrl(AbsoluteRemoteUrl);
+        return _super.Proxy.ProxyChannelUrl(channelId ?? string.Empty);
     }
 
     /// <summary>
@@ -157,7 +175,7 @@ public sealed class Channel : IDisposable
             .OrderByDescending(a => a.Width)
             .FirstOrDefault() ?? Avatars.First();
 
-        return avatar.RemoteUrl.ToString();
+        return avatar.AbsoluteRemoteUrl?.ToString();
     }
 
     /// <summary>
@@ -175,7 +193,7 @@ public sealed class Channel : IDisposable
             .OrderByDescending(b => b.Width)
             .FirstOrDefault() ?? Banners.First();
 
-        return banner.RemoteUrl.ToString();
+        return banner.AbsoluteRemoteUrl?.ToString();
     }
 
     /// <summary>
@@ -207,7 +225,7 @@ public sealed class Channel : IDisposable
         }
 
         SelectedTab = tabId;
-        Videos.Clear();
+        Videos = [];
         _currentContinuationToken = null;
         
         await LoadVideosForTabAsync(tabId, isInitial: true, cancellationToken);
@@ -234,7 +252,7 @@ public sealed class Channel : IDisposable
 
         if (isInitial)
         {
-            Videos.Clear();
+            Videos = [];
             _currentContinuationToken = null;
             IsLoading = true;
         }
@@ -247,42 +265,37 @@ public sealed class Channel : IDisposable
 
         try
         {
-            _logger.LogDebug(
-                "Loading videos for channel {ChannelId}, tab {TabId}, continuation: {HasContinuation}", 
-                RemoteId, 
-                tabId, 
-                _currentContinuationToken is not null);
+            var page = await Super.RepositoryManager.GetChannelsPageAsync(
+                CacheResult.Identity,
+                tabId,
+                _currentContinuationToken,
+                token,
+                autoSave: true);
 
-            var videosPage = await _super.GetChannelVideosAsync(
-                RemoteId, 
-                tabId, 
-                _currentContinuationToken, 
-                token);
-
-            if (videosPage is not null)
+            if (page is not null)
             {
-                foreach (var videoMetadata in videosPage.Videos)
+                Videos = page.Videos;
+                HasMore = page.HasMore;
+                _currentContinuationToken = page.ContinuationToken;
+                ErrorMessage = null;
+            }
+            else
+            {
+                Videos = [];
+                HasMore = false;
+                if (isInitial)
                 {
-                    Videos.Add(new Video(_super, _super.LoggerFactory, videoMetadata));
+                    ErrorMessage = "No videos found or channel unavailable.";
                 }
-
-                _currentContinuationToken = videosPage.ContinuationToken;
-                HasMore = videosPage.HasMore;
-
-                _logger.LogDebug(
-                    "Loaded {VideoCount} videos, total: {TotalCount}, hasMore: {HasMore}", 
-                    videosPage.Videos.Count, 
-                    Videos.Count, 
-                    HasMore);
             }
         }
         catch (OperationCanceledException)
         {
-            _logger.LogDebug("Videos loading cancelled for channel {ChannelId}", RemoteId);
+            _logger.LogDebug("Videos loading cancelled for channel {ChannelUrl}", AbsoluteRemoteUrl);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading videos for channel {ChannelId}", RemoteId);
+            _logger.LogError(ex, "Error loading videos for channel {ChannelUrl}", AbsoluteRemoteUrl);
             // Don't set error message for pagination failures
             if (isInitial)
             {
@@ -309,7 +322,7 @@ public sealed class Channel : IDisposable
         StateChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         if (_isDisposed)
         {

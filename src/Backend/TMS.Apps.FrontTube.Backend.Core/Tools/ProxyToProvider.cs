@@ -1,36 +1,47 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
 
 namespace TMS.Apps.FrontTube.Backend.Core.Tools;
 
 /// <summary>
 /// Handles proxy functionality for video playback, DASH manifests, and image fetching.
-/// Provides URL generation and HTTP proxying to bypass CORS restrictions.
+/// 
+/// WHY WE NEED THE PROXY:
+/// 1. CORS Restrictions: Browsers block cross-origin requests. All requests must stay on same origin (localhost).
+/// 2. YouTube Access Blocks: YouTube blocks direct access from non-YouTube domains with 403 Forbidden.
+/// 3. Caching: Images and metadata cached in database for performance and reduced bandwidth.
+/// 4. URL Abstraction: UI uses stable YouTube URLs; proxy translates to Invidious URLs behind the scenes.
+/// 
+/// The proxy acts as a smart gateway between your UI and Invidious, handling URL translation,
+/// CORS, caching, and stream proxying automatically.
 /// </summary>
-public sealed partial class Proxy
+public sealed partial class ProxyToProvider
 {
-    private readonly ILogger<Proxy> _logger;
+    private readonly ILogger<ProxyToProvider> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly Uri _providerBaseUrl;
     private readonly Action<HttpClientHandler>? _httpHandlerConfigurator;
-    private readonly ICacheManager _cacheManager;
 
-    public Proxy(
-        ILoggerFactory loggerFactory,
+    private readonly Super _super;
+    //private readonly ICacheManager _cacheManager;
+
+    public ProxyToProvider(
+        Super super,
         IHttpClientFactory httpClientFactory,
         Uri providerBaseUrl,
-        ICacheManager cacheManager,
         Action<HttpClientHandler>? httpHandlerConfigurator = null)
     {
-        ArgumentNullException.ThrowIfNull(loggerFactory);
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _providerBaseUrl = providerBaseUrl ?? throw new ArgumentNullException(nameof(providerBaseUrl));
-        _cacheManager = cacheManager ?? throw new ArgumentNullException(nameof(cacheManager));
         _httpHandlerConfigurator = httpHandlerConfigurator;
+
+        _super = super ?? throw new ArgumentNullException(nameof(super));
         
-        _logger = loggerFactory.CreateLogger<Proxy>();
+        _logger = super.LoggerFactory.CreateLogger<ProxyToProvider>();
         _logger.LogDebug("Proxy initialized with provider base URL: {BaseUrl}", _providerBaseUrl);
     }
 
@@ -78,6 +89,14 @@ public sealed partial class Proxy
 
     /// <summary>
     /// Gets a local proxied DASH manifest URL that bypasses CORS restrictions.
+    /// 
+    /// PURPOSE: Generates the local endpoint URL for DASH manifests.
+    /// USED BY: Shaka Player configuration in VideoPlayerComponent
+    /// RETURNS: /api/proxy/dash/{videoId} (relative URI)
+    /// 
+    /// This URL points to our local ProxyDashManifestAsync endpoint, which fetches
+    /// the manifest from Invidious and rewrites all segment URLs to go through
+    /// our video proxy, avoiding CORS issues entirely.
     /// </summary>
     /// <param name="videoId">The video identifier.</param>
     /// <returns>The proxied DASH manifest URL as a relative URI.</returns>
@@ -90,6 +109,13 @@ public sealed partial class Proxy
 
     /// <summary>
     /// Gets the embed URL for a video.
+    /// 
+    /// PURPOSE: Generates Invidious embed URLs for iframe-based playback.
+    /// USED BY: Embedded player mode (fallback for unsupported browsers)
+    /// EXAMPLE: ABC123 → https://youtube.srv1.tms.com/embed/ABC123?autoplay=1&local=true
+    /// 
+    /// The local=true parameter tells Invidious to proxy video streams through itself,
+    /// avoiding direct YouTube access and CORS issues.
     /// </summary>
     /// <param name="videoId">The video identifier.</param>
     /// <returns>The embed URL.</returns>
@@ -101,6 +127,10 @@ public sealed partial class Proxy
 
     /// <summary>
     /// Gets the URL to a channel page.
+    /// 
+    /// PURPOSE: Generates Invidious channel URLs for navigation.
+    /// EXAMPLE: UC1234567890 → https://youtube.srv1.tms.com/channel/UC1234567890
+    /// USED BY: Channel links in UI components
     /// </summary>
     /// <param name="channelId">The channel identifier.</param>
     /// <returns>The channel page URL.</returns>
@@ -112,6 +142,14 @@ public sealed partial class Proxy
 
     /// <summary>
     /// Constructs the provider-specific fetch URL for an image from its original YouTube URL.
+    /// 
+    /// PURPOSE: Converts YouTube image URLs to Invidious proxy URLs.
+    /// WHY: YouTube image URLs (i.ytimg.com) often return "video unavailable" placeholders 
+    ///      when accessed from non-YouTube domains. Invidious proxies these correctly.
+    /// 
+    /// EXAMPLES:
+    /// - https://i.ytimg.com/vi/ABC123/maxres.jpg → https://youtube.srv1.tms.com/vi/ABC123/maxres.jpg
+    /// - https://yt3.ggpht.com/abc/photo.jpg → https://youtube.srv1.tms.com/ggpht/abc/photo.jpg
     /// </summary>
     /// <param name="originalUrl">The original YouTube CDN URL.</param>
     /// <returns>The provider URL to fetch the image from.</returns>
@@ -152,8 +190,22 @@ public sealed partial class Proxy
     #region Public Endpoint Handlers
 
     /// <summary>
-    /// Proxies a DASH manifest request to avoid CORS issues.
-    /// Rewrites manifest URLs to route through the video playback proxy.
+    /// Proxies a DASH manifest request to avoid CORS issues and rewrites internal URLs.
+    /// 
+    /// ENDPOINT: GET /api/DashManifest?videoId=...
+    /// USED BY: Shaka Player (DASH mode) for HD+ adaptive quality streaming (1080p, 1440p, 4K)
+    /// 
+    /// FLOW:
+    /// 1. Shaka Player requests DASH manifest from this endpoint
+    /// 2. Proxy fetches manifest from Invidious
+    /// 3. Proxy rewrites ALL segment URLs in manifest to point to /api/VideoProxy
+    /// 4. Shaka Player requests video/audio segments from /api/VideoProxy (avoiding CORS)
+    /// 
+    /// WHY NEEDED:
+    /// - DASH manifests contain URLs to video/audio segments on Invidious/YouTube
+    /// - These URLs have CORS restrictions and would fail in browser
+    /// - Rewriting URLs makes all requests go through our local proxy
+    /// - Now everything stays on same origin (localhost)
     /// </summary>
     /// <param name="videoId">The video identifier.</param>
     /// <param name="context">The HTTP context.</param>
@@ -208,8 +260,25 @@ public sealed partial class Proxy
     }
 
     /// <summary>
-    /// Proxies video playback segments to avoid CORS issues.
-    /// Handles range requests for video seeking.
+    /// Proxies video playback streams to avoid CORS issues.
+    /// 
+    /// ENDPOINT: GET /api/VideoProxy?url=... or /api/proxy/videoplayback?...
+    /// USED BY: 
+    /// - Native player mode (≤720p muxed streams)
+    /// - DASH player mode (segments from rewritten manifest URLs)
+    /// 
+    /// FEATURES:
+    /// - Handles HTTP Range requests (for video seeking/scrubbing)
+    /// - Handles HEAD requests (for metadata without downloading full video)
+    /// - Sets proper CORS headers (Access-Control-Allow-Origin: *)
+    /// - Forwards Content-Type, Content-Length, Content-Range, Accept-Ranges
+    /// - Supports both Invidious proxy URLs and direct YouTube CDN URLs
+    /// 
+    /// WHY NEEDED:
+    /// - YouTube/Invidious video URLs have CORS restrictions
+    /// - Browser cannot make direct cross-origin video requests
+    /// - Proxy runs on same origin (localhost) so requests succeed
+    /// - Enables video seeking by supporting Range requests
     /// </summary>
     /// <param name="context">The HTTP context.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -303,14 +372,40 @@ public sealed partial class Proxy
     }
 
     /// <summary>
-    /// Proxies an image request through the caching layer (memory → DB → web).
-    /// Gets an image by its original URL and fetch URL, using the caching layer.
+    /// Proxies an image request through the three-tier caching layer.
+    /// 
+    /// ENDPOINT: GET /api/ImageProxy?originalUrl=...&fetchUrl=...
+    /// USED BY: All image displays (thumbnails, avatars, banners)
+    /// 
+    /// CACHING LAYERS:
+    /// 1. Memory: EF Core second-level cache (fast runtime access)
+    /// 2. Database: PostgreSQL with image bytes stored (persistent cache)
+    /// 3. Web: Downloads from Invidious if not in cache
+    /// 
+    /// FLOW:
+    /// 1. Browser requests: /api/ImageProxy?originalUrl=https://i.ytimg.com/...&fetchUrl=https://youtube.srv1.tms.com/...
+    /// 2. Compute hash from originalUrl (used as cache key)
+    /// 3. Check database: Is image cached?
+    ///    - YES: Return cached bytes from database
+    ///    - NO: Download from fetchUrl (Invidious), store in DB with metadata, return bytes
+    /// 4. Browser receives image bytes with proper Content-Type and cache headers
+    /// 
+    /// WHY NEEDED:
+    /// - YouTube thumbnails return "video unavailable" placeholders from non-YouTube domains
+    /// - Invidious proxies these correctly
+    /// - Caching reduces repeated downloads (performance + bandwidth)
+    /// - originalUrl used as stable cache key (doesn't change)
+    /// - fetchUrl is Invidious proxy URL (what we actually download from)
+    /// 
+    /// PARAMETERS:
+    /// - originalUrl: YouTube CDN URL (e.g., https://i.ytimg.com/vi/ABC/maxres.jpg) - cache key
+    /// - fetchUrl: Invidious proxy URL (e.g., https://youtube.srv1.tms.com/vi/ABC/maxres.jpg) - download source
     /// </summary>
-    /// <param name="originalUrl">The original URL of the image (YouTube CDN URL).</param>
-    /// <param name="fetchUrl">The URL to fetch the image from (provider proxy URL).</param>
+    /// <param name="originalUrl">The original YouTube CDN URL (used as cache key).</param>
+    /// <param name="fetchUrl">The Invidious proxy URL (used for downloading).</param>
     /// <param name="context">The HTTP context.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>IResult for the endpoint response.</returns>
+    /// <returns>IResult with image bytes or error.</returns>
     public async Task<IResult> ProxyImageAsync(string originalUrl, string fetchUrl, HttpContext context, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(originalUrl) || !Uri.TryCreate(originalUrl, UriKind.Absolute, out var original))
@@ -327,21 +422,27 @@ public sealed partial class Proxy
         {
             _logger.LogDebug("ImageProxy: Fetching image: {OriginalUrl} via {FetchUrl}", originalUrl, fetchUrl);
 
-            var cachedImage = await _cacheManager.GetImageAsync(original, fetch, cancellationToken);
+            var identity =  new CacheableIdentity
+            {
+                AbsoluteRemoteUrlString = originalUrl
+            };
 
-            if (cachedImage is null)
+            var imageEntity = await _super.RepositoryManager.GetImageContentsAsync(identity, fetchUrl, cancellationToken);
+
+            if (imageEntity?.Data is null || imageEntity.Data.Length == 0)
             {
                 _logger.LogWarning("ImageProxy: Failed to fetch image: {OriginalUrl}", originalUrl);
                 return Results.NotFound();
             }
 
+            var mimeType = imageEntity.MimeType ?? "image/jpeg";
             _logger.LogDebug("ImageProxy: Returning image: {OriginalUrl}, MimeType: {MimeType}, Size: {Size} bytes", 
-                originalUrl, cachedImage.MimeType, cachedImage.Data.Length);
+                originalUrl, mimeType, imageEntity.Data.Length);
 
             // Set cache headers
             context.Response.Headers.CacheControl = "public, max-age=86400";
             
-            return Results.File(cachedImage.Data, cachedImage.MimeType);
+            return Results.File(imageEntity.Data, mimeType);
         }
         catch (OperationCanceledException)
         {

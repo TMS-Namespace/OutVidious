@@ -39,17 +39,17 @@ public sealed record Video : VideoBase
     /// <summary>
     /// Available media streams (adaptive formats - video only or audio only).
     /// </summary>
-    public IReadOnlyList<Stream> AdaptiveStreams { get; init; } = [];
+    public IReadOnlyList<StreamMetadata> AdaptiveStreams { get; init; } = [];
 
     /// <summary>
     /// Available combined streams (video + audio).
     /// </summary>
-    public IReadOnlyList<Stream> CombinedStreams { get; init; } = [];
+    public IReadOnlyList<StreamMetadata> MutexStreams { get; init; } = [];
 
     /// <summary>
     /// Available caption tracks.
     /// </summary>
-    public IReadOnlyList<Caption> Captions { get; init; } = [];
+    public IReadOnlyList<CaptionMetadata> Captions { get; init; } = [];
 
     /// <summary>
     /// URL to the DASH manifest (if available).
@@ -92,4 +92,6 @@ public sealed record Video : VideoBase
     /// Allowed regions (ISO country codes).
     /// </summary>
     public IReadOnlyList<string> AllowedRegions { get; init; } = [];
+
+    public new bool IsMetaData => false;
 }

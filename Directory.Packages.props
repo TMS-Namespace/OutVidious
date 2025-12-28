@@ -15,6 +15,8 @@
 
     <!-- Cache -->
     <PackageVersion Include="BitFaster.Caching" Version="2.5.4" />
+        <PackageVersion Include="System.IO.Hashing" Version="9.0.0" />
+        <PackageVersion Include="TrackableEntities.EF.Core" Version="8.0.0" />
     
     <!-- UI Components -->
     <PackageVersion Include="BlazorMonaco" Version="3.3.0" />

@@ -29,6 +29,13 @@ public sealed class Orchestrator : IDisposable
         _logger.LogDebug("Orchestrator initialized");
     }
 
+    public async Task InitAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogDebug("Initializing Super instance");
+        await Super.InitAsync(cancellationToken);
+        _logger.LogDebug("Super instance initialized");
+    }
+
     /// <summary>
     /// Gets the Super ViewModel instance.
     /// </summary>

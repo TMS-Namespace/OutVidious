@@ -72,12 +72,21 @@ public sealed record DataBaseConfig
     public bool LogAllQueries { get; init; } = false;
 
     /// <summary>
+    /// Whether to enable sensitive data logging in EF Core and PostgreSQL client.
+    /// When true, EF Core will log parameter values and PostgreSQL will include error details.
+    /// This may log sensitive information and should be used with caution.
+    /// Default: false.
+    /// </summary>
+    public bool SensitiveDataLogging { get; init; } = true;
+
+    /// <summary>
     /// Builds a PostgreSQL connection string from the configured properties.
     /// </summary>
     public string BuildConnectionString()
     {
+        var includeErrorDetail = IncludeErrorDetail || SensitiveDataLogging;
         return $"Host={Host};Port={Port};Database={DatabaseName};Username={Username};Password={Password};" +
                $"Minimum Pool Size={MinPoolSize};Maximum Pool Size={MaxPoolSize};Timeout={ConnectionTimeoutSeconds};" +
-               $"Include Error Detail={IncludeErrorDetail}";
+               $"Include Error Detail={includeErrorDetail}";
     }
 }

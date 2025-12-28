@@ -207,6 +207,7 @@ public sealed class InvidiousVideoProvider : ProviderBase
                 return VideosPage.Empty(channelId, tab);
             }
 
+            // TODO: log the actual response when the is error or deserialization fails
             var dto = await response.Content.ReadFromJsonAsync<InvidiousChannelVideosResponseDto>(
                 _jsonOptions,
                 cancellationToken);

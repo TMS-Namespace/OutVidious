@@ -4,9 +4,9 @@ namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 /// Represents a user-defined group for organizing subscriptions.
 /// Groups can be hierarchical (have parent groups).
 /// </summary>
-public class ScopedGroupEntity
+public class ScopedGroupEntity : TrackableEntitiesBase
 {
-    public int Id { get; set; }
+    //public int Id { get; set; }
 
     /// <summary>
     /// Group display name/alias.

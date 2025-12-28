@@ -1,20 +1,27 @@
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
+
 namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
 /// <summary>
 /// Represents a YouTube channel.
 /// </summary>
-public class ChannelEntity
+public class ChannelEntity : TrackableEntitiesBase, ICacheableEntity
 {
-    public int Id { get; set; }
+    //public int Id { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
 
-    public DateTime LastSyncedAt { get; set; }
+    public DateTime? LastSyncedAt { get; set; }
 
     /// <summary>
-    /// YouTube channel ID (e.g., "UC...").
+    /// XxHash64 hash of the absolute remote URL for unique lookup.
     /// </summary>
-    public required string RemoteId { get; set; }
+    public required long Hash { get; set; }
+
+    /// <summary>
+    /// The original YouTube channel URL.
+    /// </summary>
+    public required string AbsoluteRemoteUrl { get; set; }
 
     /// <summary>
     /// Channel display name/title.

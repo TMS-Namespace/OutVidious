@@ -1,3 +1,4 @@
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
 
@@ -21,12 +22,12 @@ public static class InvidiousMapper
 
         return new Video
         {
-            RemoteId = dto.VideoId,
+            AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildVideoUrl(dto.VideoId),
             Title = dto.Title,
             DescriptionText = dto.Description,
             DescriptionHtml = dto.DescriptionHtml,
-            Channel = MapChannel(dto, baseUrl),
-            PublishedAt = dto.Published > 0 
+            Channel = MapChannel(dto),
+            PublishedAtUtc = dto.Published > 0 
                 ? DateTimeOffset.FromUnixTimeSeconds(dto.Published) 
                 : null,
             PublishedAgo = dto.PublishedText,
@@ -38,14 +39,16 @@ public static class InvidiousMapper
             Genre = !string.IsNullOrWhiteSpace(dto.Genre) ? dto.Genre : null,
             Thumbnails = dto.VideoThumbnails.Select(ThumbnailMapper.ToThumbnailInfo).ToList(),
             AdaptiveStreams = dto.AdaptiveFormats.Select(StreamMapper.ToStreamInfo).ToList(),
-            CombinedStreams = dto.FormatStreams.Select(StreamMapper.ToStreamInfo).ToList(),
+            MutexStreams = dto.FormatStreams.Select(StreamMapper.ToStreamInfo).ToList(),
             Captions = dto.Captions.Select(c => CaptionMapper.ToCaptionInfo(c, baseUrl)).ToList(),
+#pragma warning disable CS0618 // Type or member is obsolete
             DashManifestUrl = !string.IsNullOrWhiteSpace(dto.DashUrl) 
                 ? TryCreateUri(dto.DashUrl) 
                 : null,
             HlsManifestUrl = !string.IsNullOrWhiteSpace(dto.HlsUrl) 
                 ? TryCreateUri(dto.HlsUrl) 
                 : null,
+#pragma warning restore CS0618 // Type or member is obsolete
             IsLive = dto.LiveNow,
             IsUpcoming = dto.IsUpcoming,
             PremiereTimestamp = dto.PremiereTimestamp.HasValue && dto.PremiereTimestamp > 0
@@ -59,18 +62,15 @@ public static class InvidiousMapper
         };
     }
 
-    private static ChannelMetadata MapChannel(InvidiousVideoDetailsDto dto, Uri baseUrl)
+    private static ChannelMetadata MapChannel(InvidiousVideoDetailsDto dto)
     {
-        var channelUrl = !string.IsNullOrWhiteSpace(dto.AuthorUrl)
-            ? TryCreateUri($"{baseUrl.ToString().TrimEnd('/')}{dto.AuthorUrl}")
-            : null;
-
         return new ChannelMetadata
         {
-            RemoteId = dto.AuthorId,
+            AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildChannelUrl(dto.AuthorId),
             Name = dto.Author,
-            ChannelUrl = channelUrl,
+#pragma warning disable CS0618 // Type or member is obsolete
             SubscriberCountText = dto.SubCountText,
+#pragma warning restore CS0618 // Type or member is obsolete
             SubscriberCount = ParseSubscriberCount(dto.SubCountText),
             Avatars = dto.AuthorThumbnails
                 .Select(ThumbnailMapper.ToChannelThumbnailInfo)

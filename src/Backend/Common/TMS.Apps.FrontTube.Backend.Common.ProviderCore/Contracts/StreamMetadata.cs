@@ -1,11 +1,13 @@
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Cache;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
 namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 
 /// <summary>
 /// Represents a media stream (video, audio, or combined).
 /// </summary>
-public sealed record Stream
+public sealed record StreamMetadata : ICacheableCommon
 {
     /// <summary>
     /// Type of stream (video only, audio only, or combined).
@@ -13,9 +15,10 @@ public sealed record Stream
     public required StreamType Type { get; init; }
 
     /// <summary>
-    /// URL to the stream.
+    /// Absolute URL to the stream.
+    /// Used as the unique identifier for hashing and lookups.
     /// </summary>
-    public required Uri RemoteUrl { get; init; }
+    public required Uri AbsoluteRemoteUrl { get; init; }
 
     /// <summary>
     /// Container format.
@@ -91,4 +94,9 @@ public sealed record Stream
     /// Internal tag identifier from the provider.
     /// </summary>
     public int? Itag { get; init; }
+
+    private long? _hash;
+    public long Hash => _hash ??= HashHelper.ComputeHash(AbsoluteRemoteUrl.ToString());
+    
+    public bool IsMetaData => true;
 }

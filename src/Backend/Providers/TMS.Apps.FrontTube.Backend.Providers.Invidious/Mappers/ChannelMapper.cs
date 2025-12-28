@@ -1,3 +1,4 @@
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
@@ -28,19 +29,16 @@ public static class ChannelMapper
         ArgumentNullException.ThrowIfNull(dto);
         ArgumentNullException.ThrowIfNull(baseUrl);
 
-        var channelUrl = !string.IsNullOrWhiteSpace(dto.AuthorUrl)
-            ? TryCreateUri($"{baseUrl.ToString().TrimEnd('/')}{dto.AuthorUrl}")
-            : null;
-
         return new Channel
         {
-            RemoteId = dto.AuthorId,
+            AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildChannelUrl(dto.AuthorId),
             Name = dto.Author,
             Description = dto.Description ?? string.Empty,
             DescriptionHtml = dto.DescriptionHtml,
-            ChannelUrl = channelUrl,
             SubscriberCount = dto.SubCount,
+#pragma warning disable CS0618 // Type or member is obsolete
             SubscriberCountText = FormatSubscriberCount(dto.SubCount),
+#pragma warning restore CS0618 // Type or member is obsolete
             TotalViewCount = dto.TotalViews,
             JoinedAt = dto.Joined > 0 ? DateTimeOffset.FromUnixTimeSeconds(dto.Joined) : null,
             Avatars = dto.AuthorThumbnails.Select(ThumbnailMapper.ToChannelThumbnailInfo).ToList(),
@@ -59,24 +57,21 @@ public static class ChannelMapper
         ArgumentNullException.ThrowIfNull(dto);
         ArgumentNullException.ThrowIfNull(baseUrl);
 
-        var channelUrl = !string.IsNullOrWhiteSpace(dto.AuthorUrl)
-            ? TryCreateUri($"{baseUrl.ToString().TrimEnd('/')}{dto.AuthorUrl}")
-            : null;
-
         return new VideoMetadata
         {
-            RemoteId = dto.VideoId,
+            AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildVideoUrl(dto.VideoId),
             Title = dto.Title,
             Duration = TimeSpan.FromSeconds(dto.LengthSeconds),
             ViewCount = dto.ViewCount,
+#pragma warning disable CS0618 // Type or member is obsolete
             ViewCountText = dto.ViewCountText ?? FormatViewCount(dto.ViewCount),
             PublishedAgo = dto.PublishedText,
-            PublishedAt = dto.Published > 0 ? DateTimeOffset.FromUnixTimeSeconds(dto.Published) : null,
+#pragma warning restore CS0618 // Type or member is obsolete
+            PublishedAtUtc = dto.Published > 0 ? DateTimeOffset.FromUnixTimeSeconds(dto.Published) : null,
             Channel = new ChannelMetadata
             {
-                RemoteId = dto.AuthorId,
+                AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildChannelUrl(dto.AuthorId),
                 Name = dto.Author,
-                ChannelUrl = channelUrl
             },
             Thumbnails = dto.VideoThumbnails.Select(ThumbnailMapper.ToThumbnailInfo).ToList(),
             IsLive = dto.LiveNow,
@@ -85,7 +80,7 @@ public static class ChannelMapper
         };
     }
 
-    private static Image ToBannerThumbnailInfo(InvidiousChannelBannerDto dto)
+    private static ImageMetadata ToBannerThumbnailInfo(InvidiousChannelBannerDto dto)
     {
         // Determine quality based on width
         var quality = dto.Width switch
@@ -99,10 +94,10 @@ public static class ChannelMapper
 
         var originalUrl = ThumbnailMapper.ExtractBannerUrl(dto.Url);
 
-        return new Image
+        return new ImageMetadata
         {
             Quality = quality,
-            RemoteUrl = originalUrl,
+            AbsoluteRemoteUrl = originalUrl,
             Width = dto.Width,
             Height = dto.Height
         };
@@ -140,15 +135,5 @@ public static class ChannelMapper
             >= 1_000 => $"{count / 1_000.0:F1}K views",
             _ => $"{count:N0} views"
         };
-    }
-
-    private static Uri? TryCreateUri(string url)
-    {
-        if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
-        {
-            return uri;
-        }
-
-        return null;
     }
 }

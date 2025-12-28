@@ -50,7 +50,7 @@ public partial class VideoThumbnailComponentBase : ComponentBase
 
     protected string FormattedDuration => FormatDuration(Video?.Duration ?? TimeSpan.Zero);
 
-    protected string ChannelUrl => $"/channel/{Video?.ChannelRemoteId}";
+    protected string ChannelUrl => $"/channel?url={Uri.EscapeDataString(Video?.ChannelAbsoluteRemoteUrl?.ToString() ?? string.Empty)}";
 
     protected string CardStyle => Width.HasValue 
         ? $"width: {Width}px; cursor: pointer;" 
@@ -58,9 +58,9 @@ public partial class VideoThumbnailComponentBase : ComponentBase
 
     protected async Task OnChannelClick()
     {
-        if (!string.IsNullOrEmpty(Video?.ChannelRemoteId))
+        if (Video?.ChannelAbsoluteRemoteUrl is not null)
         {
-            await OnChannelClicked.InvokeAsync(Video.ChannelRemoteId);
+            await OnChannelClicked.InvokeAsync(Video.ChannelAbsoluteRemoteUrl.ToString());
         }
     }
 

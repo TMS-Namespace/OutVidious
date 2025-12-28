@@ -1,15 +1,19 @@
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Cache;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
+
 namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 
 /// <summary>
 /// Represents a compact video summary for lists and grids.
 /// Contains only essential information for display in thumbnails.
 /// </summary>
-public abstract record VideoBase
+public abstract record VideoBase : ICacheableCommon
 {
     /// <summary>
-    /// Unique identifier for the video.
+    /// Absolute URL to the video on the remote platform (e.g., https://www.youtube.com/watch?v=...).
+    /// Used as the unique identifier for hashing and lookups.
     /// </summary>
-    public required string RemoteId { get; init; }
+    public required Uri AbsoluteRemoteUrl { get; init; }
 
     /// <summary>
     /// Title of the video.
@@ -41,7 +45,7 @@ public abstract record VideoBase
     /// <summary>
     /// When the video was published.
     /// </summary>
-    public DateTimeOffset? PublishedAt { get; init; }
+    public DateTimeOffset? PublishedAtUtc { get; init; }
 
     /// <summary>
     /// Channel/author information.
@@ -51,7 +55,7 @@ public abstract record VideoBase
     /// <summary>
     /// Available thumbnails.
     /// </summary>
-    public IReadOnlyList<Image> Thumbnails { get; init; } = [];
+    public IReadOnlyList<ImageMetadata> Thumbnails { get; init; } = [];
 
     /// <summary>
     /// Whether the video is a live stream.
@@ -62,4 +66,9 @@ public abstract record VideoBase
     /// Whether the video is an upcoming premiere.
     /// </summary>
     public bool IsUpcoming { get; init; }
+
+    private long? _hash;
+    public long Hash => _hash ??= HashHelper.ComputeHash(AbsoluteRemoteUrl.ToString());
+
+    public bool IsMetaData => true;
 }

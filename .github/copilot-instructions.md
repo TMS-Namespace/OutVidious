@@ -67,7 +67,7 @@ The app uses **Super** pattern. All business logic lives in ViewModels of `Core`
 - All enum table names are prefixed with `enum_`.
 - All tables that are not shared between multiple users, has names prefixed with `scoped_` and have a `user_id` column to identify the owner user.
 - All entities that are cached from external providers, should have the following columns always:
-  - Not nullable `remote_url`, for the original source URL.
+  - Not nullable `absolute_remote_url`, for the original source URL.
   - Not nullable and unique `hash` column for lookup, that uses `XxHash64` hash.
   - Nullable `last_synced_at` `DateTime` column to track when it was last fetched.
 
@@ -77,9 +77,44 @@ The app uses **Super** pattern. All business logic lives in ViewModels of `Core`
 - Solution root auto-detected by finding `.sln` file in development, or via `AppContext.BaseDirectory` in production.
 - Verbose logging everywhere, especially for async operations and failures.
 - Objects that can log shall receive `ILoggerFactory` in the constructor, each creates `ILogger<T>` from it and use it.
+- Log message should always finish with a dot.
+- Log message should be of the following format: `[Method Name] Text 'Some parameter' text.` where `nameOf()` is used for `Method Name`, and parameters are logged via structured logging, and put in between single quotes. Finally, the message shall always end with a dot.
+- Always log exceptions with `LogError(ex, "...")`, never just the message.
+- Error logs from catch statements, should start always with `[Method Name] Unexpected error: Text`.
+- All potentially spammy logs (e.g., in loops, frequent operations) should be at `Debug` level, not `Information`.
+
+
+### Provider Integration
+- All external data fetching is abstracted via `IProvider` interfaces.
+- All providers return `Common` contracts defined in `ProviderCore` project, which are then mapped to database entities and view models.
+- All `Common` contracts implement `ICacheableCommon` (since they are mapped to cacheable database entities) for easier handling in `CacheManager` and `RepositoryManager`.
+- There are two types of `Common` contracts that Youtube usually returns:
+  1. Objects that contain partial descriptive information, we call them `Metadata` objects (e.g., `VideoMetadata`, `ImageMetadata`), for example `ImageMetadata` does not contain the actual image bytes (needs to be fetched separately), just its URL, dimensions, etc..
+  2. Objects with full descriptive information, we just call them (e.g., `Video`, `Channel`), However, they still do not contain full objects, for example `Video` does not contain the actual stream bytes, and needs to be fetched separately.
+
+### Caching Mechanism
+- Caching is handled by the `Cache` project in the backend, which interacts with the database and `IProvider` to store and retrieve cached data.
+- From caching perspective, there are three sources of data:
+  1. External providers (e.g., Invidious instances) - the original source of truth.
+  2. Database cache - persistent storage of cached data fetched from external providers.
+  3. In-memory cache - which is a second level `EF Core` cache for fast access during runtime, hence, query results (i.e database entities) are what is cached in memory.
+- The cached data includes videos, channels, images, and any other relevant metadata, all cached database entities uses `ICacheableEntity`.
+- `CacheManager` is responsible for managing the caching logic and interactions with both the database caches, and `provider`'s data, however only for top level objects, i.e. if a video has images, only the video is managed by `CacheManager`, while images will be managed by `RepositoryManager`, that in turn will use `CacheManager` that will trait them as top level objects then.
+- `CacheManager` is responsible to check if the item is already cached in the database, and if it is still fresh (not expired/stale), if so, it returns it directly, otherwise it fetches fresh data from the external provider, maps it to the corresponding database entity, returns it, and updates the database cache in the background.
+- `CacheableIdentity` is used to uniquely identify objects that can be cached, it combines `AbsoluteRemoteUrl`, `RemoteID`, and `Hash` (that built from `AbsoluteRemoteUrl`).
+- We always consider `Hash` as the unique identifier of cached objects, and use it for lookups.
+- `CacheManager` is responsible for managing the caching logic and interactions with both the database caches, and provider's data .
+- All of the cached object types have configurable expiration times in `CacheConfig`, after which they are considered stale and will be refreshed upon the cache lookup.
+
+### Repository Manager
+- `RepositoryManager` is responsible for managing complex operations involving multiple cached entities, such as videos with their associated images, or channels with their videos.
+- It orchestrates calls to `CacheManager` for each individual entity type, ensuring that all related entities are properly cached and linked together.
+- It is also responsible to fetch separately the data that is not part of `Common` contracts, for example, fetching images bytes.
+- It outputs `ViewModels` that are ready for UI consumption, by mapping the cached database entities or `Common` contracts to the corresponding `ViewModels` using simple mappers.
 
 ### ViewModel Creation and Usage
-- All ViewModels are created and managed by the `Super`view model.
+- All ViewModels are created and managed by the `Super` view model.
+- Most `ViewModels`, are basically wrappers around database entities, or `Common` contracts, with added logic to manage state, operations, and events. All except super, inherit from `ViewModelBase`.
 - `Super` shall be a singleton for the whole UI app, created once via the `Orchestrator` singleton service.
 - `Super` receives only `ILoggerFactory` and `IHttpClientFactory` in its constructor, and exposes it an internal property to other VMs. Each view model creates its own `ILogger<T>` from it during construction.
 - All view models has reference to `Super`.
@@ -112,21 +147,7 @@ The app uses **Super** pattern. All business logic lives in ViewModels of `Core`
 - Always create specific DataGenerator classes for test data generation, with randomized data via `Bogus`, if not mocked.
 - When it is needed to access private members, it is allowed to make them `internal`, and use `<InternalsVisibleTo Include="..." />` in the project file, with conservatism in mind.
 
-### Caching Mechanism
 
-- We are caching all of the data fetched from external providers, first in an in-memory cache for fast access, then in a persistent database cache for long-term storage.
-- The cached data includes videos, channels, images, and any other relevant metadata (we cache database entities).
-- Caching is handled by the `Cache` project in the backend, which interacts with the database to store and retrieve cached data.
-- All of the cached object types have configurable expiration times, after which they are considered stale and will be refreshed upon the request.
-- All database operations that related to caching, shall be done in the background, and return the fetched data to the requester as soon as possible, without waiting for the data base operation to complete.
-- Object lookups should be performed using there unique identifiers (which is the Hash) to ensure accurate retrieval.
-- The caching logic goes as follows:
-  1. When data is requested, first check the in-memory cache.
-  2. If data is found and is fresh (not expired), return it.
-  3. If data is found but expired, fetch fresh data from the external provider, return it, and update the database cache in the background.
-  3. If data is not found in the memory cache, check the database cache, if found and fresh, set it in the memory cache and return it.
-  5. If the found data in the database cache is expired, fetch fresh data from the external provider, return it, and update both the memory and database caches in the background.
-  4. If the data is not found in the database cache too, fetch it from the external provider, return it, and store it in both the memory and database caches in the background.
 
 ## Common Pitfalls
 

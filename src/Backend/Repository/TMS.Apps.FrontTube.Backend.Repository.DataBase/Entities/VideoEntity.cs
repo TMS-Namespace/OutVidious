@@ -1,20 +1,27 @@
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
+
 namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
 /// <summary>
 /// Represents a video.
 /// </summary>
-public class VideoEntity
+public class VideoEntity : TrackableEntitiesBase, ICacheableEntity
 {
-    public int Id { get; set; }
+    //public int Id { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
 
-    public DateTime LastSyncedAt { get; set; }
+    public DateTime? LastSyncedAt { get; set; }
 
     /// <summary>
-    /// YouTube video ID.
+    /// XxHash64 hash of the absolute remote URL for unique lookup.
     /// </summary>
-    public required string RemoteId { get; set; }
+    public required long Hash { get; set; }
+
+    /// <summary>
+    /// The original YouTube video URL.
+    /// </summary>
+    public required string AbsoluteRemoteUrl { get; set; }
 
     /// <summary>
     /// Video title.
@@ -87,14 +94,14 @@ public class VideoEntity
     public bool IsWatched { get; set; }
 
     // Foreign keys
-    public int? ChannelId { get; set; }
+    public int ChannelId { get; set; }
 
     // Navigation properties
-    public ChannelEntity? Channel { get; set; }
+    public ChannelEntity Channel { get; set; } =null!;
 
     public ICollection<VideoThumbnailMapEntity> Thumbnails { get; set; } = [];
 
-    public ICollection<VideoCaptionEntity> Captions { get; set; } = [];
+    public ICollection<CaptionEntity> Captions { get; set; } = [];
 
     public ICollection<StreamEntity> Streams { get; set; } = [];
 

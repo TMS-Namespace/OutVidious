@@ -32,7 +32,7 @@ public sealed record Channel : ChannelMetadata
     /// <summary>
     /// Channel banner images.
     /// </summary>
-    public IReadOnlyList<Image> Banners { get; init; } = [];
+    public IReadOnlyList<ImageMetadata> Banners { get; init; } = [];
 
     /// <summary>
     /// Available tabs for this channel.
@@ -48,4 +48,6 @@ public sealed record Channel : ChannelMetadata
     /// Keywords/tags associated with the channel.
     /// </summary>
     public IReadOnlyList<string> Tags { get; init; } = [];
+
+    public new bool IsMetaData => false;
 }

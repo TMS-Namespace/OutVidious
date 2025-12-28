@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Logging;
-using TMS.Apps.FrontTube.Backend.Repository.Cache;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 using TMS.Apps.FrontTube.Backend.Core.Tools;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious;
+using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 
 namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
@@ -17,8 +17,9 @@ public sealed class Super : IDisposable
     private readonly ILoggerFactory _loggerFactory;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<Super> _logger;
-    private readonly ICacheManager _dataRepository;
+    private readonly ICacheManager _cacheManager;
     private readonly IProvider _videoProvider;
+    private readonly DataBaseContextPool _pool;
     private bool _disposed;
 
     /// <summary>
@@ -29,13 +30,15 @@ public sealed class Super : IDisposable
     /// <summary>
     /// Gets the proxy for video playback, DASH manifests, and image fetching.
     /// </summary>
-    public Proxy Proxy { get; }
+    public ProxyToProvider Proxy { get; }
 
     /// <summary>
     /// Gets the application configurations.
     /// UI can modify these to change application behavior.
     /// </summary>
     public Configurations Configurations { get; }
+
+    internal RepositoryManager RepositoryManager {get;}
 
     /// <summary>
     /// Creates a Super instance with default configurations.
@@ -53,31 +56,35 @@ public sealed class Super : IDisposable
         // Initialize configurations with defaults
         Configurations = new Configurations();
 
-        // Create CacheManager
-        _dataRepository = new CacheManager(
-            Configurations.Cache,
-            Configurations.DataBase,
-            loggerFactory);
-
-        // Create InvidiousVideoProvider
+        // Create InvidiousVideoProvider (needed for CacheManager)
         _videoProvider = new InvidiousVideoProvider(
             loggerFactory,
             httpClientFactory,
             Configurations.Provider);
+
+        // Create database context pool
+        _pool = new DataBaseContextPool(Configurations.DataBase, loggerFactory);
+
+        // create RepositoryManager
+        RepositoryManager = new RepositoryManager(this, _videoProvider);
 
         // Create Proxy with SSL bypass handler if configured
         Action<HttpClientHandler>? proxyHandlerConfigurator = Configurations.Provider.BypassSslValidation
             ? handler => handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
             : null;
 
-        Proxy = new Proxy(
-            loggerFactory,
+        Proxy = new ProxyToProvider(
+            this,
             httpClientFactory,
             _videoProvider.BaseUrl,
-            _dataRepository,
             proxyHandlerConfigurator);
 
         _logger.LogDebug("Super initialized with provider: {ProviderType}", _videoProvider.GetType().Name);
+    }
+
+    public async Task InitAsync(CancellationToken cancellationToken)
+    {
+        await RepositoryManager.InitAsync(cancellationToken);
     }
 
     /// <summary>
@@ -86,135 +93,82 @@ public sealed class Super : IDisposable
     public IProvider VideoProvider => _videoProvider;
 
     /// <summary>
-    /// Gets video information by remote ID and returns a VideoPlayerViewModel wrapping it.
+    /// Gets video information by video ID. Constructs the canonical URL to compute hash.
     /// </summary>
-    /// <param name="remoteId">The video's remote identifier.</param>
+    /// <param name="videoId">The video's remote identifier (e.g., YouTube video ID).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A VideoPlayerViewModel wrapping the video data, or null if not found.</returns>
-    public async Task<Video?> GetVideoByRemoteIdAsync(string remoteId, CancellationToken cancellationToken)
+    /// <returns>A Video ViewModel wrapping the video data, or null if not found.</returns>
+    public async Task<Video?> GetVideoByIdAsync(string videoId, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(remoteId))
+        if (string.IsNullOrWhiteSpace(videoId))
         {
-            _logger.LogWarning("GetVideoByRemoteIdAsync called with empty remoteId");
+            _logger.LogWarning("GetVideoByIdAsync called with empty videoId");
             return null;
         }
 
-        _logger.LogDebug("Getting video by remote ID: {RemoteId}", remoteId);
-
-        try
+        var absoluteRemoteUrl = YouTubeValidator.BuildVideoUrl(videoId);
+        var identity = new CacheableIdentity
         {
-            var videoInfo = await _dataRepository.GetVideoAsync(remoteId, _videoProvider, cancellationToken);
+            AbsoluteRemoteUrlString = absoluteRemoteUrl.ToString()
+        };
 
-            if (videoInfo is null)
-            {
-                _logger.LogWarning("Video not found: {RemoteId}", remoteId);
-                return null;
-            }
-
-            var viewModel = new Video(this, _loggerFactory, videoInfo);
-            _logger.LogDebug("Created VideoPlayerViewModel for: {Title}", videoInfo.Title);
-
-            return viewModel;
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogDebug("GetVideoByRemoteIdAsync cancelled for: {RemoteId}", remoteId);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting video by remote ID: {RemoteId}", remoteId);
-            return null;
-        }
+        return await RepositoryManager.GetVideoAsync(identity, cancellationToken);
     }
 
+
     /// <summary>
-    /// Gets channel details by remote ID and returns a ChannelViewModel wrapping it.
+    /// Gets channel details by channel ID. Constructs the canonical URL to compute hash.
     /// </summary>
-    /// <param name="remoteId">The channel's remote identifier.</param>
+    /// <param name="channelId">The channel's remote identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A ChannelViewModel wrapping the channel data, or null if not found.</returns>
-    public async Task<Channel?> GetChannelDetailsByRemoteIdAsync(string remoteId, CancellationToken cancellationToken)
+    /// <returns>A Channel ViewModel wrapping the channel data, or null if not found.</returns>
+    public async Task<Channel?> GetChannelByIdAsync(string channelId, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(remoteId))
+        if (string.IsNullOrWhiteSpace(channelId))
         {
-            _logger.LogWarning("GetChannelDetailsByRemoteIdAsync called with empty remoteId");
+            _logger.LogWarning("GetChannelByIdAsync called with empty channelId");
             return null;
         }
 
-        _logger.LogDebug("Getting channel by remote ID: {RemoteId}", remoteId);
-
-        try
+        var absoluteRemoteUrl = YouTubeValidator.BuildChannelUrl(channelId);
+        var identity = new CacheableIdentity
         {
-            var channelDetails = await _dataRepository.GetChannelAsync(remoteId, _videoProvider, cancellationToken);
+            AbsoluteRemoteUrlString = absoluteRemoteUrl.ToString()
+        };
 
-            if (channelDetails is null)
-            {
-                _logger.LogWarning("Channel not found: {RemoteId}", remoteId);
-                return null;
-            }
-
-            var viewModel = new Channel(this, _loggerFactory, channelDetails);
-            _logger.LogDebug("Created ChannelViewModel for: {ChannelName}", channelDetails.Name);
-
-            return viewModel;
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogDebug("GetChannelDetailsByRemoteIdAsync cancelled for: {RemoteId}", remoteId);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting channel by remote ID: {RemoteId}", remoteId);
-            return null;
-        }
+        return await  RepositoryManager.GetChannelAsync(identity, cancellationToken);
     }
 
     /// <summary>
     /// Gets a page of videos from a channel.
     /// </summary>
-    /// <param name="channelId">The channel's remote identifier.</param>
+    /// <param name="absoluteRemoteUrl">The channel's absolute remote URL.</param>
     /// <param name="tab">The tab to fetch from.</param>
     /// <param name="continuationToken">Pagination token.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A page of video summaries.</returns>
     public async Task<VideosPage?> GetChannelVideosAsync(
-        string channelId,
+        Uri absoluteRemoteUrl,
         string tab,
         string? continuationToken,
         CancellationToken cancellationToken)
     {
         _logger.LogDebug(
-            "Getting channel videos: {ChannelId}, tab: {Tab}, hasContinuation: {HasContinuation}",
-            channelId,
+            "Getting channel videos: {Url}, tab: {Tab}, hasContinuation: {HasContinuation}",
+            absoluteRemoteUrl,
             tab,
             continuationToken is not null);
 
-        return await _dataRepository.GetChannelVideosAsync(
-            channelId,
+        var identities = new CacheableIdentity
+        {
+            AbsoluteRemoteUrlString = absoluteRemoteUrl.ToString()
+        };
+
+        return await RepositoryManager.GetChannelsPageAsync(
+            identities,
             tab,
             continuationToken,
-            _videoProvider,
             cancellationToken);
-    }
-
-    /// <summary>
-    /// Invalidates cached video data, forcing a refresh on next access.
-    /// </summary>
-    /// <param name="remoteId">The video's remote identifier.</param>
-    public void InvalidateVideo(string remoteId)
-    {
-        _dataRepository.InvalidateVideo(remoteId);
-    }
-
-    /// <summary>
-    /// Invalidates cached channel data, forcing a refresh on next access.
-    /// </summary>
-    /// <param name="remoteId">The channel's remote identifier.</param>
-    public void InvalidateChannel(string remoteId)
-    {
-        _dataRepository.InvalidateChannel(remoteId);
     }
 
     /// <summary>
@@ -241,35 +195,6 @@ public sealed class Super : IDisposable
         return $"/api/ImageProxy?originalUrl={encodedOriginalUrl}&fetchUrl={encodedFetchUrl}";
     }
 
-    /// <summary>
-    /// Gets an image by its original URL with caching (memory → DB → web).
-    /// </summary>
-    /// <param name="originalUrl">The original URL of the image (YouTube CDN URL).</param>
-    /// <param name="fetchUrl">The URL to fetch the image from (may be provider proxy).</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Cached image data or null if failed.</returns>
-    public async Task<CachedImage?> GetImageAsync(Uri originalUrl, Uri fetchUrl, CancellationToken cancellationToken)
-    {
-        return await _dataRepository.GetImageAsync(originalUrl, fetchUrl, cancellationToken);
-    }
-
-    /// <summary>
-    /// Creates an ImageViewModel for async image loading.
-    /// </summary>
-    /// <param name="originalUrl">The original URL of the image (YouTube CDN URL).</param>
-    /// <param name="fetchUrl">The URL to fetch the image from (may be provider proxy).</param>
-    /// <param name="placeholderDataUrl">Optional placeholder.</param>
-    /// <returns>An ImageViewModel configured to load the image.</returns>
-    public Image CreateImageViewModel(Uri originalUrl, Uri fetchUrl, string? placeholderDataUrl = null)
-    {
-        return new Image(
-            this,
-            _loggerFactory.CreateLogger<Image>(),
-            originalUrl,
-            fetchUrl,
-            placeholderDataUrl);
-    }
-
     public void Dispose()
     {
         if (_disposed)
@@ -277,7 +202,7 @@ public sealed class Super : IDisposable
             return;
         }
 
-        _dataRepository.Dispose();
+        _cacheManager.Dispose();
         _videoProvider.Dispose();
 
         _disposed = true;

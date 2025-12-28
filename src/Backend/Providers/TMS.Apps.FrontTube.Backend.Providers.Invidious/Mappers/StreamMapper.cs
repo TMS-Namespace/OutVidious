@@ -13,15 +13,15 @@ public static partial class StreamMapper
     /// <summary>
     /// Maps an Invidious adaptive format DTO to a StreamInfo contract.
     /// </summary>
-    public static Common.ProviderCore.Contracts.Stream ToStreamInfo(InvidiousAdaptiveFormatDto dto)
+    public static Common.ProviderCore.Contracts.StreamMetadata ToStreamInfo(InvidiousAdaptiveFormatDto dto)
     {
         var streamType = DetermineStreamType(dto.Type);
         var (width, height) = ParseResolution(dto.Resolution);
 
-        return new Common.ProviderCore.Contracts.Stream
+        return new Common.ProviderCore.Contracts.StreamMetadata
         {
             Type = streamType,
-            RemoteUrl = new Uri(dto.Url, UriKind.RelativeOrAbsolute),
+            AbsoluteRemoteUrl = new Uri(dto.Url, UriKind.RelativeOrAbsolute),
             Container = ParseContainer(dto.Container),
             VideoCodec = streamType != StreamType.Audio ? ParseVideoCodec(dto.Encoding) : null,
             AudioCodec = streamType != StreamType.Video ? ParseAudioCodec(dto.Encoding) : null,
@@ -43,14 +43,14 @@ public static partial class StreamMapper
     /// <summary>
     /// Maps an Invidious format stream DTO to a StreamInfo contract.
     /// </summary>
-    public static Common.ProviderCore.Contracts.Stream ToStreamInfo(InvidiousFormatStreamDto dto)
+    public static Common.ProviderCore.Contracts.StreamMetadata ToStreamInfo(InvidiousFormatStreamDto dto)
     {
         var (width, height) = ParseResolution(dto.Resolution);
 
-        return new Common.ProviderCore.Contracts.Stream
+        return new Common.ProviderCore.Contracts.StreamMetadata
         {
             Type = StreamType.Mutex,
-            RemoteUrl = new Uri(dto.Url, UriKind.RelativeOrAbsolute),
+            AbsoluteRemoteUrl = new Uri(dto.Url, UriKind.RelativeOrAbsolute),
             Container = ParseContainer(dto.Container),
             VideoCodec = ParseVideoCodec(dto.Encoding),
             AudioCodec = AudioCodec.Aac, // Combined formats typically use AAC

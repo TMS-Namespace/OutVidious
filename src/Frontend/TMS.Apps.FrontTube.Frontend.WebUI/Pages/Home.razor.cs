@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
@@ -33,6 +34,8 @@ public partial class Home : ComponentBase, IDisposable
         await base.OnInitializedAsync();
 
         _cts = new CancellationTokenSource();
+
+        await Orchestrator.InitAsync(_cts.Token);
 
         // Auto-load the demo video
         Logger.LogInformation("Auto-loading demo video: {VideoId}", DefaultVideoId);
@@ -76,12 +79,12 @@ public partial class Home : ComponentBase, IDisposable
             // Dispose previous ViewModel if any
             _videoPlayerVm?.Dispose();
             
-            _videoPlayerVm = await Orchestrator.Super.GetVideoByRemoteIdAsync(videoId, _cts.Token);
+            _videoPlayerVm = await Orchestrator.Super.GetVideoByIdAsync(videoId, _cts.Token);
             
             if (_videoPlayerVm is not null)
             {
                 Logger.LogInformation("VideoPlayerViewModel created. Title: {Title}", _videoPlayerVm.Title);
-                Logger.LogInformation("Current Stream URL: {Url}", _videoPlayerVm.CurrentStreamUrl ?? "(null)");
+                Logger.LogInformation("Current Stream URL: {Url}", _videoPlayerVm.Streams.CurrentStreamUrl ?? "(null)");
             }
             else
             {

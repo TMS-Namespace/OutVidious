@@ -1,25 +1,23 @@
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Cache;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
+
 namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 
 /// <summary>
 /// Represents basic channel/author information.
 /// </summary>
-public record ChannelMetadata
+public record ChannelMetadata : ICacheableCommon
 {
     /// <summary>
-    /// Unique identifier for the channel.
+    /// Absolute URL to the channel on the remote platform (e.g., https://www.youtube.com/channel/...).
+    /// Used as the unique identifier for hashing and lookups.
     /// </summary>
-    public required string RemoteId { get; init; }
+    public required Uri AbsoluteRemoteUrl { get; init; }
 
     /// <summary>
     /// Display name of the channel.
     /// </summary>
     public required string Name { get; init; }
-
-    /// <summary>
-    /// URL to the channel page.
-    /// </summary>
-    [Obsolete("Use RemoteId instead")]
-    public Uri? ChannelUrl { get; init; }
 
     /// <summary>
     /// Subscriber count text (e.g., "1.5M subscribers").
@@ -35,5 +33,11 @@ public record ChannelMetadata
     /// <summary>
     /// Available thumbnails for the channel avatar.
     /// </summary>
-    public IReadOnlyList<Image> Avatars { get; init; } = [];
+    public IReadOnlyList<ImageMetadata> Avatars { get; init; } = [];
+
+    private long? _hash;
+    public long Hash => _hash ??= HashHelper.ComputeHash(AbsoluteRemoteUrl.ToString());
+
+    public bool IsMetaData => true;
+
 }
