@@ -22,7 +22,7 @@
         <div class="channel-header">
             @if (BannerUrl is not null)
             {
-                <AsyncImageComponent 
+                <ImageComponent 
                     ImageUrl="@BannerUrl" 
                     Alt="Channel Banner"
                     Class="channel-banner-image"
@@ -32,7 +32,7 @@
 
             <div class="channel-info">
                 <MudAvatar Size="Size.Large" Class="channel-avatar">
-                    <AsyncImageComponent 
+                    <ImageComponent 
                         ImageUrl="@AvatarUrl" 
                         Alt="@ViewModel.Name"
                         ObjectFit="ObjectFit.Cover"

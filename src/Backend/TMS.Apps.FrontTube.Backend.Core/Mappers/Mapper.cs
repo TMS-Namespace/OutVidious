@@ -53,8 +53,8 @@ namespace TMS.Apps.FrontTube.Backend.Core.Mappers;
             return new Channel(
                 super, 
                 channelCacheResult, 
-                bannersCacheResult.Select(img => ToVM(super, img)).ToList(), 
-                avatarsCacheResult.Select(img => ToVM(super, img)).ToList());
+                avatarsCacheResult.Select(img => ToVM(super, img)).ToList(), 
+                bannersCacheResult.Select(img => ToVM(super, img)).ToList());
         }
 
         public static VideosPage ToVM(
