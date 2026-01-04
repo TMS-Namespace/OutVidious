@@ -204,6 +204,8 @@ public sealed class DataBaseContextPool : IAsyncDisposable
         if (config.ConnectionPoolConfig.ConnectionPruningIntervalSeconds is { } prune)
             csb.ConnectionPruningInterval = prune;
 
+        csb.IncludeErrorDetail = config.SensitiveDataLogging;
+
         return csb.ToString();
     }
 

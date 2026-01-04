@@ -14,7 +14,7 @@ public interface IProvider : IProviderMetadata, IDisposable
     /// <param name="videoId">The video identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Video information or null if not found.</returns>
-    Task<Video?> GetVideoInfoAsync(string videoId, CancellationToken cancellationToken);
+    Task<VideoCommon?> GetVideoAsync(string videoId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Gets the embed URL for a video.
@@ -29,7 +29,7 @@ public interface IProvider : IProviderMetadata, IDisposable
     /// <param name="channelId">The channel identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Channel details or null if not found.</returns>
-    Task<Channel?> GetChannelDetailsAsync(string channelId, CancellationToken cancellationToken);
+    Task<ChannelCommon?> GetChannelAsync(string channelId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Gets a page of videos from a channel.
@@ -39,7 +39,7 @@ public interface IProvider : IProviderMetadata, IDisposable
     /// <param name="continuationToken">Token for pagination. Null for the first page.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A page of videos with continuation token for next page.</returns>
-    Task<VideosPage?> GetChannelVideosAsync(
+    Task<VideosPageCommon?> GetChannelVideosTabAsync(
         string channelId,
         string tab = "videos",
         string? continuationToken = null,

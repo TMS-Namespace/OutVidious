@@ -37,16 +37,16 @@ public abstract class ProviderBase : IProvider
     public virtual bool IsConfigured => BaseUrl.IsAbsoluteUri;
 
     /// <inheritdoc />
-    public abstract Task<Video?> GetVideoInfoAsync(string videoId, CancellationToken cancellationToken);
+    public abstract Task<VideoCommon?> GetVideoAsync(string videoId, CancellationToken cancellationToken);
 
     /// <inheritdoc />
     public abstract Uri GetEmbedUrl(string videoId);
 
     /// <inheritdoc />
-    public abstract Task<Channel?> GetChannelDetailsAsync(string channelId, CancellationToken cancellationToken);
+    public abstract Task<ChannelCommon?> GetChannelAsync(string channelId, CancellationToken cancellationToken);
 
     /// <inheritdoc />
-    public abstract Task<VideosPage?> GetChannelVideosAsync(
+    public abstract Task<VideosPageCommon?> GetChannelVideosTabAsync(
         string channelId,
         string tab = "videos",
         string? continuationToken = null,

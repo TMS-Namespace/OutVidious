@@ -1,4 +1,4 @@
-namespace TMS.Apps.FrontTube.Backend.Core.Tools;
+namespace TMS.Apps.FrontTube.Backend.Repository.Data.Tools;
 
 /// <summary>
 /// Parses image dimensions from binary data by reading image format headers.

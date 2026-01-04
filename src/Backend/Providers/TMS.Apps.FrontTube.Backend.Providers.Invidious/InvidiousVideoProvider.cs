@@ -64,7 +64,7 @@ public sealed class InvidiousVideoProvider : ProviderBase
     public override string Description => "Privacy-focused YouTube frontend providing access to YouTube videos without tracking.";
 
     /// <inheritdoc />
-    public override async Task<Video?> GetVideoInfoAsync(string videoId, CancellationToken cancellationToken)
+    public override async Task<VideoCommon?> GetVideoAsync(string videoId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(videoId))
         {
@@ -126,7 +126,7 @@ public sealed class InvidiousVideoProvider : ProviderBase
     }
 
     /// <inheritdoc />
-    public override async Task<Channel?> GetChannelDetailsAsync(string channelId, CancellationToken cancellationToken)
+    public override async Task<ChannelCommon?> GetChannelAsync(string channelId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(channelId))
         {
@@ -136,10 +136,14 @@ public sealed class InvidiousVideoProvider : ProviderBase
         var apiUrl = $"{BaseUrl.ToString().TrimEnd('/')}/api/v1/channels/{Uri.EscapeDataString(channelId)}";
         Logger.LogDebug("Fetching channel details from Invidious: {ApiUrl}", apiUrl);
 
+        string? responseContent = null;
+
         try
         {
             var response = await HttpClient.GetAsync(apiUrl, cancellationToken);
 
+            responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            
             if (!response.IsSuccessStatusCode)
             {
                 Logger.LogWarning(
@@ -149,13 +153,14 @@ public sealed class InvidiousVideoProvider : ProviderBase
                 return null;
             }
 
+
             var dto = await response.Content.ReadFromJsonAsync<InvidiousChannelDto>(
                 _jsonOptions,
                 cancellationToken);
 
             if (dto == null)
             {
-                Logger.LogWarning("Invidious API returned null for channel {ChannelId}", channelId);
+                Logger.LogWarning("Invidious API returned null for channel {ChannelId}. Response content: {ResponseContent}", channelId, responseContent);
                 return null;
             }
 
@@ -166,18 +171,18 @@ public sealed class InvidiousVideoProvider : ProviderBase
         }
         catch (HttpRequestException ex)
         {
-            Logger.LogError(ex, "HTTP error while fetching channel {ChannelId} from Invidious", channelId);
+            Logger.LogError(ex, "HTTP error while fetching channel {ChannelId} from Invidious. Response content: {ResponseContent}", channelId, responseContent);
             throw;
         }
         catch (JsonException ex)
         {
-            Logger.LogError(ex, "JSON parsing error for channel {ChannelId} from Invidious", channelId);
+            Logger.LogError(ex, "JSON parsing error for channel {ChannelId} from Invidious. Response content: {ResponseContent}", channelId, responseContent);
             throw;
         }
     }
 
     /// <inheritdoc />
-    public override async Task<VideosPage?> GetChannelVideosAsync(
+    public override async Task<VideosPageCommon?> GetChannelVideosTabAsync(
         string channelId,
         string? tabId,
         string? continuationToken,
@@ -204,7 +209,7 @@ public sealed class InvidiousVideoProvider : ProviderBase
                     "Invidious API request failed with status {StatusCode} for channel videos {ChannelId}",
                     response.StatusCode,
                     channelId);
-                return VideosPage.Empty(channelId, tab);
+                return VideosPageCommon.Empty(channelId, tab);
             }
 
             // TODO: log the actual response when the is error or deserialization fails
@@ -215,14 +220,14 @@ public sealed class InvidiousVideoProvider : ProviderBase
             if (dto == null || dto.Videos == null)
             {
                 Logger.LogWarning("Invidious API returned null for channel videos {ChannelId}", channelId);
-                return VideosPage.Empty(channelId, tab);
+                return VideosPageCommon.Empty(channelId, tab);
             }
 
             var videos = dto.Videos.Select(v => ChannelMapper.ToVideoSummary(v, BaseUrl)).ToList();
 
-            var page = new VideosPage
+            var page = new VideosPageCommon
             {
-                ChannelId = channelId,
+                ChannelRemoteAbsoluteUrl = channelId,
                 Tab = tab,
                 Videos = videos,
                 ContinuationToken = dto.Continuation,

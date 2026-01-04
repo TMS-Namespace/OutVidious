@@ -7,7 +7,7 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// <summary>
 /// Represents a thumbnail image with strongly typed dimensions and quality.
 /// </summary>
-public sealed record ImageMetadata : ICacheableCommon
+public sealed record ImageMetadataCommon : ICacheableCommon
 {
     /// <summary>
     /// Quality level of the thumbnail.

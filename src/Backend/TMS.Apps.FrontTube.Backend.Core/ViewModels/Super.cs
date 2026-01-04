@@ -1,10 +1,8 @@
 using Microsoft.Extensions.Logging;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
+using TMS.Apps.FrontTube.Backend.Core.Mappers;
 using TMS.Apps.FrontTube.Backend.Core.Tools;
-using TMS.Apps.FrontTube.Backend.Providers.Invidious;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
-using TMS.Apps.FrontTube.Backend.Repository.DataBase;
+using TMS.Apps.FrontTube.Backend.Repository.Data;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 
 namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
@@ -15,11 +13,8 @@ namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 public sealed class Super : IDisposable
 {
     private readonly ILoggerFactory _loggerFactory;
-    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<Super> _logger;
-    //private readonly ICacheManager _cacheManager;
-    private readonly IProvider _videoProvider;
-    //private readonly DataBaseContextPool _pool;
+    private readonly CancellationTokenSource _repositoryManagerCts = new();
     private bool _disposed;
 
     /// <summary>
@@ -38,7 +33,7 @@ public sealed class Super : IDisposable
     /// </summary>
     public Configurations Configurations { get; }
 
-    internal RepositoryManager RepositoryManager {get;}
+    internal RepositoryManager RepositoryManager { get; }
 
     /// <summary>
     /// Creates a Super instance with default configurations.
@@ -50,25 +45,19 @@ public sealed class Super : IDisposable
         ArgumentNullException.ThrowIfNull(httpClientFactory);
 
         _loggerFactory = loggerFactory;
-        _httpClientFactory = httpClientFactory;
         _logger = loggerFactory.CreateLogger<Super>();
 
-        // Initialize configurations with defaults
         Configurations = new Configurations();
 
-        // Create InvidiousVideoProvider (needed for CacheManager)
-        _videoProvider = new InvidiousVideoProvider(
+        RepositoryManager = new RepositoryManager(
+            Configurations.DataBase,
+            Configurations.Cache,
+            Configurations.Provider,
             loggerFactory,
-            httpClientFactory,
-            Configurations.Provider);
+            httpClientFactory);
 
-        // Create database context pool
-        //_pool = new DataBaseContextPool(Configurations.DataBase, Configurations.Cache, loggerFactory);
+        var providerBaseUri = Configurations.Provider.BaseUri ?? new Uri("https://youtube.srv1.tms.com");
 
-        // create RepositoryManager
-        RepositoryManager = new RepositoryManager(this, _videoProvider);
-
-        // Create Proxy with SSL bypass handler if configured
         Action<HttpClientHandler>? proxyHandlerConfigurator = Configurations.Provider.BypassSslValidation
             ? handler => handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
             : null;
@@ -76,21 +65,16 @@ public sealed class Super : IDisposable
         Proxy = new ProxyToProvider(
             this,
             httpClientFactory,
-            _videoProvider.BaseUrl,
+            providerBaseUri,
             proxyHandlerConfigurator);
 
-        _logger.LogDebug("Super initialized with provider: {ProviderType}", _videoProvider.GetType().Name);
+        _logger.LogDebug("Super initialized with provider base URL: {BaseUrl}", providerBaseUri);
     }
 
     public async Task InitAsync(CancellationToken cancellationToken)
     {
-        await RepositoryManager.InitAsync(cancellationToken);
+        await RepositoryManager.InitAsync(cancellationToken, _repositoryManagerCts.Token);
     }
-
-    /// <summary>
-    /// Gets the underlying video provider.
-    /// </summary>
-    public IProvider VideoProvider => _videoProvider;
 
     /// <summary>
     /// Gets video information by video ID. Constructs the canonical URL to compute hash.
@@ -107,14 +91,26 @@ public sealed class Super : IDisposable
         }
 
         var absoluteRemoteUrl = YouTubeValidator.BuildVideoUrl(videoId);
-        var identity = new CacheableIdentity
+        var identity = new IdentityDomain
         {
             AbsoluteRemoteUrlString = absoluteRemoteUrl.ToString()
         };
 
-        return await RepositoryManager.GetVideoAsync(identity, cancellationToken);
-    }
+        var videoDomain = await RepositoryManager.GetVideoAsync(identity, cancellationToken);
+        if (videoDomain is null)
+        {
+            return null;
+        }
 
+        if (videoDomain.Channel is null)
+        {
+            _logger.LogWarning("Video domain missing channel for URL: {Url}", videoDomain.AbsoluteRemoteUrl);
+            return null;
+        }
+
+        var channelVm = DomainViewModelMapper.ToViewModel(this, videoDomain.Channel);
+        return DomainViewModelMapper.ToViewModel(this, videoDomain, channelVm);
+    }
 
     /// <summary>
     /// Gets channel details by channel ID. Constructs the canonical URL to compute hash.
@@ -131,12 +127,13 @@ public sealed class Super : IDisposable
         }
 
         var absoluteRemoteUrl = YouTubeValidator.BuildChannelUrl(channelId);
-        var identity = new CacheableIdentity
+        var identity = new IdentityDomain
         {
             AbsoluteRemoteUrlString = absoluteRemoteUrl.ToString()
         };
 
-        return await  RepositoryManager.GetChannelAsync(identity, cancellationToken);
+        var channelDomain = await RepositoryManager.GetChannelAsync(identity, cancellationToken);
+        return channelDomain is null ? null : DomainViewModelMapper.ToViewModel(this, channelDomain);
     }
 
     /// <summary>
@@ -159,16 +156,30 @@ public sealed class Super : IDisposable
             tab,
             continuationToken is not null);
 
-        var identities = new CacheableIdentity
+        var identity = new IdentityDomain
         {
             AbsoluteRemoteUrlString = absoluteRemoteUrl.ToString()
         };
 
-        return await RepositoryManager.GetChannelsPageAsync(
-            identities,
+        var pageDomain = await RepositoryManager.GetChannelsPageAsync(
+            identity,
             tab,
             continuationToken,
             cancellationToken);
+
+        if (pageDomain is null)
+        {
+            return null;
+        }
+
+        var channelDomain = await RepositoryManager.GetChannelAsync(identity, cancellationToken);
+        if (channelDomain is null)
+        {
+            return null;
+        }
+
+        var channelVm = DomainViewModelMapper.ToViewModel(this, channelDomain);
+        return DomainViewModelMapper.ToViewModel(this, pageDomain, channelVm);
     }
 
     /// <summary>
@@ -202,8 +213,8 @@ public sealed class Super : IDisposable
             return;
         }
 
-        //_cacheManager.Dispose();
-        _videoProvider.Dispose();
+        _repositoryManagerCts.Cancel();
+        _repositoryManagerCts.Dispose();
 
         _disposed = true;
         _logger.LogDebug("Super disposed");

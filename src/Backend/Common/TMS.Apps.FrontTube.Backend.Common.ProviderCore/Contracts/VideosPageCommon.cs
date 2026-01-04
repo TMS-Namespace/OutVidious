@@ -1,26 +1,27 @@
-using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
-namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
+namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 
 /// <summary>
 /// Represents a paginated list of videos from a channel.
 /// </summary>
-public sealed record VideosPage
+public sealed record VideosPageCommon : ICommonContract
 {
-    internal VideosPage(Super super, VideosPageDomain domain, List<Video> videos, Channel channel)
+    /// <summary>
+    /// Empty page for error cases or when no results are found.
+    /// </summary>
+    public static VideosPageCommon Empty(string channelId, string tab = "videos") => new()
     {
-        Channel = channel;
-        Tab = domain.Tab;
-        Videos = videos;
-        ContinuationToken = domain.ContinuationToken;
-        TotalVideoCount = domain.TotalVideoCount;
-        PageNumber = domain.PageNumber;
-    }
+        ChannelRemoteAbsoluteUrl = channelId,
+        Tab = tab,
+        Videos = [],
+        ContinuationToken = null
+    };
 
     /// <summary>
     /// The channel this page belongs to.
     /// </summary>
-    public Channel Channel { get; init; }
+    public required string ChannelRemoteAbsoluteUrl { get; init; }
 
     /// <summary>
     /// The tab this page was retrieved from (e.g., "videos", "shorts", "live").
@@ -30,7 +31,7 @@ public sealed record VideosPage
     /// <summary>
     /// List of videos in this page.
     /// </summary>
-    public IReadOnlyList<Video> Videos { get; init; } = [];
+    public IReadOnlyList<VideoMetadataCommon> Videos { get; init; } = [];
 
     /// <summary>
     /// Continuation token for fetching the next page.

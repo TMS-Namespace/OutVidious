@@ -6,7 +6,7 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// <summary>
 /// Represents basic channel/author information.
 /// </summary>
-public record ChannelMetadata : ICacheableCommon
+public record ChannelMetadataCommon : ICacheableCommon
 {
     /// <summary>
     /// Absolute URL to the channel on the remote platform (e.g., https://www.youtube.com/channel/...).
@@ -33,7 +33,7 @@ public record ChannelMetadata : ICacheableCommon
     /// <summary>
     /// Available thumbnails for the channel avatar.
     /// </summary>
-    public IReadOnlyList<ImageMetadata> Avatars { get; init; } = [];
+    public IReadOnlyList<ImageMetadataCommon> Avatars { get; init; } = [];
 
     private long? _hash;
     public long Hash => _hash ??= HashHelper.ComputeHash(AbsoluteRemoteUrl.ToString());

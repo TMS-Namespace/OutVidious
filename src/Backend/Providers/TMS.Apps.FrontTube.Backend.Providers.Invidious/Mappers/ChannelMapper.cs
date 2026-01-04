@@ -24,12 +24,12 @@ public static class ChannelMapper
     /// <summary>
     /// Maps an Invidious channel DTO to a ChannelDetails contract.
     /// </summary>
-    public static Channel ToChannelDetails(InvidiousChannelDto dto, Uri baseUrl)
+    public static ChannelCommon ToChannelDetails(InvidiousChannelDto dto, Uri baseUrl)
     {
         ArgumentNullException.ThrowIfNull(dto);
         ArgumentNullException.ThrowIfNull(baseUrl);
 
-        return new Channel
+        return new ChannelCommon
         {
             AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildChannelUrl(dto.AuthorId),
             Name = dto.Author,
@@ -52,12 +52,12 @@ public static class ChannelMapper
     /// <summary>
     /// Maps an Invidious channel video DTO to a VideoSummary contract.
     /// </summary>
-    public static VideoMetadata ToVideoSummary(InvidiousChannelVideoDto dto, Uri baseUrl)
+    public static VideoMetadataCommon ToVideoSummary(InvidiousChannelVideoDto dto, Uri baseUrl)
     {
         ArgumentNullException.ThrowIfNull(dto);
         ArgumentNullException.ThrowIfNull(baseUrl);
 
-        return new VideoMetadata
+        return new VideoMetadataCommon
         {
             AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildVideoUrl(dto.VideoId),
             Title = dto.Title,
@@ -68,7 +68,7 @@ public static class ChannelMapper
             PublishedAgo = dto.PublishedText,
 #pragma warning restore CS0618 // Type or member is obsolete
             PublishedAtUtc = dto.Published > 0 ? DateTimeOffset.FromUnixTimeSeconds(dto.Published) : null,
-            Channel = new ChannelMetadata
+            Channel = new ChannelMetadataCommon
             {
                 AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildChannelUrl(dto.AuthorId),
                 Name = dto.Author,
@@ -80,7 +80,7 @@ public static class ChannelMapper
         };
     }
 
-    private static ImageMetadata ToBannerThumbnailInfo(InvidiousChannelBannerDto dto)
+    private static ImageMetadataCommon ToBannerThumbnailInfo(InvidiousChannelBannerDto dto)
     {
         // Determine quality based on width
         var quality = dto.Width switch
@@ -94,7 +94,7 @@ public static class ChannelMapper
 
         var originalUrl = ThumbnailMapper.ExtractBannerUrl(dto.Url);
 
-        return new ImageMetadata
+        return new ImageMetadataCommon
         {
             Quality = quality,
             AbsoluteRemoteUrl = originalUrl,

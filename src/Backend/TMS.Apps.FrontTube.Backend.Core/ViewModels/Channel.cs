@@ -1,51 +1,42 @@
-using System.Collections.ObjectModel;
 using Microsoft.Extensions.Logging;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Core.Mappers;
 using TMS.Apps.FrontTube.Backend.Core.Tools;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Models;
-using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 
 namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
 /// <summary>
 /// ViewModel for displaying a channel and its content.
-/// Wraps a ChannelDetails contract loaded via Super.
+/// Wraps a ChannelDomain contract loaded via Super.
 /// </summary>
 public sealed class Channel : ViewModelBase
 {
     private readonly Super _super;
     private readonly ILogger<Channel> _logger;
-    //private readonly Common.ProviderCore.Contracts.Channel _channelDetails;
     private CancellationTokenSource? _loadCts;
     private string? _currentContinuationToken;
     private string? _selectedTab;
     private bool _isDisposed;
 
-    internal CacheResult<ChannelEntity> CacheResult { get; }
+    internal ChannelDomain Domain { get; private set; }
 
-    internal Channel(Super super, CacheResult<ChannelEntity> channelCachingResult, IReadOnlyList<Image> avatars, IReadOnlyList<Image> banners)
-    : base(super)
+    internal Channel(Super super, ChannelDomain domain, IReadOnlyList<Image> avatars, IReadOnlyList<Image> banners)
+        : base(super)
     {
         _super = super ?? throw new ArgumentNullException(nameof(super));
-        CacheResult = channelCachingResult ?? throw new ArgumentNullException(nameof(channelCachingResult));
+        Domain = domain ?? throw new ArgumentNullException(nameof(domain));
         _logger = super.LoggerFactory.CreateLogger<Channel>();
-        
-        Avatars = avatars;
-        Banners = banners;
-        
-        // Initialize properties - prefer Entity over Common (Entity is always available, Common only for new fetches)
-        var channelEntity = CacheResult.Entity;
-        var channelCommon = CacheResult.Common as Common.ProviderCore.Contracts.Channel;
-        
-        AbsoluteRemoteUrl = new Uri(CacheResult.Identity.AbsoluteRemoteUrlString);
-        Name = channelEntity?.Title ?? channelCommon?.Name ?? string.Empty;
-        Description = channelEntity?.Description ?? channelCommon?.Description ?? string.Empty;
-        SubscriberCount = channelEntity?.SubscriberCount ?? channelCommon?.SubscriberCount ?? 0;
-#pragma warning disable CS0618
-        SubscriberCountText = channelCommon?.SubscriberCountText;
-#pragma warning restore CS0618
-        
-        // Auto-select the first available tab (defaults to "videos" for cached channels)
+
+        Avatars = avatars ?? [];
+        Banners = banners ?? [];
+
+        AbsoluteRemoteUrl = new Uri(Domain.AbsoluteRemoteUrl);
+        Name = Domain.Title;
+        Description = Domain.Description ?? string.Empty;
+        DescriptionHtml = Domain.DescriptionHtml;
+        SubscriberCount = Domain.SubscriberCount ?? 0;
+        ErrorMessage = Domain.FetchingError;
+
         var availableTabs = AvailableTabs;
         if (availableTabs.Count > 0)
         {
@@ -61,22 +52,27 @@ public sealed class Channel : ViewModelBase
     /// <summary>
     /// The channel's absolute remote URL on the original platform.
     /// </summary>
-    public Uri AbsoluteRemoteUrl { get; }
+    public Uri AbsoluteRemoteUrl { get; private set; }
 
     /// <summary>
     /// The channel name.
     /// </summary>
-    public string Name { get; }
+    public string Name { get; private set; }
 
     /// <summary>
     /// The channel description.
     /// </summary>
-    public string Description { get; }
+    public string Description { get; private set; }
+
+    /// <summary>
+    /// HTML-formatted channel description.
+    /// </summary>
+    public string? DescriptionHtml { get; private set; }
 
     /// <summary>
     /// Number of subscribers.
     /// </summary>
-    public long SubscriberCount { get; }
+    public long SubscriberCount { get; private set; }
 
     /// <summary>
     /// Formatted subscriber count text.
@@ -87,12 +83,12 @@ public sealed class Channel : ViewModelBase
     /// <summary>
     /// Channel avatar images.
     /// </summary>
-    public IReadOnlyList<Image> Avatars { get; }
+    public IReadOnlyList<Image> Avatars { get; private set; }
 
     /// <summary>
     /// Channel banner images.
     /// </summary>
-    public IReadOnlyList<Image> Banners { get; }
+    public IReadOnlyList<Image> Banners { get; private set; }
 
     /// <summary>
     /// Available channel tab IDs (e.g., "videos", "shorts", "streams").
@@ -101,18 +97,12 @@ public sealed class Channel : ViewModelBase
     {
         get
         {
-            var channelCommon = CacheResult.Common as Common.ProviderCore.Contracts.Channel;
-            if (channelCommon is null)
+            if (Domain.AvailableTabs.Count > 0)
             {
-                // For existing cached channels, default to "videos" tab
-                return ["videos"];  
+                return Domain.AvailableTabs;
             }
-#pragma warning disable CS0618
-            return channelCommon.AvailableTabs
-                .Select(t => t.RemoteTabId)
-                .ToList();
-#pragma warning restore CS0618
-            
+
+            return ["videos"];
         }
     }
 
@@ -149,6 +139,25 @@ public sealed class Channel : ViewModelBase
     /// Error message if loading failed.
     /// </summary>
     public string? ErrorMessage { get; private set; }
+
+    internal void UpdateFromDomain(ChannelDomain domain, IReadOnlyList<Image> avatars, IReadOnlyList<Image> banners)
+    {
+        Domain = domain ?? throw new ArgumentNullException(nameof(domain));
+        Avatars = avatars ?? [];
+        Banners = banners ?? [];
+        AbsoluteRemoteUrl = new Uri(Domain.AbsoluteRemoteUrl);
+        Name = Domain.Title;
+        Description = Domain.Description ?? string.Empty;
+        DescriptionHtml = Domain.DescriptionHtml;
+        SubscriberCount = Domain.SubscriberCount ?? 0;
+        ErrorMessage = Domain.FetchingError;
+
+        var availableTabs = AvailableTabs;
+        if (_selectedTab is null || !availableTabs.Contains(_selectedTab))
+        {
+            _selectedTab = availableTabs.Count > 0 ? availableTabs[0] : null;
+        }
+    }
 
     /// <summary>
     /// Gets the channel URL for this channel.
@@ -227,7 +236,7 @@ public sealed class Channel : ViewModelBase
         SelectedTab = tabId;
         Videos = [];
         _currentContinuationToken = null;
-        
+
         await LoadVideosForTabAsync(tabId, isInitial: true, cancellationToken);
     }
 
@@ -260,13 +269,18 @@ public sealed class Channel : ViewModelBase
         {
             IsLoadingMore = true;
         }
-        
+
         NotifyStateChanged();
 
         try
         {
+            var identity = new IdentityDomain
+            {
+                AbsoluteRemoteUrlString = Domain.AbsoluteRemoteUrl
+            };
+
             var page = await Super.RepositoryManager.GetChannelsPageAsync(
-                CacheResult.Identity,
+                identity,
                 tabId,
                 _currentContinuationToken,
                 token,
@@ -274,7 +288,9 @@ public sealed class Channel : ViewModelBase
 
             if (page is not null)
             {
-                Videos = page.Videos;
+                Videos = page.Videos
+                    .Select(v => DomainViewModelMapper.ToViewModel(Super, v, this))
+                    .ToList();
                 HasMore = page.HasMore;
                 _currentContinuationToken = page.ContinuationToken;
                 ErrorMessage = null;
@@ -296,7 +312,6 @@ public sealed class Channel : ViewModelBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading videos for channel {ChannelUrl}", AbsoluteRemoteUrl);
-            // Don't set error message for pagination failures
             if (isInitial)
             {
                 ErrorMessage = "Failed to load videos. Please try again.";

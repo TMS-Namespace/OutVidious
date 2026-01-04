@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.AspNetCore.Components;
 using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
@@ -9,6 +10,8 @@ namespace TMS.Apps.FrontTube.Frontend.WebUI.Pages;
 /// </summary>
 public partial class ChannelPage : ComponentBase, IDisposable
 {
+    private const string AboutTabId = "about";
+    private const string AboutTabLabel = "About";
     private int _selectedTabIndex;
     private bool _isDisposed;
     private bool _initialLoadComplete;
@@ -60,6 +63,66 @@ public partial class ChannelPage : ComponentBase, IDisposable
     protected string? AvatarUrl => GetBestAvatar();
 
     protected string? BannerUrl => GetBestBanner();
+
+    protected IReadOnlyList<string> Tabs
+    {
+        get
+        {
+            if (ViewModel is null)
+            {
+                return [];
+            }
+
+            var tabs = ViewModel.AvailableTabs.ToList();
+
+            if (!tabs.Any(t => string.Equals(t, AboutTabId, StringComparison.OrdinalIgnoreCase)))
+            {
+                tabs.Add(AboutTabId);
+            }
+
+            return tabs;
+        }
+    }
+
+    protected bool IsAboutTabSelected
+    {
+        get
+        {
+            var tabId = GetSelectedTabId();
+            return tabId != null && string.Equals(tabId, AboutTabId, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    protected bool HasChannelDescription => !string.IsNullOrWhiteSpace(ViewModel?.DescriptionHtml)
+        || !string.IsNullOrWhiteSpace(ViewModel?.Description);
+
+    protected MarkupString ChannelDescriptionMarkup
+    {
+        get
+        {
+            if (ViewModel is null)
+            {
+                return new MarkupString(string.Empty);
+            }
+
+            if (!string.IsNullOrWhiteSpace(ViewModel.DescriptionHtml))
+            {
+                return new MarkupString(ViewModel.DescriptionHtml);
+            }
+
+            if (string.IsNullOrWhiteSpace(ViewModel.Description))
+            {
+                return new MarkupString(string.Empty);
+            }
+
+            var encoded = WebUtility.HtmlEncode(ViewModel.Description);
+            var withLineBreaks = encoded
+                .Replace("\r\n", "<br />")
+                .Replace("\n", "<br />");
+
+            return new MarkupString(withLineBreaks);
+        }
+    }
 
     protected override void OnInitialized()
     {
@@ -152,15 +215,23 @@ public partial class ChannelPage : ComponentBase, IDisposable
 
     private async Task OnTabChangedAsync(int tabIndex)
     {
+        var tabs = Tabs;
+
         if (ViewModel is null || 
             tabIndex < 0 || 
-            tabIndex >= ViewModel.AvailableTabs.Count ||
+            tabIndex >= tabs.Count ||
             _cts is null)
         {
             return;
         }
 
-        var tabId = ViewModel.AvailableTabs[tabIndex];
+        var tabId = tabs[tabIndex];
+
+        if (string.Equals(tabId, AboutTabId, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         await ViewModel.SelectTabAsync(tabId, _cts.Token);
     }
 
@@ -189,6 +260,28 @@ public partial class ChannelPage : ComponentBase, IDisposable
         }
 
         return Orchestrator.Super.BuildImageProxyUrl(new Uri(bannerUrl));
+    }
+
+    private string? GetSelectedTabId()
+    {
+        var tabs = Tabs;
+
+        if (_selectedTabIndex < 0 || _selectedTabIndex >= tabs.Count)
+        {
+            return null;
+        }
+
+        return tabs[_selectedTabIndex];
+    }
+
+    protected static string GetTabLabel(string tabId)
+    {
+        if (string.Equals(tabId, AboutTabId, StringComparison.OrdinalIgnoreCase))
+        {
+            return AboutTabLabel;
+        }
+
+        return tabId;
     }
 
     public void Dispose()

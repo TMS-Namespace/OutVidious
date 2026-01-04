@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>TMS.Apps.FrontTube.Backend.Repository.Data</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="EFCoreSecondLevelCacheInterceptor" />
+    <PackageReference Include="EFCoreSecondLevelCacheInterceptor.MemoryCache" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\TMS.Apps.FrontTube.Backend.Common.ProviderCore\TMS.Apps.FrontTube.Backend.Common.ProviderCore.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\..\Providers\TMS.Apps.FrontTube.Backend.Providers.Invidious\TMS.Apps.FrontTube.Backend.Providers.Invidious.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\TMS.Apps.FrontTube.Backend.Repository.Cache\TMS.Apps.FrontTube.Backend.Repository.Cache.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\TMS.Apps.FrontTube.Backend.Repository.DataBase\TMS.Apps.FrontTube.Backend.Repository.DataBase.csproj" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

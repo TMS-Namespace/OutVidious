@@ -13,12 +13,12 @@ public static partial class StreamMapper
     /// <summary>
     /// Maps an Invidious adaptive format DTO to a StreamInfo contract.
     /// </summary>
-    public static Common.ProviderCore.Contracts.StreamMetadata ToStreamInfo(InvidiousAdaptiveFormatDto dto)
+    public static Common.ProviderCore.Contracts.StreamMetadataCommon ToStreamInfo(InvidiousAdaptiveFormatDto dto)
     {
         var streamType = DetermineStreamType(dto.Type);
         var (width, height) = ParseResolution(dto.Resolution);
 
-        return new Common.ProviderCore.Contracts.StreamMetadata
+        return new Common.ProviderCore.Contracts.StreamMetadataCommon
         {
             Type = streamType,
             AbsoluteRemoteUrl = new Uri(dto.Url, UriKind.RelativeOrAbsolute),
@@ -43,11 +43,11 @@ public static partial class StreamMapper
     /// <summary>
     /// Maps an Invidious format stream DTO to a StreamInfo contract.
     /// </summary>
-    public static Common.ProviderCore.Contracts.StreamMetadata ToStreamInfo(InvidiousFormatStreamDto dto)
+    public static Common.ProviderCore.Contracts.StreamMetadataCommon ToStreamInfo(InvidiousFormatStreamDto dto)
     {
         var (width, height) = ParseResolution(dto.Resolution);
 
-        return new Common.ProviderCore.Contracts.StreamMetadata
+        return new Common.ProviderCore.Contracts.StreamMetadataCommon
         {
             Type = StreamType.Mutex,
             AbsoluteRemoteUrl = new Uri(dto.Url, UriKind.RelativeOrAbsolute),

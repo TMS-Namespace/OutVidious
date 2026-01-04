@@ -13,6 +13,7 @@ using TMS.Apps.FrontTube.Backend.Repository.Cache.Tools;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Tools;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Cache;
 
@@ -24,7 +25,7 @@ public sealed class CacheManager : ICacheManager
 {
     private readonly CacheConfig _config;
     private readonly ILogger<CacheManager> _logger;
-    private readonly DataBaseContextPool _pool;
+    //private readonly DataBaseContextPool _pool;
     //private readonly ICache<long, ICacheableEntity> _entityCache;
     private readonly HttpClient _httpClient;
     private bool _disposed;
@@ -45,7 +46,7 @@ public sealed class CacheManager : ICacheManager
         ArgumentNullException.ThrowIfNull(loggerFactory);
 
         _config = cacheConfig;
-        _pool = pool;
+        //_pool = pool;
         Provider = provider;
         _logger = loggerFactory.CreateLogger<CacheManager>();
 
@@ -64,7 +65,7 @@ public sealed class CacheManager : ICacheManager
         _disposed = true;
     }
 
-    private bool IsStale(ICacheableEntity domain)
+    public bool IsStale(ICacheableEntity domain)
     {
         if (domain.LastSyncedAt is null)
         {
@@ -100,25 +101,25 @@ public sealed class CacheManager : ICacheManager
 
             switch (commonWithIdentity.Common)
             {
-                case Video common:
+                case VideoCommon common:
                     result = CommonToEntityMapper.ToEntity(common, (VideoEntity?)existingEntity);
                     break;
-                case VideoMetadata common:
+                case VideoMetadataCommon common:
                     result = CommonToEntityMapper.ToEntity(common, (VideoEntity?)existingEntity);
                     break;
-                case Channel common:
+                case ChannelCommon common:
                     result = CommonToEntityMapper.ToEntity(common, (ChannelEntity?)existingEntity);
                     break;
-                case ChannelMetadata common:
+                case ChannelMetadataCommon common:
                     result = CommonToEntityMapper.ToEntity(common, (ChannelEntity?)existingEntity);
                     break;
-                case ImageMetadata common:
+                case ImageMetadataCommon common:
                     result = CommonToEntityMapper.ToEntity(common, (ImageEntity?)existingEntity);
                     break;
-                case CaptionMetadata common:
+                case CaptionMetadataCommon common:
                     result = CommonToEntityMapper.ToEntity(common, (CaptionEntity?)existingEntity);
                     break;
-                case StreamMetadata common:
+                case StreamMetadataCommon common:
                     result = CommonToEntityMapper.ToEntity(common, (StreamEntity?)existingEntity);
                     break;
                 // Add cases for other entity types as needed
@@ -153,7 +154,8 @@ public sealed class CacheManager : ICacheManager
 
         if (typeof(T) == typeof(VideoEntity))
         {
-            var entities = await dbContext.Videos
+            var entities = await dbContext
+                .BuildVideosQuery(full: false, noTracking: false)
                 // .Include(v => v.Channel).ThenInclude(c => c.Avatars).ThenInclude(a => a.Image)
                 // .Include(v => v.Thumbnails).ThenInclude(t => t.Image)
                 // .Include(v => v.Captions)
@@ -166,7 +168,8 @@ public sealed class CacheManager : ICacheManager
 
         if (typeof(T) == typeof(ChannelEntity))
         {
-            var entities = await dbContext.Channels
+            var entities = await dbContext
+                .BuildChannelsQuery(full: false, noTracking: false)
                 // .Include(c => c.Avatars).ThenInclude(a => a.Image)
                 // .Include(c => c.Banners).ThenInclude(b => b.Image)
                 .Where(c => hashes.Contains(c.Hash)) // TODO: add videos?
@@ -258,11 +261,11 @@ public sealed class CacheManager : ICacheManager
     public async Task<CacheResult<T>>
         GetLocallyAsync<T>(
         ICacheableCommon common,
-        CancellationToken cancellationToken,
-        bool autoSave = true)
+        DataBaseContext dataBaseContext,
+        CancellationToken cancellationToken)
         where T : class, ICacheableEntity
     {
-        var results = await GetLocallyAsync<T>([common], cancellationToken, autoSave);
+        var results = await GetLocallyAsync<T>([common], dataBaseContext, cancellationToken);
         return results.Single();
     }
 
@@ -276,8 +279,8 @@ public sealed class CacheManager : ICacheManager
     public async Task<List<CacheResult<T>>>
         GetLocallyAsync<T>(
         IReadOnlyList<ICacheableCommon> commons,
-        CancellationToken cancellationToken,
-        bool autoSave = true)
+        DataBaseContext dataBaseContext,
+        CancellationToken cancellationToken)
         where T : class, ICacheableEntity
     {
         var commonsWithIdentities = commons
@@ -288,9 +291,9 @@ public sealed class CacheManager : ICacheManager
             .Select(ci => ci.Identity)
             .ToList();
 
-        await using var dbContext = await _pool.GetContextAsync(cancellationToken);
+        //await using var dbContext = await _pool.GetContextAsync(cancellationToken);
 
-        var (freshEntities, staleEntities, notSavedIdentities) = await GetLocallyAsync<T>(identities, dbContext, cancellationToken);
+        var (freshEntities, staleEntities, notSavedIdentities) = await GetLocallyAsync<T>(identities, dataBaseContext, cancellationToken);
 
         // isolate commons that has stale entities, or are not saved
         var staleOrNotSavedCommonsWithIdentities = commonsWithIdentities
@@ -330,299 +333,299 @@ public sealed class CacheManager : ICacheManager
             ce.Common,
             null)));
 
-        // save changes to DB in the background
-        if (autoSave)
-        {
-            var entitiesToAdd = createdEntitiesWithCommonAndIdentity.Select(ue => (T)ue.Entity).ToList();
-            var entitiesToUpdate = updatedEntitiesWithCommonAndIdentity.Select(ue => (T)ue.Entity).ToList();
-            BackgroundSave(entitiesToAdd, entitiesToUpdate, cancellationToken);
-        }
+        // // save changes to DB in the background
+        // if (autoSave)
+        // {
+        //     var entitiesToAdd = createdEntitiesWithCommonAndIdentity.Select(ue => (T)ue.Entity).ToList();
+        //     var entitiesToUpdate = updatedEntitiesWithCommonAndIdentity.Select(ue => (T)ue.Entity).ToList();
+        //     BackgroundSave(entitiesToAdd, entitiesToUpdate, cancellationToken);
+        // }
 
         return results;
     }
-    private async Task<(ICacheableCommon? ResultCommon, string? Error)> FetchFromProviderAsync<T>(
-        CacheableIdentity identity,
-        //ICacheableEntity? parentEntity,
-        CancellationToken cancellationToken)
-        where T : class, ICacheableEntity
-    {
-        if (typeof(T) == typeof(VideoEntity))
-        {
-            var videoId = YouTubeUrlBuilder.ExtractVideoId(identity.AbsoluteRemoteUrlString);
+    // private async Task<(ICacheableCommon? ResultCommon, string? Error)> FetchFromProviderAsync<T>(
+    //     CacheableIdentity identity,
+    //     //ICacheableEntity? parentEntity,
+    //     CancellationToken cancellationToken)
+    //     where T : class, ICacheableEntity
+    // {
+    //     if (typeof(T) == typeof(VideoEntity))
+    //     {
+    //         var videoId = YouTubeUrlBuilder.ExtractVideoId(identity.AbsoluteRemoteUrlString);
 
-            if (string.IsNullOrEmpty(videoId))
-            {
-                _logger.LogWarning("Could not extract video ID from URL: {Url}", identity.AbsoluteRemoteUrlString);
-                return (null, $"Could not extract video ID from URL: {identity.AbsoluteRemoteUrlString}");
-            }
+    //         if (string.IsNullOrEmpty(videoId))
+    //         {
+    //             _logger.LogWarning("Could not extract video ID from URL: {Url}", identity.AbsoluteRemoteUrlString);
+    //             return (null, $"Could not extract video ID from URL: {identity.AbsoluteRemoteUrlString}");
+    //         }
 
-            var videoCommon = await Provider.GetVideoInfoAsync(videoId, cancellationToken);
-            if (videoCommon is null)
-            {
-                return (null, $"Provider returned null for video ID: {videoId}");
-            }
+    //         var videoCommon = await Provider.GetVideoInfoAsync(videoId, cancellationToken);
+    //         if (videoCommon is null)
+    //         {
+    //             return (null, $"Provider returned null for video ID: {videoId}");
+    //         }
 
-            return (videoCommon, null);
-        }
+    //         return (videoCommon, null);
+    //     }
 
-        if (typeof(T) == typeof(ChannelEntity))
-        {
-            var channelId = YouTubeUrlBuilder.ExtractChannelRemoteId(identity.AbsoluteRemoteUrlString);
+    //     if (typeof(T) == typeof(ChannelEntity))
+    //     {
+    //         var channelId = YouTubeUrlBuilder.ExtractChannelRemoteId(identity.AbsoluteRemoteUrlString);
 
-            if (string.IsNullOrEmpty(channelId))
-            {
-                _logger.LogWarning("Could not extract channel ID from URL: {Url}", identity.AbsoluteRemoteUrlString);
-                return (null, $"Could not extract channel ID from URL: {identity.AbsoluteRemoteUrlString}");
-            }
+    //         if (string.IsNullOrEmpty(channelId))
+    //         {
+    //             _logger.LogWarning("Could not extract channel ID from URL: {Url}", identity.AbsoluteRemoteUrlString);
+    //             return (null, $"Could not extract channel ID from URL: {identity.AbsoluteRemoteUrlString}");
+    //         }
 
-            var channelCommon = await Provider.GetChannelDetailsAsync(channelId, cancellationToken);
-            if (channelCommon is null)
-            {
-                return (null, $"Provider returned null for channel ID: {channelId}");
-            }
+    //         var channelCommon = await Provider.GetChannelDetailsAsync(channelId, cancellationToken);
+    //         if (channelCommon is null)
+    //         {
+    //             return (null, $"Provider returned null for channel ID: {channelId}");
+    //         }
 
-            return (channelCommon, null);
-        }
+    //         return (channelCommon, null);
+    //     }
 
-        throw new NotSupportedException($"Entity type {typeof(T).Name} is not fetchable from providers.");
-    }
+    //     throw new NotSupportedException($"Entity type {typeof(T).Name} is not fetchable from providers.");
+    // }
 
-    /// <summary>
-    /// Used to fetch/create missing or stale entities from remote providers. Doesn't touch local database/cache.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="notExistentIdentities"></param>
-    /// <param name="staleEntitiesWithIdentities"></param>
-    /// <param name="dbContext"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    private async Task<(
-        List<(CacheableIdentity Identity, ICacheableCommon Common)> NewCommonsWithIdentities,
-        List<(CacheableIdentity Identity, T Entity, ICacheableCommon Common)> UpdatingCommonsWithIdentitiesAndEntities,
-        List<(CacheableIdentity Identity, T? Entity, string Error)> Errors)>
-        GetRemotelyAsync<T>(
-        IReadOnlyList<CacheableIdentity> notExistentIdentities,
-        IReadOnlyList<(CacheableIdentity Identity, T Entity)> staleEntitiesWithIdentities,
-        DataBaseContext dbContext,
-        CancellationToken cancellationToken) // TODO: add progress reporting
-        where T : class, ICacheableEntity
-    {
-        var results = new List<(CacheableIdentity Identity, ICacheableCommon? Common, string? Error)>();
+    // /// <summary>
+    // /// Used to fetch/create missing or stale entities from remote providers. Doesn't touch local database/cache.
+    // /// </summary>
+    // /// <typeparam name="T"></typeparam>
+    // /// <param name="notExistentIdentities"></param>
+    // /// <param name="staleEntitiesWithIdentities"></param>
+    // /// <param name="dbContext"></param>
+    // /// <param name="cancellationToken"></param>
+    // /// <returns></returns>
+    // private async Task<(
+    //     List<(CacheableIdentity Identity, ICacheableCommon Common)> NewCommonsWithIdentities,
+    //     List<(CacheableIdentity Identity, T Entity, ICacheableCommon Common)> UpdatingCommonsWithIdentitiesAndEntities,
+    //     List<(CacheableIdentity Identity, T? Entity, string Error)> Errors)>
+    //     GetRemotelyAsync<T>(
+    //     IReadOnlyList<CacheableIdentity> notExistentIdentities,
+    //     IReadOnlyList<(CacheableIdentity Identity, T Entity)> staleEntitiesWithIdentities,
+    //     DataBaseContext dbContext,
+    //     CancellationToken cancellationToken) // TODO: add progress reporting
+    //     where T : class, ICacheableEntity
+    // {
+    //     var results = new List<(CacheableIdentity Identity, ICacheableCommon? Common, string? Error)>();
 
-        // combine identities to fetch
-        var allIdentities = staleEntitiesWithIdentities
-            .Select(se => se.Identity)
-            .Concat(notExistentIdentities)
-            .ToList();
+    //     // combine identities to fetch
+    //     var allIdentities = staleEntitiesWithIdentities
+    //         .Select(se => se.Identity)
+    //         .Concat(notExistentIdentities)
+    //         .ToList();
 
-        foreach (var identity in allIdentities)
-        {
-            var result = await FetchFromProviderAsync<T>(identity, cancellationToken);
-            _logger.LogDebug("Fetching remotely URL: {Url}", identity.AbsoluteRemoteUrlString);
+    //     foreach (var identity in allIdentities)
+    //     {
+    //         var result = await FetchFromProviderAsync<T>(identity, cancellationToken);
+    //         _logger.LogDebug("Fetching remotely URL: {Url}", identity.AbsoluteRemoteUrlString);
 
-            results.Add((Identity: identity, Common: result.ResultCommon, result.Error));
+    //         results.Add((Identity: identity, Common: result.ResultCommon, result.Error));
 
-            cancellationToken.ThrowIfCancellationRequested();
-        }
+    //         cancellationToken.ThrowIfCancellationRequested();
+    //     }
 
-        // get stale entities only
-        var staleEntities = staleEntitiesWithIdentities
-            .Select(se => se.Entity)
-            .ToList();
+    //     // get stale entities only
+    //     var staleEntities = staleEntitiesWithIdentities
+    //         .Select(se => se.Entity)
+    //         .ToList();
 
-        // construct failed results
-        var failedResults = results
-            .Where(r => r.Common is null)
-            .Select(r => (Identity: r.Identity, Entity: staleEntities.SingleOrDefault(se => se.Hash == r.Identity.Hash), r.Error!))
-            .ToList();
+    //     // construct failed results
+    //     var failedResults = results
+    //         .Where(r => r.Common is null)
+    //         .Select(r => (Identity: r.Identity, Entity: staleEntities.SingleOrDefault(se => se.Hash == r.Identity.Hash), r.Error!))
+    //         .ToList();
 
-        // isolate successful results
-        var successfulCommonsWithIdentities = results
-            .Where(r => r.Common is not null)
-            .Select(r => (Identity: r.Identity, Common: r.Common!))
-            .ToList();
+    //     // isolate successful results
+    //     var successfulCommonsWithIdentities = results
+    //         .Where(r => r.Common is not null)
+    //         .Select(r => (Identity: r.Identity, Common: r.Common!))
+    //         .ToList();
 
-        // isolate new commons
-        var newCommonsWithIdentities = successfulCommonsWithIdentities
-            .Where(sc => !staleEntities.Any(se => se.Hash == sc.Identity.Hash))
-            .ToList();
+    //     // isolate new commons
+    //     var newCommonsWithIdentities = successfulCommonsWithIdentities
+    //         .Where(sc => !staleEntities.Any(se => se.Hash == sc.Identity.Hash))
+    //         .ToList();
 
-        // isolate updating commons
-        var updatingCommonsWithIdentitiesAndEntities = successfulCommonsWithIdentities
-            .Except(newCommonsWithIdentities)
-            .Select(sc => (Identity: sc.Identity, Entity: staleEntities.Single(se => se.Hash == sc.Identity.Hash), sc.Common))
-            .ToList();
+    //     // isolate updating commons
+    //     var updatingCommonsWithIdentitiesAndEntities = successfulCommonsWithIdentities
+    //         .Except(newCommonsWithIdentities)
+    //         .Select(sc => (Identity: sc.Identity, Entity: staleEntities.Single(se => se.Hash == sc.Identity.Hash), sc.Common))
+    //         .ToList();
 
-        return (
-            NewCommonsWithIdentities: newCommonsWithIdentities,
-            UpdatingCommonsWithIdentitiesAndEntities: updatingCommonsWithIdentitiesAndEntities,
-            Errors: failedResults
-            );
-    }
+    //     return (
+    //         NewCommonsWithIdentities: newCommonsWithIdentities,
+    //         UpdatingCommonsWithIdentitiesAndEntities: updatingCommonsWithIdentitiesAndEntities,
+    //         Errors: failedResults
+    //         );
+    // }
 
-    /// <summary>
-    /// Fetches/creates entities from local database/cache and remote providers. Doesn't save to database.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="identities"></param>
-    /// <param name="dbContext"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    private async Task<(
-        List<T> FreshEntities,
-        List<(CacheableIdentity Identity, ICacheableCommon Common)> NewCommonsWithIdentities,
-        List<(CacheableIdentity Identity, T Entity, ICacheableCommon Common)> UpdatingCommonsWithIdentitiesAndEntities,
-        List<(CacheableIdentity Identity, T? Entity, string Error)> Errors)>
-        GetGloballyAsync<T>(
-        IReadOnlyList<CacheableIdentity> identities,
-        DataBaseContext dbContext,
-        CancellationToken cancellationToken) // TODO: add progress reporting
-        where T : class, ICacheableEntity
-    {
-        // first get locally
-        var (freshEntities, staleEntities, notSavedIdentities) = await GetLocallyAsync<T>(identities, dbContext, cancellationToken);
+    // /// <summary>
+    // /// Fetches/creates entities from local database/cache and remote providers. Doesn't save to database.
+    // /// </summary>
+    // /// <typeparam name="T"></typeparam>
+    // /// <param name="identities"></param>
+    // /// <param name="dbContext"></param>
+    // /// <param name="cancellationToken"></param>
+    // /// <returns></returns>
+    // private async Task<(
+    //     List<T> FreshEntities,
+    //     List<(CacheableIdentity Identity, ICacheableCommon Common)> NewCommonsWithIdentities,
+    //     List<(CacheableIdentity Identity, T Entity, ICacheableCommon Common)> UpdatingCommonsWithIdentitiesAndEntities,
+    //     List<(CacheableIdentity Identity, T? Entity, string Error)> Errors)>
+    //     GetGloballyAsync<T>(
+    //     IReadOnlyList<CacheableIdentity> identities,
+    //     DataBaseContext dbContext,
+    //     CancellationToken cancellationToken) // TODO: add progress reporting
+    //     where T : class, ICacheableEntity
+    // {
+    //     // first get locally
+    //     var (freshEntities, staleEntities, notSavedIdentities) = await GetLocallyAsync<T>(identities, dbContext, cancellationToken);
 
-        // prepare entity lists
-        var staleEntitiesWithIdentities = staleEntities
-            .Select(e => (Identity: e.ToIdentity(), Entity: e))
-            .ToList();
+    //     // prepare entity lists
+    //     var staleEntitiesWithIdentities = staleEntities
+    //         .Select(e => (Identity: e.ToIdentity(), Entity: e))
+    //         .ToList();
 
-        // then get remotely the not saved ones
-        var remoteResults = await GetRemotelyAsync<T>(notSavedIdentities, staleEntitiesWithIdentities, dbContext, cancellationToken);
+    //     // then get remotely the not saved ones
+    //     var remoteResults = await GetRemotelyAsync<T>(notSavedIdentities, staleEntitiesWithIdentities, dbContext, cancellationToken);
 
-        return (
-            FreshEntities: freshEntities,
-            NewCommonsWithIdentities: remoteResults.NewCommonsWithIdentities,
-            UpdatingCommonsWithIdentitiesAndEntities: remoteResults.UpdatingCommonsWithIdentitiesAndEntities,
-            Errors: remoteResults.Errors
-            );
-    }
+    //     return (
+    //         FreshEntities: freshEntities,
+    //         NewCommonsWithIdentities: remoteResults.NewCommonsWithIdentities,
+    //         UpdatingCommonsWithIdentitiesAndEntities: remoteResults.UpdatingCommonsWithIdentitiesAndEntities,
+    //         Errors: remoteResults.Errors
+    //         );
+    // }
 
-    public async Task<CacheResult<T>>
-        GetGloballyAsync<T>(
-        CacheableIdentity identity,
-        CancellationToken cancellationToken,
-        bool autoSave = true)
-        where T : class, ICacheableEntity
-    {
-        var results = await GetGloballyAsync<T>([identity], cancellationToken, autoSave);
-        return results.First();
-    }
+    // public async Task<CacheResult<T>>
+    //     GetGloballyAsync<T>(
+    //     CacheableIdentity identity,
+    //     CancellationToken cancellationToken,
+    //     bool autoSave = true)
+    //     where T : class, ICacheableEntity
+    // {
+    //     var results = await GetGloballyAsync<T>([identity], cancellationToken, autoSave);
+    //     return results.First();
+    // }
 
-    /// <summary>
-    /// Fetches/creates entities from local database/cache and remote providers, and saves them to database.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="identities"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    public async Task<List<CacheResult<T>>>
-        GetGloballyAsync<T>(
-        IReadOnlyList<CacheableIdentity> identities,
-        CancellationToken cancellationToken,
-        bool autoSave = true) // TODO: add progress reporting
-        where T : class, ICacheableEntity
-    {
+    // /// <summary>
+    // /// Fetches/creates entities from local database/cache and remote providers, and saves them to database.
+    // /// </summary>
+    // /// <typeparam name="T"></typeparam>
+    // /// <param name="identities"></param>
+    // /// <param name="cancellationToken"></param>
+    // /// <returns></returns>
+    // public async Task<List<CacheResult<T>>>
+    //     GetGloballyAsync<T>(
+    //     IReadOnlyList<CacheableIdentity> identities,
+    //     CancellationToken cancellationToken,
+    //     bool autoSave = true) // TODO: add progress reporting
+    //     where T : class, ICacheableEntity
+    // {
 
-        await using var dbContext = await _pool.GetContextAsync(cancellationToken);
+    //     await using var dbContext = await _pool.GetContextAsync(cancellationToken);
 
-        var globalResults = await GetGloballyAsync<T>(identities, dbContext, cancellationToken);
+    //     var globalResults = await GetGloballyAsync<T>(identities, dbContext, cancellationToken);
 
-        // prepare lists for mapping
-        var newCommonsWithIdentity = globalResults
-            .NewCommonsWithIdentities
-            .Concat(globalResults.UpdatingCommonsWithIdentitiesAndEntities
-                .Select(uc => (uc.Identity, uc.Common)))
-            .ToList();
+    //     // prepare lists for mapping
+    //     var newCommonsWithIdentity = globalResults
+    //         .NewCommonsWithIdentities
+    //         .Concat(globalResults.UpdatingCommonsWithIdentitiesAndEntities
+    //             .Select(uc => (uc.Identity, uc.Common)))
+    //         .ToList();
 
-        var existingEntities = globalResults
-            .UpdatingCommonsWithIdentitiesAndEntities
-            .Select(uc => uc.Entity)
-            .ToList();
+    //     var existingEntities = globalResults
+    //         .UpdatingCommonsWithIdentitiesAndEntities
+    //         .Select(uc => uc.Entity)
+    //         .ToList();
 
-        // map to entities and add to entity
-        var (updatedEntities, createdEntities) = MapCommonToEntities(newCommonsWithIdentity, existingEntities);
+    //     // map to entities and add to entity
+    //     var (updatedEntities, createdEntities) = MapCommonToEntities(newCommonsWithIdentity, existingEntities);
 
-        // construct final results
-        var finalResults = new List<CacheResult<T>>();
+    //     // construct final results
+    //     var finalResults = new List<CacheResult<T>>();
 
-        finalResults.AddRange(
-            globalResults.FreshEntities.Select(e =>
-                new CacheResult<T>(
-                    Status: Repository.Cache.Enums.EntityStatus.Existed,
-                    Identity:  identities.Single(id => id.Hash == e.Hash),
-                    Entity: (T)e,
-                    null,
-                    Error: null)));
+    //     finalResults.AddRange(
+    //         globalResults.FreshEntities.Select(e =>
+    //             new CacheResult<T>(
+    //                 Status: Repository.Cache.Enums.EntityStatus.Existed,
+    //                 Identity:  identities.Single(id => id.Hash == e.Hash),
+    //                 Entity: (T)e,
+    //                 null,
+    //                 Error: null)));
 
-        finalResults.AddRange(
-            createdEntities.Select(e =>
-                new CacheResult<T>(
-                    Status: Repository.Cache.Enums.EntityStatus.New,
-                    Identity: e.Identity,
-                    Entity: (T)e.Entity,
-                    Common: e.Common,
-                    Error: null
-                    )));
+    //     finalResults.AddRange(
+    //         createdEntities.Select(e =>
+    //             new CacheResult<T>(
+    //                 Status: Repository.Cache.Enums.EntityStatus.New,
+    //                 Identity: e.Identity,
+    //                 Entity: (T)e.Entity,
+    //                 Common: e.Common,
+    //                 Error: null
+    //                 )));
 
-        finalResults.AddRange(
-            updatedEntities.Select(e =>
-                new CacheResult<T>(
-                    Status: Repository.Cache.Enums.EntityStatus.Updated,
-                    Identity: e.Identity,
-                    Entity: (T)e.Entity,
-                    Common: e.Common,
-                    Error: null)));
+    //     finalResults.AddRange(
+    //         updatedEntities.Select(e =>
+    //             new CacheResult<T>(
+    //                 Status: Repository.Cache.Enums.EntityStatus.Updated,
+    //                 Identity: e.Identity,
+    //                 Entity: (T)e.Entity,
+    //                 Common: e.Common,
+    //                 Error: null)));
 
-        finalResults.AddRange(
-            globalResults.Errors.Select(e =>
-                new CacheResult<T>(
-                    Status: Repository.Cache.Enums.EntityStatus.Error,
-                    Identity: e.Identity,
-                    Entity: (T?)e.Entity,
-                    Common: null,
-                    Error: e.Error)));
+    //     finalResults.AddRange(
+    //         globalResults.Errors.Select(e =>
+    //             new CacheResult<T>(
+    //                 Status: Repository.Cache.Enums.EntityStatus.Error,
+    //                 Identity: e.Identity,
+    //                 Entity: (T?)e.Entity,
+    //                 Common: null,
+    //                 Error: e.Error)));
 
-        // Save to database in background
-        if (autoSave)
-        {
-            var entitiesToAdd = createdEntities.Select(e => (T)e.Entity).ToList();
-            var entitiesToUpdate = updatedEntities.Select(e => (T)e.Entity).ToList();
-            BackgroundSave(entitiesToAdd, entitiesToUpdate, cancellationToken);
-        }
+    //     // Save to database in background
+    //     if (autoSave)
+    //     {
+    //         var entitiesToAdd = createdEntities.Select(e => (T)e.Entity).ToList();
+    //         var entitiesToUpdate = updatedEntities.Select(e => (T)e.Entity).ToList();
+    //         BackgroundSave(entitiesToAdd, entitiesToUpdate, cancellationToken);
+    //     }
 
-        return finalResults;
-    }
+    //     return finalResults;
+    // }
 
-    private void BackgroundSave<T>(List<T> entitiesToAdd, List<T> entitiesToUpdate, CancellationToken cancellationToken)
-    where T : class, ICacheableEntity
-    {
-        _ = Task.Run(async () =>
-        {
-            await using var backgroundContext = await _pool.GetContextAsync(cancellationToken);
+    // private void BackgroundSave<T>(List<T> entitiesToAdd, List<T> entitiesToUpdate, CancellationToken cancellationToken)
+    // where T : class, ICacheableEntity
+    // {
+    //     _ = Task.Run(async () =>
+    //     {
+    //         await using var backgroundContext = await _pool.GetContextAsync(cancellationToken);
             
-            try
-            {
-                if (entitiesToAdd.Count > 0)
-                {
-                    await backgroundContext.Set<T>().AddRangeAsync(entitiesToAdd, cancellationToken);
-                }
+    //         try
+    //         {
+    //             if (entitiesToAdd.Count > 0)
+    //             {
+    //                 await backgroundContext.Set<T>().AddRangeAsync(entitiesToAdd, cancellationToken);
+    //             }
 
-                if (entitiesToUpdate.Count > 0)
-                {
-                    backgroundContext.Set<T>().UpdateRange(entitiesToUpdate);
-                }
+    //             if (entitiesToUpdate.Count > 0)
+    //             {
+    //                 backgroundContext.Set<T>().UpdateRange(entitiesToUpdate);
+    //             }
 
-                if (entitiesToAdd.Count > 0 || entitiesToUpdate.Count > 0)
-                {
-                    await backgroundContext.SaveChangesAsync(cancellationToken);
-                    _logger.LogDebug("Background save completed: {AddedCount} added, {UpdatedCount} updated", entitiesToAdd.Count, entitiesToUpdate.Count);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to save entities to database (Added: {AddedCount}, Updated: {UpdatedCount})", entitiesToAdd.Count, entitiesToUpdate.Count);
-            }
-        }, cancellationToken);
-    }
+    //             if (entitiesToAdd.Count > 0 || entitiesToUpdate.Count > 0)
+    //             {
+    //                 await backgroundContext.SaveChangesAsync(cancellationToken);
+    //                 _logger.LogDebug("Background save completed: {AddedCount} added, {UpdatedCount} updated", entitiesToAdd.Count, entitiesToUpdate.Count);
+    //             }
+    //         }
+    //         catch (Exception ex)
+    //         {
+    //             _logger.LogError(ex, "Failed to save entities to database (Added: {AddedCount}, Updated: {UpdatedCount})", entitiesToAdd.Count, entitiesToUpdate.Count);
+    //         }
+    //     }, cancellationToken);
+    // }
 }

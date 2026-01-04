@@ -7,7 +7,7 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// <summary>
 /// Represents a media stream (video, audio, or combined).
 /// </summary>
-public sealed record StreamMetadata : ICacheableCommon
+public sealed record StreamMetadataCommon : ICacheableCommon
 {
     /// <summary>
     /// Type of stream (video only, audio only, or combined).

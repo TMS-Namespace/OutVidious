@@ -15,12 +15,12 @@ public static class InvidiousMapper
     /// <param name="dto">The Invidious video details DTO.</param>
     /// <param name="baseUrl">The base URL of the Invidious instance.</param>
     /// <returns>The mapped VideoInfo contract.</returns>
-    public static Video ToVideoInfo(InvidiousVideoDetailsDto dto, Uri baseUrl)
+    public static VideoCommon ToVideoInfo(InvidiousVideoDetailsDto dto, Uri baseUrl)
     {
         ArgumentNullException.ThrowIfNull(dto);
         ArgumentNullException.ThrowIfNull(baseUrl);
 
-        return new Video
+        return new VideoCommon
         {
             AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildVideoUrl(dto.VideoId),
             Title = dto.Title,
@@ -62,9 +62,9 @@ public static class InvidiousMapper
         };
     }
 
-    private static ChannelMetadata MapChannel(InvidiousVideoDetailsDto dto)
+    private static ChannelMetadataCommon MapChannel(InvidiousVideoDetailsDto dto)
     {
-        return new ChannelMetadata
+        return new ChannelMetadataCommon
         {
             AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildChannelUrl(dto.AuthorId),
             Name = dto.Author,

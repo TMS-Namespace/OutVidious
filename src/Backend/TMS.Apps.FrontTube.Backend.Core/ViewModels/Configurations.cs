@@ -1,4 +1,4 @@
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts.Configuration;
 
 namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 

@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Core.Enums;
 using TMS.Apps.FrontTube.Backend.Core.Tools;
-using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 
 namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
@@ -10,9 +10,13 @@ namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 /// </summary>
 public sealed class Streams : ViewModelBase
 {
+    private const int StreamTypeVideo = 1;
+    private const int StreamTypeAudio = 2;
+    private const int StreamTypeMutex = 3;
+
     private readonly ILogger<Streams> _logger;
     private readonly Video _videoViewModel;
-    private readonly List<StreamEntity> _streamEntities;
+    private readonly List<StreamDomain> _streamDomains;
     private readonly Uri _videoAbsoluteRemoteUrl;
     private bool _disposed;
 
@@ -28,7 +32,7 @@ public sealed class Streams : ViewModelBase
     {
         _logger = super.LoggerFactory.CreateLogger<Streams>();
         _videoViewModel = videoViewModel ?? throw new ArgumentNullException(nameof(videoViewModel));
-        _streamEntities = _videoViewModel.CacheResult.Entity!.Streams.ToList();
+        _streamDomains = _videoViewModel.Domain.Streams.ToList();
         _videoAbsoluteRemoteUrl = _videoViewModel.AbsoluteRemoteUrl;
 
         Initialize();
@@ -69,8 +73,8 @@ public sealed class Streams : ViewModelBase
     /// </summary>
     public IReadOnlyList<string> AvailableDashQualities { get; private set; } = [];
 
-    private List<StreamEntity> _mutexStreams = [];
-    private List<StreamEntity> _adaptiveStreams = [];
+    private List<StreamDomain> _mutexStreams = [];
+    private List<StreamDomain> _adaptiveStreams = [];
 
     /// <summary>
     /// Sets the player mode.
@@ -107,15 +111,13 @@ public sealed class Streams : ViewModelBase
 
     private void Initialize()
     {
-        // Separate streams by type using StreamTypeId
-        // Assuming: 1=Video, 2=Audio, 3=Mutex based on enum ordinal values
-        _mutexStreams = _streamEntities
-            .Where(s => s.StreamTypeId == (int)Common.ProviderCore.Enums.StreamType.Mutex)
+        _mutexStreams = _streamDomains
+            .Where(s => s.StreamTypeId == StreamTypeMutex)
             .ToList();
 
-        _adaptiveStreams = _streamEntities
-            .Where(s => s.StreamTypeId == (int)Common.ProviderCore.Enums.StreamType.Video ||
-                       s.StreamTypeId == (int)Common.ProviderCore.Enums.StreamType.Audio)
+        _adaptiveStreams = _streamDomains
+            .Where(s => s.StreamTypeId == StreamTypeVideo ||
+                        s.StreamTypeId == StreamTypeAudio)
             .ToList();
 
         UpdateAvailableQualities();
@@ -147,7 +149,6 @@ public sealed class Streams : ViewModelBase
             .OrderByDescending(ParseQualityHeight)
             .ToList();
 
-        // Default to highest quality
         SelectedQuality = AvailableQualities.FirstOrDefault();
 
         _logger.LogDebug(
@@ -186,7 +187,7 @@ public sealed class Streams : ViewModelBase
             return;
         }
 
-        EmbedUrl = Super.VideoProvider.GetEmbedUrl(videoId).ToString();
+        EmbedUrl = Super.Proxy.ProxyEmbedUrl(videoId).ToString();
         _logger.LogDebug("Embed URL updated: {EmbedUrl}", EmbedUrl);
     }
 
@@ -200,7 +201,6 @@ public sealed class Streams : ViewModelBase
             return;
         }
 
-        // Use proxied URL to avoid CORS issues
         var proxiedUrl = Super.Proxy.ProxyDashManifestLocalUrl(videoId);
         DashManifestUrl = proxiedUrl.ToString();
         _logger.LogDebug("DASH manifest URL updated: {DashUrl}", DashManifestUrl);
@@ -215,10 +215,9 @@ public sealed class Streams : ViewModelBase
             return;
         }
 
-        // Get video-only adaptive formats and extract quality labels
         AvailableDashQualities = _adaptiveStreams
-            .Where(s => !string.IsNullOrEmpty(s.QualityLabel) && 
-                       s.StreamTypeId == (int)Common.ProviderCore.Enums.StreamType.Video)
+            .Where(s => !string.IsNullOrEmpty(s.QualityLabel) &&
+                       s.StreamTypeId == StreamTypeVideo)
             .Select(s => s.QualityLabel!)
             .Distinct()
             .OrderByDescending(ParseQualityHeight)
@@ -229,7 +228,6 @@ public sealed class Streams : ViewModelBase
 
     private static int ParseQualityHeight(string qualityLabel)
     {
-        // Parse quality labels like "1080p", "720p60", "1440p", "2160p60" etc.
         var numericPart = new string(qualityLabel.TakeWhile(char.IsDigit).ToArray());
         return int.TryParse(numericPart, out var height) ? height : 0;
     }

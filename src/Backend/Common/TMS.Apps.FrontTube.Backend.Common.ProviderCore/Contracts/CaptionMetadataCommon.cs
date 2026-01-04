@@ -6,7 +6,7 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// <summary>
 /// Represents a video caption/subtitle track.
 /// </summary>
-public sealed record CaptionMetadata : ICacheableCommon // TODO: Add Base Contract, with identity
+public sealed record CaptionMetadataCommon : ICacheableCommon // TODO: Add Base Contract, with identity
 {
     /// <summary>
     /// Display label for the caption (e.g., "English", "Spanish (auto-generated)").

@@ -1,0 +1,501 @@
+using System.Net;
+using Microsoft.Extensions.Logging;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious;
+using TMS.Apps.FrontTube.Backend.Repository.Cache;
+using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Mappers;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Tools;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Tools;
+using Microsoft.EntityFrameworkCore;
+using CommonConfig = TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
+
+
+namespace TMS.Apps.FrontTube.Backend.Repository.Data;
+
+public sealed class RepositoryManager
+{
+    private readonly DataBaseContextPool _pool;
+    private readonly ILogger<RepositoryManager> _logger;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly Data.Contracts.Configuration.DatabaseConfig _databaseConfig;
+    private readonly Data.Contracts.Configuration.CacheConfig _cacheConfig;
+    private readonly ICacheManager _cacheManager;
+    private readonly HttpClient _httpClient;
+    private readonly CacheHelper _cacheHelper;
+    private readonly IProvider _provider;
+
+    private readonly DatabaseSynchronizer _dbSynchronizer;
+
+    private readonly ImageDataSynchronizer _imageDataSynchronizer;
+
+    private PeriodicBackgroundWorker _dbSyncWorker;
+
+    private PeriodicBackgroundWorker _imageDataSyncWorker;
+
+    public RepositoryManager(
+        Data.Contracts.Configuration.DatabaseConfig databaseConfig,
+        Data.Contracts.Configuration.CacheConfig cacheConfig,
+        Data.Contracts.Configuration.ProviderConfig providerConfig,
+        ILoggerFactory loggerFactory,
+        IHttpClientFactory httpClientFactory)
+    {
+        ArgumentNullException.ThrowIfNull(databaseConfig);
+        ArgumentNullException.ThrowIfNull(cacheConfig);
+        ArgumentNullException.ThrowIfNull(providerConfig);
+        ArgumentNullException.ThrowIfNull(loggerFactory);
+        ArgumentNullException.ThrowIfNull(httpClientFactory);
+
+        _databaseConfig = databaseConfig;
+        _loggerFactory = loggerFactory;
+        _cacheConfig = cacheConfig;
+        _logger = loggerFactory.CreateLogger<RepositoryManager>();
+
+        var commonDbConfig = CommonDomainMapper.FromDomain(databaseConfig);
+        var commonCacheConfig = CommonDomainMapper.FromDomain(cacheConfig);
+        var commonProviderConfig = CommonDomainMapper.FromDomain(providerConfig);
+
+        _pool = new DataBaseContextPool(commonDbConfig, commonCacheConfig, loggerFactory);
+
+        _provider = new InvidiousVideoProvider(loggerFactory, httpClientFactory, commonProviderConfig);
+
+        var handler = new HttpClientHandler
+        {
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+
+        _httpClient = new HttpClient(handler)
+        {
+            Timeout = TimeSpan.FromSeconds(30)
+        };
+
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        _httpClient.DefaultRequestHeaders.Accept.ParseAdd("image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8");
+        _httpClient.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
+        _httpClient.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip, deflate, br");
+
+        _cacheManager = new Repository.Cache.CacheManager(commonCacheConfig, _pool, _provider, _httpClient, loggerFactory);
+        _cacheHelper = new CacheHelper(_pool, _cacheManager, loggerFactory);
+
+        _dbSynchronizer = new DatabaseSynchronizer(_pool, _cacheManager, loggerFactory);
+        _imageDataSynchronizer = new ImageDataSynchronizer(_pool, _cacheManager, loggerFactory);
+
+        _dbSyncWorker = new PeriodicBackgroundWorker(
+            TimeSpan.FromSeconds(3),
+            async (cancellationToken) => await _dbSynchronizer.SynchronizeAsync(cancellationToken),
+            (ex) => _logger.LogError(ex, "Database synchronization worker encountered an error."));
+    
+        _imageDataSyncWorker = new PeriodicBackgroundWorker(
+            TimeSpan.FromSeconds(5),
+            async (cancellationToken) => await _imageDataSynchronizer.SynchronizeAsync(cancellationToken),
+            (ex) => _logger.LogError(ex, "Image data synchronization worker encountered an error."));
+
+
+        }
+
+    public async Task InitAsync(CancellationToken initCancellationToken, CancellationToken workerCancellationToken)
+    {
+        await using var dbContext = await _pool.GetContextAsync(initCancellationToken);
+        await dbContext.Database.EnsureCreatedAsync(initCancellationToken);
+        _logger.LogDebug("Database initialized/ensured created");
+
+        if (_databaseConfig.IsDevMode)
+        {
+            var seeder = new DevModeSeeder(_loggerFactory);
+            await seeder.SeedDevUserAsync(dbContext, initCancellationToken);
+            _logger.LogDebug("Development user seeded");
+        }
+
+       
+        _dbSyncWorker.Start(workerCancellationToken);
+        _imageDataSyncWorker.Start(workerCancellationToken);
+
+    }
+
+    private async Task<(byte[]? Data, HttpStatusCode StatusCode)> DownloadDataAsync(string url, CancellationToken cancellationToken)
+    {
+        var uri = new Uri(url);
+        using var response = await _httpClient.GetAsync(uri, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return (null, response.StatusCode);
+        }
+
+        var data = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+
+        return (data, response.StatusCode);
+    }
+
+    /// <summary>
+    /// Downloads image binary contents, and saved it. Assumes that the image metadata is already cached.
+    /// </summary>
+    public async Task<ImageDomain> GetImageContentsAsync(
+        IdentityDomain imageIdentity,
+        string? providerRedirectedUrl,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(imageIdentity.AbsoluteRemoteUrlString);
+
+        try
+        {
+            var info = await _imageDataSynchronizer.GetAsync(imageIdentity.Hash, cancellationToken);
+
+            if (info != null)
+            {
+                _logger.LogDebug("Image data found in synchronized images: {@ImageIdentity}", imageIdentity);
+
+                return new ImageDomain
+                {
+                    Hash = imageIdentity.Hash,
+                    AbsoluteRemoteUrl = imageIdentity.AbsoluteRemoteUrlString,
+                    Data = info.Value.Data,
+                    Width = info.Value.Width,
+                    Height = info.Value.Height,
+                    LastSyncedAt = DateTime.UtcNow
+                };
+            }
+
+            _logger.LogWarning("Image data not found, fetching for identity: {@ImageIdentity}", imageIdentity);
+
+            var (data, statusCode) = await DownloadDataAsync(
+                    providerRedirectedUrl ?? imageIdentity.AbsoluteRemoteUrlString,
+                    cancellationToken);
+
+            if (data == null || statusCode != HttpStatusCode.OK)
+            {
+                _logger.LogWarning("Failed to download image data, status: {StatusCode}, originalUrl: {OriginalUrl}, fetchUrl: {FetchUrl}",
+                    statusCode, imageIdentity.AbsoluteRemoteUrlString, providerRedirectedUrl ?? imageIdentity.AbsoluteRemoteUrlString);
+                
+                return new ImageDomain
+                {
+                    Hash = imageIdentity.Hash,
+                    AbsoluteRemoteUrl = imageIdentity.AbsoluteRemoteUrlString,
+                    Data = null,
+                    LastSyncedAt = DateTime.UtcNow,
+                    FetchingError = $"Failed to download image data, status: {statusCode}"
+                };
+            }
+
+            var (width, height) = ImageDimensionParser.GetImageDimensions(data);
+
+            _imageDataSynchronizer.Enqueue(imageIdentity.Hash, width, height, data, DateTime.UtcNow);
+
+            return new ImageDomain
+            {
+                Hash = imageIdentity.Hash,
+                AbsoluteRemoteUrl = imageIdentity.AbsoluteRemoteUrlString,
+                Data = data,
+                Width = width,
+                Height = height,
+                LastSyncedAt = DateTime.UtcNow                
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error in {MethodName} for identity: {@ImageIdentity}", nameof(GetImageContentsAsync), imageIdentity);
+            return new ImageDomain
+            {
+                Hash = imageIdentity.Hash,
+                AbsoluteRemoteUrl = imageIdentity.AbsoluteRemoteUrlString,
+                Data = null,
+                LastSyncedAt = DateTime.UtcNow,
+                FetchingError = $"Unexpected error: {ex.Message}"
+            };
+        }
+    }
+
+    private bool IsStale(ICacheableDomain domain)
+    {
+        if (domain.LastSyncedAt is null)
+        {
+            return true;
+        }
+
+        var threshold = domain switch
+        {
+            VideoEntity => _cacheConfig.StalenessConfigs.VideoStalenessThreshold,
+            ChannelEntity => _cacheConfig.StalenessConfigs.ChannelStalenessThreshold,
+            ImageEntity => _cacheConfig.StalenessConfigs.ImageStalenessThreshold,
+            _ => _cacheConfig.StalenessConfigs.VideoStalenessThreshold
+        };
+
+        return DateTime.UtcNow - domain.LastSyncedAt.Value > threshold;
+    }
+
+    private async Task<VideoDomain?> GetVideoFromProviderAsync(
+        IdentityDomain videoIdentity,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(videoIdentity.AbsoluteRemoteUrlString);
+
+        var remoteId = YouTubeUrlBuilder.ExtractVideoId(videoIdentity.AbsoluteRemoteUrlString);
+
+
+        var remoteVideo = await _provider.GetVideoAsync(
+            remoteId!,
+            cancellationToken);
+
+        if (remoteVideo == null)
+        {
+            _logger.LogWarning("Video not found from remote provider: {@VideoIdentity}", videoIdentity);
+            return null;
+        }
+
+        _dbSynchronizer.Enqueue(remoteVideo);
+
+        return CommonDomainMapper.ToDomain(remoteVideo);
+    }
+
+    private async Task<VideoDomain?> GetVideoFromDataBaseAsync(
+        IdentityDomain videoIdentity,
+        CancellationToken cancellationToken)
+    {
+        await using var db = await _pool.GetContextAsync(cancellationToken);
+
+        var videoEntity = await db
+            .BuildVideosQuery( true, true)
+            .SingleOrDefaultAsync( v => v.Hash == videoIdentity.Hash, cancellationToken);
+
+        if (videoEntity != null)
+        {
+            return EntityDomainMapper.ToDomain(videoEntity);
+        }
+
+        return null;
+    }
+
+    private async Task<ChannelDomain?> GetChannelFromDataBaseAsync(
+        IdentityDomain channelIdentity,
+        CancellationToken cancellationToken)
+    {
+        await using var db = await _pool.GetContextAsync(cancellationToken);
+
+        var channelEntity = await db
+            .BuildChannelsQuery(true, true)
+            .SingleOrDefaultAsync(c => c.Hash == channelIdentity.Hash, cancellationToken);
+
+        if (channelEntity != null)
+        {
+            return EntityDomainMapper.ToDomain(channelEntity);
+        }
+
+        return null;
+    }
+
+    private async Task<ChannelDomain?> GetChannelFromProviderAsync(
+        IdentityDomain channelIdentity,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(channelIdentity.AbsoluteRemoteUrlString);
+
+        var remoteId = YouTubeUrlBuilder.ExtractChannelRemoteId(channelIdentity.AbsoluteRemoteUrlString);
+
+
+        var remoteChannel = await _provider.GetChannelAsync(
+            remoteId!,
+            cancellationToken);
+
+        if (remoteChannel == null)
+        {
+            _logger.LogWarning("Channel not found from remote provider: {@ChannelIdentity}", channelIdentity);
+            return null;
+        }
+
+        _dbSynchronizer.Enqueue(remoteChannel);
+
+        return CommonDomainMapper.ToDomain(remoteChannel);
+    }
+
+    private async Task<VideosPageDomain?> GetChannelPageFromProviderAsync(
+        IdentityDomain channelIdentity,
+        string tab,
+        string? continuationToken,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(channelIdentity.AbsoluteRemoteUrlString);
+
+        var remoteId = YouTubeUrlBuilder.ExtractChannelRemoteId(channelIdentity.AbsoluteRemoteUrlString);
+
+        var remotePage = await _provider.GetChannelVideosTabAsync(
+            remoteId!,
+            tab,
+            continuationToken,
+            cancellationToken);
+
+        if (remotePage == null)
+        {
+            _logger.LogWarning("Channel videos page not found from remote provider: {@ChannelIdentity}, Tab: {Tab}, Continuation: {HasContinuation}",
+                channelIdentity, tab, continuationToken is not null);
+            return null;
+        }
+
+        _dbSynchronizer.Enqueue(remotePage);
+
+        return CommonDomainMapper.ToDomain(remotePage);
+    }
+
+    private async Task<VideosPageDomain?> GetChannelPageFromDataBaseAsync(
+        IdentityDomain channelIdentity,
+        string tab,
+        string? continuationToken,
+        CancellationToken cancellationToken)
+    {
+        // TODO: make it page and tab aware
+
+        await using var db = await _pool.GetContextAsync(cancellationToken);
+
+        var videos = await db
+            .BuildVideosQuery(false, true)
+            .Where(v => v.Channel!.Hash == channelIdentity.Hash)
+            .ToListAsync(cancellationToken);
+
+        if (videos.Any())
+        {
+            var pageDomain = new VideosPageDomain
+            {
+                ChannelAbsoluteRemoteUrl = videos.First().Channel!.AbsoluteRemoteUrl,
+                Videos = videos
+                    .Select(v => EntityDomainMapper.ToDomain(v))
+                    .ToList(),
+                ContinuationToken = null
+            };
+
+            return pageDomain;
+        }
+
+        return null;
+    }
+
+    public async Task<VideoDomain?> GetVideoAsync(
+        IdentityDomain videoIdentity,
+        CancellationToken cancellationToken,
+        bool autoSave = true)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(videoIdentity.AbsoluteRemoteUrlString);
+        
+        // try to get it from synchronization queue
+        if (_dbSynchronizer.TryGetQueued<VideoCommon>(videoIdentity.Hash, false, out var queuedCommon))
+        {
+            _logger.LogDebug("Video found in synchronization queue: {@VideoIdentity}", videoIdentity);
+            return CommonDomainMapper.ToDomain((VideoCommon)queuedCommon!);
+        }
+
+        // try to get it from DB
+        var videoDomain = await GetVideoFromDataBaseAsync(videoIdentity, cancellationToken);
+
+        if (videoDomain != null)
+        {
+            if (IsStale(videoDomain) || IsStale(videoDomain.Channel!) || videoDomain.Streams.Any(IsStale))
+            {
+                _logger.LogDebug("Video found in database but is stale, refetching: {@VideoIdentity}", videoIdentity);
+
+                return await GetVideoFromProviderAsync(videoIdentity, cancellationToken);
+            }
+            
+            return videoDomain;
+        }
+
+        // nowhere found, fetch from provider
+        _logger.LogDebug("Video not found locally, fetching from provider: {@VideoIdentity}", videoIdentity);
+
+        return await GetVideoFromProviderAsync(videoIdentity, cancellationToken);
+    }
+
+    public async Task<ChannelDomain?> GetChannelAsync(
+        IdentityDomain channelIdentity,
+        CancellationToken cancellationToken,
+        bool autoSave = true)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(channelIdentity.AbsoluteRemoteUrlString);
+
+        // try to get it from synchronization queue
+        if (_dbSynchronizer.TryGetQueued<ChannelCommon>(channelIdentity.Hash, false, out var queuedCommon))        
+        {
+            _logger.LogDebug("Channel found in synchronization queue: {@ChannelIdentity}", channelIdentity);
+            return CommonDomainMapper.ToDomain((ChannelCommon)queuedCommon!);
+        }
+
+        // try to get it from DB
+        var channelDomain = await GetChannelFromDataBaseAsync(channelIdentity, cancellationToken);
+        
+        if (channelDomain != null)
+        {
+            if (IsStale(channelDomain))
+            {
+                _logger.LogDebug("Channel found in database but is stale, refetching: {@ChannelIdentity}", channelIdentity);
+
+                return await GetChannelFromProviderAsync(channelIdentity, cancellationToken);
+            }
+
+            return channelDomain;
+        }
+
+        // nowhere found, fetch from provider
+        _logger.LogDebug("Channel not found locally, fetching from provider: {@ChannelIdentity}", channelIdentity);
+        return await GetChannelFromProviderAsync(channelIdentity, cancellationToken);
+
+    }
+
+    public async Task<VideosPageDomain?> GetChannelsPageAsync(
+        IdentityDomain channelIdentity,
+        string tab,
+        string? continuationToken,
+        CancellationToken cancellationToken,
+        bool autoSave = true)
+    {
+
+        tab = "videos";
+        // try to get it from synchronization queue
+        if (_dbSynchronizer.TryGetQueued<VideosPageCommon>(channelIdentity.Hash, true, out var queuedCommon))
+        {
+            _logger.LogDebug("Channel videos page found in synchronization queue: {@ChannelIdentity}, Tab: {Tab}, Continuation: {HasContinuation}",
+                channelIdentity, tab, continuationToken is not null);  
+ 
+            return CommonDomainMapper.ToDomain((VideosPageCommon)queuedCommon!);
+        }
+
+        // try to get it from DB
+        var pageDomain = await GetChannelPageFromDataBaseAsync(
+            channelIdentity,
+            tab,
+            continuationToken,
+            cancellationToken);
+
+        if (pageDomain != null)
+        {
+            if (pageDomain.Videos.Any(v => IsStale(v) || IsStale(v.Channel!)))
+            {
+                _logger.LogDebug("Channel videos page found in database but is stale, refetching: {@ChannelIdentity}, Tab: {Tab}, Continuation: {HasContinuation}",
+                    channelIdentity, tab, continuationToken is not null);  
+                
+                return await GetChannelPageFromProviderAsync(
+                    channelIdentity,
+                    tab,
+                    continuationToken,
+                    cancellationToken);
+            }
+
+            return pageDomain;
+        }
+
+        // nowhere found, fetch from provider
+        _logger.LogDebug("Channel videos page not found locally, fetching from provider: {@ChannelIdentity}, Tab: {Tab}, Continuation: {HasContinuation}",
+            channelIdentity, tab, continuationToken is not null);  
+        return await GetChannelPageFromProviderAsync(
+            channelIdentity,
+            tab,
+            continuationToken,
+            cancellationToken);
+
+    }
+}

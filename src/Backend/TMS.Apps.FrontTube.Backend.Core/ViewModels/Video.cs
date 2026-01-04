@@ -1,15 +1,13 @@
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Core.Enums;
 using TMS.Apps.FrontTube.Backend.Core.Tools;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Enums;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Models;
-using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 
 namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
 /// <summary>
 /// ViewModel for managing video data and player state.
-/// Can wrap either full Video or VideoMetadata (summary).
+/// Wraps VideoDomain internally.
 /// </summary>
 public sealed class Video : ViewModelBase
 {
@@ -17,29 +15,42 @@ public sealed class Video : ViewModelBase
     private bool _disposed;
     private Streams? _streams;
 
-    internal CacheResult<VideoEntity> CacheResult { get; }
-    
+    internal VideoDomain Domain { get; private set; }
+
     internal Video(
-        Super super, 
-        Channel channel, 
-        CacheResult<VideoEntity> videoCachingResult, 
-        List<Image> thumbnails)
+        Super super,
+        Channel channel,
+        VideoDomain domain,
+        IReadOnlyList<Image> thumbnails)
         : base(super)
     {
         _logger = super.LoggerFactory.CreateLogger<Video>();
 
-        CacheResult = videoCachingResult ?? throw new ArgumentNullException(nameof(videoCachingResult));
-
+        Domain = domain ?? throw new ArgumentNullException(nameof(domain));
         Channel = channel ?? throw new ArgumentNullException(nameof(channel));
+        Thumbnails = thumbnails ?? [];
 
-        Thumbnails = thumbnails;
+        LoadState = string.IsNullOrWhiteSpace(Domain.FetchingError)
+            ? VideoLoadState.Loaded
+            : VideoLoadState.Error;
 
-        // Set LoadState based on cache result
-        LoadState = videoCachingResult.Status == EntityStatus.Error 
-            ? VideoLoadState.Error 
-            : VideoLoadState.Loaded;
-        
-        ErrorMessage = videoCachingResult.Error;
+        ErrorMessage = Domain.FetchingError;
+    }
+
+    internal void UpdateFromDomain(VideoDomain domain, Channel channel, IReadOnlyList<Image> thumbnails)
+    {
+        Domain = domain ?? throw new ArgumentNullException(nameof(domain));
+        Channel = channel ?? throw new ArgumentNullException(nameof(channel));
+        Thumbnails = thumbnails ?? [];
+
+        LoadState = string.IsNullOrWhiteSpace(Domain.FetchingError)
+            ? VideoLoadState.Loaded
+            : VideoLoadState.Error;
+
+        ErrorMessage = Domain.FetchingError;
+
+        _streams?.Dispose();
+        _streams = null;
     }
 
     /// <summary>
@@ -52,8 +63,8 @@ public sealed class Video : ViewModelBase
             if (_streams == null)
             {
                 _streams = new Streams(Super, this);
-                _logger.LogDebug("Streams VM initialized with {Count} stream entities", 
-                    CacheResult.Entity?.Streams?.Count ?? 0);
+                _logger.LogDebug("Streams VM initialized with {Count} stream domains",
+                    Domain.Streams.Count);
             }
 
             return _streams;
@@ -68,32 +79,32 @@ public sealed class Video : ViewModelBase
     /// <summary>
     /// The video's absolute remote URL on the original platform.
     /// </summary>
-    public Uri AbsoluteRemoteUrl => CacheResult.Identity.AbsoluteRemoteUrl;
+    public Uri AbsoluteRemoteUrl => new Uri(Domain.AbsoluteRemoteUrl);
 
     /// <summary>
     /// The video title.
     /// </summary>
-    public string Title => CacheResult.Entity!.Title;
+    public string Title => Domain.Title;
 
     /// <summary>
     /// The video description.
     /// </summary>
-    public string Description => CacheResult.Entity!.Description;
+    public string Description => Domain.Description ?? string.Empty;
 
     /// <summary>
     /// The video duration.
     /// </summary>
-    public TimeSpan Duration => TimeSpan.FromSeconds(CacheResult.Entity!.DurationSeconds);
+    public TimeSpan Duration => TimeSpan.FromSeconds(Domain.DurationSeconds);
 
     /// <summary>
     /// The view count.
     /// </summary>
-    public long ViewCount => CacheResult.Entity!.ViewCount;
+    public long ViewCount => Domain.ViewCount;
 
     /// <summary>
     /// The like count.
     /// </summary>
-    public long? LikesCount => CacheResult.Entity!.LikesCount;
+    public long? LikesCount => Domain.LikesCount;
 
     /// <summary>
     /// The formatted view count text.
@@ -104,7 +115,9 @@ public sealed class Video : ViewModelBase
     /// <summary>
     /// The date/time the video was published.
     /// </summary>
-    public DateTimeOffset? PublishedAt => CacheResult.Entity!.PublishedAt;
+    public DateTimeOffset? PublishedAt => Domain.PublishedAt is null
+        ? null
+        : new DateTimeOffset(Domain.PublishedAt.Value, TimeSpan.Zero);
 
     /// <summary>
     /// Human-friendly "published ago" text.
@@ -115,52 +128,53 @@ public sealed class Video : ViewModelBase
     /// <summary>
     /// Video thumbnails.
     /// </summary>
-    public IReadOnlyList<Image> Thumbnails { get; }
+    public IReadOnlyList<Image> Thumbnails { get; private set; }
 
     /// <summary>
     /// Channel name.
     /// </summary>
     [Obsolete("Use Channel.Name from Channel property")]
-    public string ChannelName { get; }
+    public string ChannelName => Channel.Name;
 
-    public Channel Channel { get; init; }
+    public Channel Channel { get; private set; }
 
     /// <summary>
     /// Channel absolute remote URL.
     /// </summary>
     [Obsolete("Use Channel.AbsoluteRemoteUrl from Channel property")]
-    public Uri ChannelAbsoluteRemoteUrl { get; }
+    public Uri ChannelAbsoluteRemoteUrl => Channel.AbsoluteRemoteUrl;
 
     /// <summary>
     /// Channel avatar images.
     /// </summary>
     [Obsolete("Use Channel.Avatars from Channel property")]
-    public IReadOnlyList<Common.ProviderCore.Contracts.ImageMetadata> ChannelAvatars { get; }
+    public IReadOnlyList<Image> ChannelAvatars => Channel.Avatars;
 
     /// <summary>
     /// Whether this is a short-form video.
     /// </summary>
-    public bool IsShort { get; }
+    public bool IsShort => Domain.IsShort;
 
     /// <summary>
     /// Whether the video is a live stream.
     /// </summary>
-    public bool IsLive { get; }
+    public bool IsLive => Domain.IsLive;
 
     /// <summary>
     /// Whether the video is an upcoming premiere.
     /// </summary>
-    public bool IsUpcoming { get; }
+    public bool IsUpcoming => Domain.IsUpcoming;
 
     /// <summary>
     /// Gets the current loading state.
     /// </summary>
-    public VideoLoadState LoadState { get; }
+    public VideoLoadState LoadState { get; private set; }
 
     /// <summary>
     /// Gets the error message if loading failed.
     /// </summary>
-    public string? ErrorMessage { get; }
+    public string? ErrorMessage { get; private set; }
+
     /// <summary>
     /// Gets the URL of the best available thumbnail for display.
     /// </summary>

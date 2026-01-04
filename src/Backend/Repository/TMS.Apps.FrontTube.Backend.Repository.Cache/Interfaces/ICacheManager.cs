@@ -1,6 +1,7 @@
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 using TMS.Apps.FrontTube.Backend.Repository.Cache.Models;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
@@ -13,9 +14,9 @@ namespace TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
 public interface ICacheManager : IDisposable
 {
     IProvider Provider { get; set; }
-    Task<CacheResult<T>> GetGloballyAsync<T>(CacheableIdentity identity, CancellationToken cancellationToken, bool autoSave = true) where T : class, ICacheableEntity;
-    Task<List<CacheResult<T>>> GetGloballyAsync<T>(IReadOnlyList<CacheableIdentity> identities, CancellationToken cancellationToken, bool autoSave = true) where T : class, ICacheableEntity;
-    Task<List<CacheResult<T>>> GetLocallyAsync<T>(IReadOnlyList<ICacheableCommon> commons, CancellationToken cancellationToken, bool autoSave = true) where T : class, ICacheableEntity;
-    Task<CacheResult<T>> GetLocallyAsync<T>(ICacheableCommon common, CancellationToken cancellationToken, bool autoSave = true) where T : class, ICacheableEntity;
+    //Task<CacheResult<T>> GetGloballyAsync<T>(CacheableIdentity identity, CancellationToken cancellationToken, bool autoSave = true) where T : class, ICacheableEntity;
+    //Task<List<CacheResult<T>>> GetGloballyAsync<T>(IReadOnlyList<CacheableIdentity> identities, CancellationToken cancellationToken, bool autoSave = true) where T : class, ICacheableEntity;
+    Task<List<CacheResult<T>>> GetLocallyAsync<T>(IReadOnlyList<ICacheableCommon> commons, DataBaseContext dataBaseContext, CancellationToken cancellationToken) where T : class, ICacheableEntity;
+    Task<CacheResult<T>> GetLocallyAsync<T>(ICacheableCommon common, DataBaseContext dataBaseContext, CancellationToken cancellationToken) where T : class, ICacheableEntity;
 
 }

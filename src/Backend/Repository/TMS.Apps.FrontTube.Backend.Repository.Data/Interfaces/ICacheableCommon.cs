@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
-    public interface ICacheableCommon : ICommonContract
+namespace TMS.Apps.FrontTube.Backend.Repository.Data.Interfaces;
+    public interface ICacheableDomain
     {
         long Hash { get;  }
+
+        DateTime? LastSyncedAt { get; set; }
 
 
         // /// <summary>
@@ -18,7 +20,7 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
         /// <summary>
         /// The original remote URL of this entity.
         /// </summary>
-        Uri AbsoluteRemoteUrl { get;  }
+        string AbsoluteRemoteUrl { get;  }
 
-        bool IsMetaData { get; }
+        //bool IsMetaData { get; }
     }

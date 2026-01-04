@@ -4,7 +4,7 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// Represents detailed information about a video.
 /// All properties are strongly typed with parsed values.
 /// </summary>
-public sealed record Video : VideoBase
+public sealed record VideoCommon : VideoBaseCommon
 {
     /// <summary>
     /// Plain text description of the video.
@@ -39,17 +39,17 @@ public sealed record Video : VideoBase
     /// <summary>
     /// Available media streams (adaptive formats - video only or audio only).
     /// </summary>
-    public IReadOnlyList<StreamMetadata> AdaptiveStreams { get; init; } = [];
+    public IReadOnlyList<StreamMetadataCommon> AdaptiveStreams { get; init; } = [];
 
     /// <summary>
     /// Available combined streams (video + audio).
     /// </summary>
-    public IReadOnlyList<StreamMetadata> MutexStreams { get; init; } = [];
+    public IReadOnlyList<StreamMetadataCommon> MutexStreams { get; init; } = [];
 
     /// <summary>
     /// Available caption tracks.
     /// </summary>
-    public IReadOnlyList<CaptionMetadata> Captions { get; init; } = [];
+    public IReadOnlyList<CaptionMetadataCommon> Captions { get; init; } = [];
 
     /// <summary>
     /// URL to the DASH manifest (if available).

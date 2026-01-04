@@ -89,7 +89,7 @@ The app uses **Super** pattern. All business logic lives in ViewModels of `Core`
 - All providers return `Common` contracts defined in `ProviderCore` project, which are then mapped to database entities and view models.
 - All `Common` contracts implement `ICacheableCommon` (since they are mapped to cacheable database entities) for easier handling in `CacheManager` and `RepositoryManager`.
 - There are two types of `Common` contracts that Youtube usually returns:
-  1. Objects that contain partial descriptive information, we call them `Metadata` objects (e.g., `VideoMetadata`, `ImageMetadata`), for example `ImageMetadata` does not contain the actual image bytes (needs to be fetched separately), just its URL, dimensions, etc..
+  1. Objects that contain partial descriptive information, we call them `Metadata` objects (e.g., `VideoMetadataCommon`, `ImageMetadataCommon`), for example `ImageMetadataCommon` does not contain the actual image bytes (needs to be fetched separately), just its URL, dimensions, etc..
   2. Objects with full descriptive information, we just call them (e.g., `Video`, `Channel`), However, they still do not contain full objects, for example `Video` does not contain the actual stream bytes, and needs to be fetched separately.
 
 ### Caching Mechanism

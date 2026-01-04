@@ -14,7 +14,7 @@ public static class CommonToEntityMapper
     }
 
     // Video (full)
-    public static VideoEntity ToEntity(Video common, VideoEntity? targetEntity = null)
+    public static VideoEntity ToEntity(VideoCommon common, VideoEntity? targetEntity = null)
     {
         ArgumentNullException.ThrowIfNull(common);
 
@@ -64,7 +64,7 @@ public static class CommonToEntityMapper
     }
 
     // Video metadata (summary)
-    public static VideoEntity ToEntity(VideoMetadata common, VideoEntity? targetEntity = null)
+    public static VideoEntity ToEntity(VideoMetadataCommon common, VideoEntity? targetEntity = null)
     {
         ArgumentNullException.ThrowIfNull(common);
 
@@ -104,7 +104,7 @@ public static class CommonToEntityMapper
     }
 
     // Channel (full)
-    public static ChannelEntity ToEntity(Channel common, ChannelEntity? targetEntity = null)
+    public static ChannelEntity ToEntity(ChannelCommon common, ChannelEntity? targetEntity = null)
     {
         ArgumentNullException.ThrowIfNull(common);
 
@@ -148,7 +148,7 @@ public static class CommonToEntityMapper
     }
 
     // Channel metadata
-    public static ChannelEntity ToEntity(ChannelMetadata common, ChannelEntity? targetEntity = null)
+    public static ChannelEntity ToEntity(ChannelMetadataCommon common, ChannelEntity? targetEntity = null)
     {
         ArgumentNullException.ThrowIfNull(common);
 
@@ -176,7 +176,7 @@ public static class CommonToEntityMapper
     }
 
     // Image metadata
-    public static ImageEntity ToEntity(ImageMetadata common, ImageEntity? targetEntity = null)
+    public static ImageEntity ToEntity(ImageMetadataCommon common, ImageEntity? targetEntity = null)
     {
         ArgumentNullException.ThrowIfNull(common);
 
@@ -206,7 +206,7 @@ public static class CommonToEntityMapper
     }
 
     // Caption metadata
-    public static CaptionEntity ToEntity(CaptionMetadata common, CaptionEntity? targetEntity = null)
+    public static CaptionEntity ToEntity(CaptionMetadataCommon common, CaptionEntity? targetEntity = null)
     {
         ArgumentNullException.ThrowIfNull(common);
 
@@ -238,7 +238,7 @@ public static class CommonToEntityMapper
     }
 
     // Stream metadata (basic mapping)
-    public static StreamEntity ToEntity(StreamMetadata common, StreamEntity? targetEntity = null)
+    public static StreamEntity ToEntity(StreamMetadataCommon common, StreamEntity? targetEntity = null)
     {
         ArgumentNullException.ThrowIfNull(common);
 

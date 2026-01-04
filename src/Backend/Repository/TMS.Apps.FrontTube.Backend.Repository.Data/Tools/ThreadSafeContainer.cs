@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace TMS.Apps.FrontTube.Backend.Core.Tools;
+namespace TMS.Apps.FrontTube.Backend.Repository.Data.Tools;
 
 public sealed class ThreadSafeContainer<T>
 {

@@ -2,84 +2,133 @@
 
 <PageTitle>@PageTitle</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+<MudContainer
+    MaxWidth="MaxWidth.ExtraLarge"
+    Class="pa-4">
     @if (IsInitialLoading)
     {
-        <div class="channel-loading">
-            <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />
-            <MudText Typo="Typo.body1" Class="mt-2">Loading channel...</MudText>
-        </div>
+        <MudStack
+            AlignItems="AlignItems.Center"
+            Justify="Justify.Center"
+            Class="channel-loading">
+            <MudProgressCircular
+                Indeterminate="true"
+                Size="Size.Large"
+                Color="Color.Primary" />
+
+            <MudText
+                Typo="Typo.body1"
+                Class="mt-2">
+                Loading channel...
+            </MudText>
+        </MudStack>
     }
     else if (!string.IsNullOrWhiteSpace(ErrorMessage))
     {
-        <MudAlert Severity="Severity.Error" Class="ma-4">
+        <MudAlert
+            Severity="Severity.Error"
+            Class="ma-4">
             @ErrorMessage
         </MudAlert>
     }
     else if (ViewModel is not null)
     {
         <!-- Channel Header -->
-        <div class="channel-header">
+        <MudStack
+            Spacing="2"
+            Class="channel-header">
             @if (BannerUrl is not null)
             {
-                <ImageComponent 
-                    ImageUrl="@BannerUrl" 
-                    Alt="Channel Banner"
-                    Class="channel-banner-image"
-                    ObjectFit="ObjectFit.Cover"
-                    UseAsyncLoading="false" />
-            }
-
-            <div class="channel-info">
-                <MudAvatar Size="Size.Large" Class="channel-avatar">
-                    <ImageComponent 
-                        ImageUrl="@AvatarUrl" 
-                        Alt="@ViewModel.Name"
+                <MudPaper
+                    Elevation="0"
+                    Class="channel-banner">
+                    <ImageComponent
+                        ImageUrl="@BannerUrl"
+                        Alt="Channel Banner"
+                        Class="channel-banner-image"
                         ObjectFit="ObjectFit.Cover"
                         UseAsyncLoading="false" />
-                </MudAvatar>
+                </MudPaper>
+            }
 
-                <div class="channel-details">
-                    <MudText Typo="Typo.h4" Class="channel-name">
-                        @ViewModel.Name
-                    </MudText>
+            <MudPaper
+                Elevation="1"
+                Class="pa-4 channel-info-panel">
+                <MudStack
+                    Row="true"
+                    AlignItems="AlignItems.Center"
+                    Spacing="3"
+                    Wrap="Wrap.Wrap"
+                    Class="channel-info-stack">
+                    <MudAvatar
+                        Size="Size.Large"
+                        Class="channel-avatar">
+                        <ImageComponent
+                            ImageUrl="@AvatarUrl"
+                            Alt="@ViewModel.Name"
+                            ObjectFit="ObjectFit.Cover"
+                            UseAsyncLoading="false" />
+                    </MudAvatar>
 
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">
-                        @ViewModel.SubscriberCount.ToString("N0") subscribers
-                    </MudText>
-
-                    @if (!string.IsNullOrWhiteSpace(ViewModel.Description))
-                    {
-                        <MudText Typo="Typo.body2" Class="channel-description mt-2">
-                            @ViewModel.Description
+                    <MudStack>
+                        <MudText
+                            Typo="Typo.h4"
+                            Class="channel-name">
+                            @ViewModel.Name
                         </MudText>
-                    }
-                </div>
-            </div>
-        </div>
+
+                        <MudText
+                            Typo="Typo.body2"
+                            Color="Color.Secondary">
+                            @ViewModel.SubscriberCount.ToString("N0") subscribers
+                        </MudText>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudStack>
 
         <!-- Tab Navigation -->
-        @if (ViewModel.AvailableTabs.Count > 0)
+        @if (Tabs.Count > 0)
         {
-            <MudTabs @bind-ActivePanelIndex="SelectedTabIndex" 
-                     Elevation="0" 
-                     ApplyEffectsToContainer="true"
-                     Class="channel-tabs">
-                @foreach (var tabId in ViewModel.AvailableTabs)
+            <MudTabs
+                @bind-ActivePanelIndex="SelectedTabIndex"
+                Elevation="0"
+                ApplyEffectsToContainer="true"
+                Class="channel-tabs">
+                @foreach (var tabId in Tabs)
                 {
-                    <MudTabPanel Text="@tabId" ID="@tabId" />
+                    <MudTabPanel
+                        Text="@GetTabLabel(tabId)"
+                        ID="@tabId" />
                 }
             </MudTabs>
         }
 
-        <!-- Videos Grid -->
-        <VideosGridComponent 
-            Videos="@ViewModel.Videos"
-            ShowChannelName="false"
-            IsLoading="@ViewModel.IsLoading"
-            IsLoadingMore="@ViewModel.IsLoadingMore"
-            HasMore="@ViewModel.HasMore"
-            OnVideoClick="HandleVideoClick"
-            OnLoadMore="HandleLoadMore" />
+        @if (IsAboutTabSelected)
+        {
+            <MudPaper
+                Elevation="0"
+                Class="pa-4 channel-about">
+                @if (HasChannelDescription)
+                {
+                    <MudText
+                        Typo="Typo.body2"
+                        Class="channel-description">
+                        @ChannelDescriptionMarkup
+                    </MudText>
+                }
+            </MudPaper>
+        }
+        else
+        {
+            <VideosGridComponent
+                Videos="@ViewModel.Videos"
+                ShowChannelName="false"
+                IsLoading="@ViewModel.IsLoading"
+                IsLoadingMore="@ViewModel.IsLoadingMore"
+                HasMore="@ViewModel.HasMore"
+                OnVideoClick="HandleVideoClick"
+                OnLoadMore="HandleLoadMore" />
+        }
     }
 </MudContainer>

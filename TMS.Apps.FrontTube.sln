@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.FrontTube.Backend.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.FrontTube.Backend.Repository.DataBase", "src\Backend\Repository\TMS.Apps.FrontTube.Backend.Repository.DataBase\TMS.Apps.FrontTube.Backend.Repository.DataBase.csproj", "{14E6160C-1496-4EF6-8583-1FA573ACF611}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.FrontTube.Backend.Repository.Data", "src\Backend\Repository\TMS.Apps.FrontTube.Backend.Repository.Data\TMS.Apps.FrontTube.Backend.Repository.Data.csproj", "{4E3A6411-F897-4D8C-A5A6-40E79E517367}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{14E6160C-1496-4EF6-8583-1FA573ACF611}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{14E6160C-1496-4EF6-8583-1FA573ACF611}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{14E6160C-1496-4EF6-8583-1FA573ACF611}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E3A6411-F897-4D8C-A5A6-40E79E517367}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E3A6411-F897-4D8C-A5A6-40E79E517367}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E3A6411-F897-4D8C-A5A6-40E79E517367}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E3A6411-F897-4D8C-A5A6-40E79E517367}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -73,5 +79,6 @@ Global
 		{9EFB56BC-C02A-BFC8-8CAF-57F312DE9EAE} = {AF8F0F96-A2D6-5996-F80E-97D24DC22B95}
 		{7413122A-1730-4E3C-8C5F-3895B877412D} = {9EFB56BC-C02A-BFC8-8CAF-57F312DE9EAE}
 		{14E6160C-1496-4EF6-8583-1FA573ACF611} = {9EFB56BC-C02A-BFC8-8CAF-57F312DE9EAE}
+		{4E3A6411-F897-4D8C-A5A6-40E79E517367} = {9EFB56BC-C02A-BFC8-8CAF-57F312DE9EAE}
 	EndGlobalSection
 EndGlobal

@@ -11,13 +11,13 @@ public static class CaptionMapper
     /// <summary>
     /// Maps an Invidious video caption DTO to a CaptionInfo contract.
     /// </summary>
-    public static CaptionMetadata ToCaptionInfo(InvidiousVideoCaptionDto dto, Uri baseUrl)
+    public static CaptionMetadataCommon ToCaptionInfo(InvidiousVideoCaptionDto dto, Uri baseUrl)
     {
         var captionUrl = dto.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase)
             ? new Uri(dto.Url)
             : new Uri($"{baseUrl.ToString().TrimEnd('/')}{dto.Url}");
 
-        return new CaptionMetadata
+        return new CaptionMetadataCommon
         {
             Name = dto.Label,
             LanguageCode = dto.LanguageCode,

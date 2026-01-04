@@ -3,7 +3,7 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// <summary>
 /// Represents detailed channel information.
 /// </summary>
-public sealed record Channel : ChannelMetadata
+public sealed record ChannelCommon : ChannelMetadataCommon
 {
     /// <summary>
     /// Channel description/about text.
@@ -32,7 +32,7 @@ public sealed record Channel : ChannelMetadata
     /// <summary>
     /// Channel banner images.
     /// </summary>
-    public IReadOnlyList<ImageMetadata> Banners { get; init; } = [];
+    public IReadOnlyList<ImageMetadataCommon> Banners { get; init; } = [];
 
     /// <summary>
     /// Available tabs for this channel.

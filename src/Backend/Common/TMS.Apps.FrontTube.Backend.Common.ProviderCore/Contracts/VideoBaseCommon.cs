@@ -7,7 +7,7 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// Represents a compact video summary for lists and grids.
 /// Contains only essential information for display in thumbnails.
 /// </summary>
-public abstract record VideoBase : ICacheableCommon
+public abstract record VideoBaseCommon : ICacheableCommon
 {
     /// <summary>
     /// Absolute URL to the video on the remote platform (e.g., https://www.youtube.com/watch?v=...).
@@ -50,12 +50,12 @@ public abstract record VideoBase : ICacheableCommon
     /// <summary>
     /// Channel/author information.
     /// </summary>
-    public required ChannelMetadata Channel { get; init; }
+    public required ChannelMetadataCommon Channel { get; init; }
 
     /// <summary>
     /// Available thumbnails.
     /// </summary>
-    public IReadOnlyList<ImageMetadata> Thumbnails { get; init; } = [];
+    public IReadOnlyList<ImageMetadataCommon> Thumbnails { get; init; } = [];
 
     /// <summary>
     /// Whether the video is a live stream.

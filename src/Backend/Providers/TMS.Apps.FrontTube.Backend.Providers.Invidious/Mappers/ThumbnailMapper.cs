@@ -25,11 +25,11 @@ public static partial class ThumbnailMapper
     /// <summary>
     /// Maps an Invidious video thumbnail DTO to a ThumbnailInfo contract.
     /// </summary>
-    public static ImageMetadata ToThumbnailInfo(InvidiousVideoThumbnailDto dto)
+    public static ImageMetadataCommon ToThumbnailInfo(InvidiousVideoThumbnailDto dto)
     {
         var originalUrl = ExtractVideoThumbnailUrl(dto.Url);
 
-        return new ImageMetadata
+        return new ImageMetadataCommon
         {
             Quality = ParseThumbnailQuality(dto.Quality),
             AbsoluteRemoteUrl = originalUrl,
@@ -41,7 +41,7 @@ public static partial class ThumbnailMapper
     /// <summary>
     /// Maps an Invidious author thumbnail DTO to a ThumbnailInfo contract.
     /// </summary>
-    public static ImageMetadata ToChannelThumbnailInfo(InvidiousAuthorThumbnailDto dto)
+    public static ImageMetadataCommon ToChannelThumbnailInfo(InvidiousAuthorThumbnailDto dto)
     {
         // Determine quality based on dimensions
         var quality = dto.Width switch
@@ -54,7 +54,7 @@ public static partial class ThumbnailMapper
 
         var originalUrl = ExtractAvatarUrl(dto.Url);
 
-        return new ImageMetadata
+        return new ImageMetadataCommon
         {
             Quality = quality,
             AbsoluteRemoteUrl = originalUrl,

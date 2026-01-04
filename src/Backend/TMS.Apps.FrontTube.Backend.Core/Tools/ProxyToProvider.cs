@@ -1,9 +1,8 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Core.ViewModels;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 
 namespace TMS.Apps.FrontTube.Backend.Core.Tools;
 
@@ -422,27 +421,27 @@ public sealed partial class ProxyToProvider
         {
             _logger.LogDebug("ImageProxy: Fetching image: {OriginalUrl} via {FetchUrl}", originalUrl, fetchUrl);
 
-            var identity =  new CacheableIdentity
+            var identity = new IdentityDomain
             {
                 AbsoluteRemoteUrlString = originalUrl
             };
 
-            var imageEntity = await _super.RepositoryManager.GetImageContentsAsync(identity, fetchUrl, cancellationToken);
+            var imageDomain = await _super.RepositoryManager.GetImageContentsAsync(identity, fetchUrl, cancellationToken);
 
-            if (imageEntity?.Data is null || imageEntity.Data.Length == 0)
+            if (imageDomain?.Data is null || imageDomain.Data.Length == 0)
             {
                 _logger.LogWarning("ImageProxy: Failed to fetch image: {OriginalUrl}", originalUrl);
                 return Results.NotFound();
             }
 
-            var mimeType = imageEntity.MimeType ?? "image/jpeg";
+            var mimeType = imageDomain.MimeType ?? "image/jpeg";
             _logger.LogDebug("ImageProxy: Returning image: {OriginalUrl}, MimeType: {MimeType}, Size: {Size} bytes", 
-                originalUrl, mimeType, imageEntity.Data.Length);
+                originalUrl, mimeType, imageDomain.Data.Length);
 
             // Set cache headers
             context.Response.Headers.CacheControl = "public, max-age=86400";
             
-            return Results.File(imageEntity.Data, mimeType);
+            return Results.File(imageDomain.Data, mimeType);
         }
         catch (OperationCanceledException)
         {
