@@ -1,24 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 
 namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
-    public interface ICacheableCommon : ICommonContract
-    {
-        long Hash { get;  }
 
+public interface ICacheableCommon : ICommonContract
+{
+    RemoteIdentityCommon RemoteIdentity { get; }
 
-        // /// <summary>
-        // /// When this entity was last synchronized from the remote source.
-        // /// Used for staleness checking.
-        // /// </summary>
-        // DateTime? LastSyncedAt { get; set; }
-
-        /// <summary>
-        /// The original remote URL of this entity.
-        /// </summary>
-        Uri AbsoluteRemoteUrl { get;  }
-
-        bool IsMetaData { get; }
-    }
+    bool IsMetaData { get; }
+}

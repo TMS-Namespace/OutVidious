@@ -13,20 +13,12 @@ public sealed class StreamDomain : ICacheableDomain
 
     public DateTime? LastSyncedAt { get; set; }
 
-    /// <summary>
-    /// XxHash64 hash of the absolute remote URL for unique lookup.
-    /// </summary>
-    public long Hash { get; set; }
+    public required RemoteIdentityDomain RemoteIdentity { get; set; }
 
     /// <summary>
     /// Reference to the video this stream belongs to.
     /// </summary>
     public int VideoId { get; set; }
-
-    /// <summary>
-    /// Absolute URL to the stream.
-    /// </summary>
-    public string AbsoluteRemoteUrl { get; set; } = string.Empty;
 
     /// <summary>
     /// Stream type ID.

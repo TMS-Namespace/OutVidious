@@ -1,4 +1,3 @@
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Cache;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
@@ -18,8 +17,9 @@ public static class CommonToEntityMapper
     {
         ArgumentNullException.ThrowIfNull(common);
 
-        var absoluteRemoteUrl = common.AbsoluteRemoteUrl.ToString();
-        var hash = HashHelper.ComputeHash(absoluteRemoteUrl);
+        var identity = common.RemoteIdentity;
+        var absoluteRemoteUrl = identity.AbsoluteRemoteUrl;
+        var hash = identity.Hash;
 
         if (targetEntity is not null)
         {
@@ -68,8 +68,9 @@ public static class CommonToEntityMapper
     {
         ArgumentNullException.ThrowIfNull(common);
 
-        var absoluteRemoteUrl = common.AbsoluteRemoteUrl.ToString();
-        var hash = HashHelper.ComputeHash(absoluteRemoteUrl);
+        var identity = common.RemoteIdentity;
+        var absoluteRemoteUrl = identity.AbsoluteRemoteUrl;
+        var hash = identity.Hash;
 
         if (targetEntity is not null)
         {
@@ -108,8 +109,9 @@ public static class CommonToEntityMapper
     {
         ArgumentNullException.ThrowIfNull(common);
 
-        var absoluteRemoteUrl = common.AbsoluteRemoteUrl.ToString();
-        var hash = HashHelper.ComputeHash(absoluteRemoteUrl);
+        var identity = common.RemoteIdentity;
+        var absoluteRemoteUrl = identity.AbsoluteRemoteUrl;
+        var hash = identity.Hash;
 
         if (targetEntity is not null)
         {
@@ -152,8 +154,9 @@ public static class CommonToEntityMapper
     {
         ArgumentNullException.ThrowIfNull(common);
 
-        var absoluteRemoteUrl = common.AbsoluteRemoteUrl.ToString();
-        var hash = HashHelper.ComputeHash(absoluteRemoteUrl);
+        var identity = common.RemoteIdentity;
+        var absoluteRemoteUrl = identity.AbsoluteRemoteUrl;
+        var hash = identity.Hash;
 
         if (targetEntity is not null)
         {
@@ -180,8 +183,9 @@ public static class CommonToEntityMapper
     {
         ArgumentNullException.ThrowIfNull(common);
 
-        var absoluteRemoteUrl = common.AbsoluteRemoteUrl.ToString();
-        var hash = HashHelper.ComputeHash(absoluteRemoteUrl);
+        var identity = common.RemoteIdentity;
+        var absoluteRemoteUrl = identity.AbsoluteRemoteUrl;
+        var hash = identity.Hash;
 
         if (targetEntity is not null)
         {
@@ -210,8 +214,9 @@ public static class CommonToEntityMapper
     {
         ArgumentNullException.ThrowIfNull(common);
 
-        var absoluteRemoteUrl = common.AbsoluteRemoteUrl.ToString();
-        var hash = HashHelper.ComputeHash(absoluteRemoteUrl);
+        var identity = common.RemoteIdentity;
+        var absoluteRemoteUrl = identity.AbsoluteRemoteUrl;
+        var hash = identity.Hash;
 
         if (targetEntity is not null)
         {
@@ -242,8 +247,9 @@ public static class CommonToEntityMapper
     {
         ArgumentNullException.ThrowIfNull(common);
 
-        var absoluteRemoteUrl = common.AbsoluteRemoteUrl.ToString();
-        var hash = HashHelper.ComputeHash(absoluteRemoteUrl);
+        var identity = common.RemoteIdentity;
+        var absoluteRemoteUrl = identity.AbsoluteRemoteUrl;
+        var hash = identity.Hash;
 
         if (targetEntity is not null)
         {

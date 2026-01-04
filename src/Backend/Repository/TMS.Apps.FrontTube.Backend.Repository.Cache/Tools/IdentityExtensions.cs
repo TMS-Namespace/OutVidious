@@ -1,29 +1,38 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Cache.Tools;
-    public static class IdentityExtensions
+
+public static class IdentityExtensions
+{
+    public static RemoteIdentityCommon ToIdentity(this ICacheableCommon common)
     {
-    public static CacheableIdentity ToIdentity(this ICacheableCommon common)
-    {
-        return new CacheableIdentity
-        {
-            AbsoluteRemoteUrlString = common.AbsoluteRemoteUrl.ToString()
-        };
+        ArgumentNullException.ThrowIfNull(common);
+
+        return common.RemoteIdentity;
     }
 
-        public static CacheableIdentity ToIdentity(this ICacheableEntity entity)
+    public static RemoteIdentityCommon ToIdentity(this ICacheableEntity entity)
     {
-        return new CacheableIdentity()
-        {
-            DataBaseId = entity.Id,
-            AbsoluteRemoteUrlString = entity.AbsoluteRemoteUrl,
-        };
+        ArgumentNullException.ThrowIfNull(entity);
+
+        var identityType = ResolveIdentityType(entity);
+        return new RemoteIdentityCommon(identityType, entity.AbsoluteRemoteUrl);
     }
 
+    private static RemoteIdentityTypeCommon ResolveIdentityType(ICacheableEntity entity)
+    {
+        return entity switch
+        {
+            VideoEntity => RemoteIdentityTypeCommon.Video,
+            ChannelEntity => RemoteIdentityTypeCommon.Channel,
+            ImageEntity => RemoteIdentityTypeCommon.Image,
+            CaptionEntity => RemoteIdentityTypeCommon.Caption,
+            StreamEntity => RemoteIdentityTypeCommon.Stream,
+            _ => throw new NotSupportedException($"Entity type {entity.GetType().Name} is not supported for identity resolution.")
+        };
     }
+}

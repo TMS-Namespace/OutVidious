@@ -4,6 +4,7 @@ using CommonConfig = TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuratio
 using CommonContracts = TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using DomainConfig = TMS.Apps.FrontTube.Backend.Repository.Data.Contracts.Configuration;
 using DomainContracts = TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
+using DomainEnums = TMS.Apps.FrontTube.Backend.Repository.Data.Enums;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data.Mappers;
 
@@ -38,14 +39,50 @@ public static class CommonDomainMapper
         return Enum.IsDefined(typeof(TEnum), value) ? (TEnum)(object)value : fallback;
     }
 
+    private static DomainEnums.RemoteIdentityTypeDomain ToDomain(RemoteIdentityTypeCommon type)
+    {
+        return type switch
+        {
+            RemoteIdentityTypeCommon.Video => DomainEnums.RemoteIdentityTypeDomain.Video,
+            RemoteIdentityTypeCommon.Channel => DomainEnums.RemoteIdentityTypeDomain.Channel,
+            RemoteIdentityTypeCommon.Image => DomainEnums.RemoteIdentityTypeDomain.Image,
+            RemoteIdentityTypeCommon.Caption => DomainEnums.RemoteIdentityTypeDomain.Caption,
+            RemoteIdentityTypeCommon.Stream => DomainEnums.RemoteIdentityTypeDomain.Stream,
+            _ => throw new NotSupportedException($"Unsupported identity type: {type}.")
+        };
+    }
+
+    private static RemoteIdentityTypeCommon FromDomain(DomainEnums.RemoteIdentityTypeDomain type)
+    {
+        return type switch
+        {
+            DomainEnums.RemoteIdentityTypeDomain.Video => RemoteIdentityTypeCommon.Video,
+            DomainEnums.RemoteIdentityTypeDomain.Channel => RemoteIdentityTypeCommon.Channel,
+            DomainEnums.RemoteIdentityTypeDomain.Image => RemoteIdentityTypeCommon.Image,
+            DomainEnums.RemoteIdentityTypeDomain.Caption => RemoteIdentityTypeCommon.Caption,
+            DomainEnums.RemoteIdentityTypeDomain.Stream => RemoteIdentityTypeCommon.Stream,
+            _ => throw new NotSupportedException($"Unsupported identity type: {type}.")
+        };
+    }
+
     private static DomainContracts.VideoDomain MapVideoBase(VideoBaseCommon video, DomainContracts.VideoDomain? target = null)
     {
         ArgumentNullException.ThrowIfNull(video);
 
-        target ??= new DomainContracts.VideoDomain();
+        var identity = ToDomain(video.RemoteIdentity);
 
-        target.Hash = video.Hash;
-        target.AbsoluteRemoteUrl = video.AbsoluteRemoteUrl.ToString();
+        if (target is null)
+        {
+            target = new DomainContracts.VideoDomain
+            {
+                RemoteIdentity = identity
+            };
+        }
+        else
+        {
+            target.RemoteIdentity = identity;
+        }
+
         target.Title = video.Title;
         target.DurationSeconds = (long)video.Duration.TotalSeconds;
         target.ViewCount = video.ViewCount;
@@ -61,52 +98,79 @@ public static class CommonDomainMapper
         return target;
     }
 
-    public static DomainContracts.IdentityDomain ToDomain(CommonContracts.CacheableIdentity identity, DomainContracts.IdentityDomain? target = null)
+    public static DomainContracts.RemoteIdentityDomain ToDomain(CommonContracts.RemoteIdentityCommon identity, DomainContracts.RemoteIdentityDomain? target = null)
     {
         ArgumentNullException.ThrowIfNull(identity);
 
-        target ??= new DomainContracts.IdentityDomain
-        {
-            AbsoluteRemoteUrlString = identity.AbsoluteRemoteUrlString
-        };
+        var identityType = ToDomain(identity.IdentityType);
 
-        target.AbsoluteRemoteUrlString = identity.AbsoluteRemoteUrlString;
-        target.RemoteId = identity.RemoteId;
-        target.DataBaseId = identity.DataBaseId;
+        var shouldRebuild = target is null
+            || target.IdentityType != identityType
+            || !string.Equals(target.AbsoluteRemoteUrl, identity.AbsoluteRemoteUrl, StringComparison.Ordinal)
+            || target.Hash != identity.Hash
+            || (!string.IsNullOrWhiteSpace(identity.RemoteId)
+                && !string.Equals(identity.RemoteId, target.RemoteId, StringComparison.Ordinal));
+
+        if (shouldRebuild)
+        {
+            target = new DomainContracts.RemoteIdentityDomain
+            {
+                IdentityType = identityType,
+                AbsoluteRemoteUrl = identity.AbsoluteRemoteUrl,
+                AbsoluteRemoteUri = identity.AbsoluteRemoteUri,
+                Hash = identity.Hash,
+                RemoteId = identity.RemoteId
+            };
+        }
 
         return target;
     }
 
-    public static CommonContracts.CacheableIdentity FromDomain(DomainContracts.IdentityDomain domain, CommonContracts.CacheableIdentity? target = null)
+    public static CommonContracts.RemoteIdentityCommon FromDomain(DomainContracts.RemoteIdentityDomain domain, CommonContracts.RemoteIdentityCommon? target = null)
     {
         ArgumentNullException.ThrowIfNull(domain);
 
-        if (target is null)
+        var identityType = FromDomain(domain.IdentityType);
+
+        var shouldRebuild = target is null
+            || target.IdentityType != identityType
+            || !string.Equals(target.AbsoluteRemoteUrl, domain.AbsoluteRemoteUrl, StringComparison.Ordinal)
+            || target.Hash != domain.Hash
+            || (!string.IsNullOrWhiteSpace(domain.RemoteId)
+                && !string.Equals(domain.RemoteId, target.RemoteId, StringComparison.Ordinal));
+
+        if (shouldRebuild)
         {
-            return new CommonContracts.CacheableIdentity
+            target = new CommonContracts.RemoteIdentityCommon(identityType, domain.AbsoluteRemoteUrl)
             {
-                AbsoluteRemoteUrlString = domain.AbsoluteRemoteUrlString,
                 RemoteId = domain.RemoteId,
-                DataBaseId = domain.DataBaseId
+                Hash = domain.Hash,
+                AbsoluteRemoteUrl = domain.AbsoluteRemoteUrl,
+                AbsoluteRemoteUri = domain.AbsoluteRemoteUri
             };
         }
 
-        return target with
-        {
-            AbsoluteRemoteUrlString = domain.AbsoluteRemoteUrlString,
-            RemoteId = domain.RemoteId,
-            DataBaseId = domain.DataBaseId
-        };
+        return target;
     }
 
     public static DomainContracts.ChannelDomain ToDomain(CommonContracts.ChannelMetadataCommon channel, DomainContracts.ChannelDomain? target = null)
     {
         ArgumentNullException.ThrowIfNull(channel);
 
-        target ??= new DomainContracts.ChannelDomain();
+        var identity = ToDomain(channel.RemoteIdentity);
 
-        target.Hash = channel.Hash;
-        target.AbsoluteRemoteUrl = channel.AbsoluteRemoteUrl.ToString();
+        if (target is null)
+        {
+            target = new DomainContracts.ChannelDomain
+            {
+                RemoteIdentity = identity
+            };
+        }
+        else
+        {
+            target.RemoteIdentity = identity;
+        }
+
         target.Title = channel.Name;
         target.SubscriberCount = channel.SubscriberCount;
         target.Avatars = channel.Avatars
@@ -155,7 +219,7 @@ public static class CommonDomainMapper
         {
             return new CommonContracts.ChannelMetadataCommon
             {
-                AbsoluteRemoteUrl = new Uri(domain.AbsoluteRemoteUrl),
+                RemoteIdentity = FromDomain(domain.RemoteIdentity),
                 Name = domain.Title,
                 SubscriberCount = domain.SubscriberCount,
                 Avatars = avatars
@@ -164,7 +228,7 @@ public static class CommonDomainMapper
 
         return target with
         {
-            AbsoluteRemoteUrl = new Uri(domain.AbsoluteRemoteUrl),
+            RemoteIdentity = FromDomain(domain.RemoteIdentity),
             Name = domain.Title,
             SubscriberCount = domain.SubscriberCount,
             Avatars = avatars
@@ -198,7 +262,7 @@ public static class CommonDomainMapper
         {
             return new ChannelCommon
             {
-                AbsoluteRemoteUrl = new Uri(domain.AbsoluteRemoteUrl),
+                RemoteIdentity = FromDomain(domain.RemoteIdentity),
                 Name = domain.Title,
                 SubscriberCount = domain.SubscriberCount,
                 Avatars = avatars,
@@ -216,7 +280,7 @@ public static class CommonDomainMapper
 
         return target with
         {
-            AbsoluteRemoteUrl = new Uri(domain.AbsoluteRemoteUrl),
+            RemoteIdentity = FromDomain(domain.RemoteIdentity),
             Name = domain.Title,
             SubscriberCount = domain.SubscriberCount,
             Avatars = avatars,
@@ -236,10 +300,20 @@ public static class CommonDomainMapper
     {
         ArgumentNullException.ThrowIfNull(image);
 
-        target ??= new DomainContracts.ImageDomain();
+        var identity = ToDomain(image.RemoteIdentity);
 
-        target.Hash = image.Hash;
-        target.AbsoluteRemoteUrl = image.AbsoluteRemoteUrl.ToString();
+        if (target is null)
+        {
+            target = new DomainContracts.ImageDomain
+            {
+                RemoteIdentity = identity
+            };
+        }
+        else
+        {
+            target.RemoteIdentity = identity;
+        }
+
         target.Width = image.Width;
         target.Height = image.Height;
         target.LastSyncedAt = DateTime.UtcNow;
@@ -256,7 +330,7 @@ public static class CommonDomainMapper
             return new CommonContracts.ImageMetadataCommon
             {
                 Quality = ImageQuality.Unknown,
-                AbsoluteRemoteUrl = new Uri(domain.AbsoluteRemoteUrl),
+                RemoteIdentity = FromDomain(domain.RemoteIdentity),
                 Width = domain.Width ?? 0,
                 Height = domain.Height ?? 0
             };
@@ -265,7 +339,7 @@ public static class CommonDomainMapper
         return target with
         {
             Quality = ImageQuality.Unknown,
-            AbsoluteRemoteUrl = new Uri(domain.AbsoluteRemoteUrl),
+            RemoteIdentity = FromDomain(domain.RemoteIdentity),
             Width = domain.Width ?? 0,
             Height = domain.Height ?? 0
         };
@@ -275,10 +349,20 @@ public static class CommonDomainMapper
     {
         ArgumentNullException.ThrowIfNull(caption);
 
-        target ??= new DomainContracts.CaptionDomain();
+        var identity = ToDomain(caption.RemoteIdentity);
 
-        target.Hash = caption.Hash;
-        target.AbsoluteRemoteUrl = caption.AbsoluteRemoteUrl.ToString();
+        if (target is null)
+        {
+            target = new DomainContracts.CaptionDomain
+            {
+                RemoteIdentity = identity
+            };
+        }
+        else
+        {
+            target.RemoteIdentity = identity;
+        }
+
         target.Label = caption.Name;
         target.LanguageCode = caption.LanguageCode;
         target.IsAutoGenerated = caption.IsAutoGenerated;
@@ -301,7 +385,7 @@ public static class CommonDomainMapper
             {
                 Name = domain.Label,
                 LanguageCode = domain.LanguageCode,
-                AbsoluteRemoteUrl = new Uri(domain.AbsoluteRemoteUrl),
+                RemoteIdentity = FromDomain(domain.RemoteIdentity),
                 IsAutoGenerated = domain.IsAutoGenerated
             };
         }
@@ -310,7 +394,7 @@ public static class CommonDomainMapper
         {
             Name = domain.Label,
             LanguageCode = domain.LanguageCode,
-            AbsoluteRemoteUrl = new Uri(domain.AbsoluteRemoteUrl),
+            RemoteIdentity = FromDomain(domain.RemoteIdentity),
             IsAutoGenerated = domain.IsAutoGenerated
         };
     }
@@ -319,10 +403,20 @@ public static class CommonDomainMapper
     {
         ArgumentNullException.ThrowIfNull(stream);
 
-        target ??= new DomainContracts.StreamDomain();
+        var identity = ToDomain(stream.RemoteIdentity);
 
-        target.Hash = stream.Hash;
-        target.AbsoluteRemoteUrl = stream.AbsoluteRemoteUrl.ToString();
+        if (target is null)
+        {
+            target = new DomainContracts.StreamDomain
+            {
+                RemoteIdentity = identity
+            };
+        }
+        else
+        {
+            target.RemoteIdentity = identity;
+        }
+
         target.StreamTypeId = (int)stream.Type;
         target.ContainerId = (int)stream.Container;
         target.VideoCodecId = stream.VideoCodec is null ? null : (int?)stream.VideoCodec;
@@ -374,7 +468,7 @@ public static class CommonDomainMapper
             return new CommonContracts.StreamMetadataCommon
             {
                 Type = type,
-                AbsoluteRemoteUrl = new Uri(domain.AbsoluteRemoteUrl),
+                RemoteIdentity = FromDomain(domain.RemoteIdentity),
                 Container = container,
                 VideoCodec = videoCodec,
                 AudioCodec = audioCodec,
@@ -396,7 +490,7 @@ public static class CommonDomainMapper
         return target with
         {
             Type = type,
-            AbsoluteRemoteUrl = new Uri(domain.AbsoluteRemoteUrl),
+            RemoteIdentity = FromDomain(domain.RemoteIdentity),
             Container = container,
             VideoCodec = videoCodec,
             AudioCodec = audioCodec,
@@ -468,7 +562,7 @@ public static class CommonDomainMapper
         {
             return new CommonContracts.VideoMetadataCommon
             {
-                AbsoluteRemoteUrl = new Uri(domain.AbsoluteRemoteUrl),
+                RemoteIdentity = FromDomain(domain.RemoteIdentity),
                 Title = domain.Title,
                 Duration = TimeSpan.FromSeconds(domain.DurationSeconds),
                 ViewCount = domain.ViewCount,
@@ -483,7 +577,7 @@ public static class CommonDomainMapper
 
         return target with
         {
-            AbsoluteRemoteUrl = new Uri(domain.AbsoluteRemoteUrl),
+            RemoteIdentity = FromDomain(domain.RemoteIdentity),
             Title = domain.Title,
             Duration = TimeSpan.FromSeconds(domain.DurationSeconds),
             ViewCount = domain.ViewCount,
@@ -529,7 +623,7 @@ public static class CommonDomainMapper
         {
             return new VideoCommon
             {
-                AbsoluteRemoteUrl = new Uri(domain.AbsoluteRemoteUrl),
+                RemoteIdentity = FromDomain(domain.RemoteIdentity),
                 Title = domain.Title,
                 Duration = TimeSpan.FromSeconds(domain.DurationSeconds),
                 ViewCount = domain.ViewCount,
@@ -557,7 +651,7 @@ public static class CommonDomainMapper
 
         return target with
         {
-            AbsoluteRemoteUrl = new Uri(domain.AbsoluteRemoteUrl),
+            RemoteIdentity = FromDomain(domain.RemoteIdentity),
             Title = domain.Title,
             Duration = TimeSpan.FromSeconds(domain.DurationSeconds),
             ViewCount = domain.ViewCount,
@@ -589,10 +683,10 @@ public static class CommonDomainMapper
 
         target ??= new DomainContracts.VideosPageDomain
         {
-            ChannelAbsoluteRemoteUrl = page.ChannelRemoteAbsoluteUrl
+            ChannelRemoteIdentity = ToDomain(page.ChannelRemoteIdentity)
         };
 
-        target.ChannelAbsoluteRemoteUrl = page.ChannelRemoteAbsoluteUrl;
+        target.ChannelRemoteIdentity = ToDomain(page.ChannelRemoteIdentity);
         target.Tab = page.Tab;
         target.ContinuationToken = page.ContinuationToken;
         target.TotalVideoCount = page.TotalVideoCount;
@@ -616,7 +710,7 @@ public static class CommonDomainMapper
         {
             return new VideosPageCommon
             {
-                ChannelRemoteAbsoluteUrl = domain.ChannelAbsoluteRemoteUrl,
+                ChannelRemoteIdentity = FromDomain(domain.ChannelRemoteIdentity),
                 Tab = domain.Tab,
                 Videos = videos,
                 ContinuationToken = domain.ContinuationToken,
@@ -627,7 +721,7 @@ public static class CommonDomainMapper
 
         return target with
         {
-            ChannelRemoteAbsoluteUrl = domain.ChannelAbsoluteRemoteUrl,
+            ChannelRemoteIdentity = FromDomain(domain.ChannelRemoteIdentity),
             Tab = domain.Tab,
             Videos = videos,
             ContinuationToken = domain.ContinuationToken,

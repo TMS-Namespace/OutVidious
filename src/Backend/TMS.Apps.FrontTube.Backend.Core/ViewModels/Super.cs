@@ -3,6 +3,7 @@ using TMS.Apps.FrontTube.Backend.Core.Mappers;
 using TMS.Apps.FrontTube.Backend.Core.Tools;
 using TMS.Apps.FrontTube.Backend.Repository.Data;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Enums;
 
 namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
 
@@ -68,7 +69,10 @@ public sealed class Super : IDisposable
             providerBaseUri,
             proxyHandlerConfigurator);
 
-        _logger.LogDebug("Super initialized with provider base URL: {BaseUrl}", providerBaseUri);
+        _logger.LogDebug(
+            "[{MethodName}] Initialized with provider base URL '{BaseUrl}'.",
+            nameof(Super),
+            providerBaseUri);
     }
 
     public async Task InitAsync(CancellationToken cancellationToken)
@@ -77,24 +81,40 @@ public sealed class Super : IDisposable
     }
 
     /// <summary>
-    /// Gets video information by video ID. Constructs the canonical URL to compute hash.
+    /// Gets video information by remote identity input (URL, ID, or supported identifier).
     /// </summary>
-    /// <param name="videoId">The video's remote identifier (e.g., YouTube video ID).</param>
+    /// <param name="remoteIdentity">The video's remote identifier (URL, ID, or supported identifier).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A Video ViewModel wrapping the video data, or null if not found.</returns>
-    public async Task<Video?> GetVideoByIdAsync(string videoId, CancellationToken cancellationToken)
+    public async Task<Video?> GetVideoAsync(string remoteIdentity, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(videoId))
+        if (string.IsNullOrWhiteSpace(remoteIdentity))
         {
-            _logger.LogWarning("GetVideoByIdAsync called with empty videoId");
+            _logger.LogWarning(
+                "[{MethodName}] Empty remote identity.",
+                nameof(GetVideoAsync));
             return null;
         }
 
-        var absoluteRemoteUrl = YouTubeValidator.BuildVideoUrl(videoId);
-        var identity = new IdentityDomain
+        if (!RepositoryManager.TryCreateRemoteIdentity(remoteIdentity, null, out var identity, out var errorMessage))
         {
-            AbsoluteRemoteUrlString = absoluteRemoteUrl.ToString()
-        };
+            _logger.LogWarning(
+                "[{MethodName}] Invalid identity '{Identity}': '{ErrorMessage}'.",
+                nameof(GetVideoAsync),
+                remoteIdentity,
+                errorMessage);
+            return null;
+        }
+
+        if (identity.IdentityType != RemoteIdentityTypeDomain.Video)
+        {
+            _logger.LogWarning(
+                "[{MethodName}] Identity type mismatch for '{Identity}': '{Type}'.",
+                nameof(GetVideoAsync),
+                remoteIdentity,
+                identity.IdentityType);
+            return null;
+        }
 
         var videoDomain = await RepositoryManager.GetVideoAsync(identity, cancellationToken);
         if (videoDomain is null)
@@ -104,33 +124,51 @@ public sealed class Super : IDisposable
 
         if (videoDomain.Channel is null)
         {
-            _logger.LogWarning("Video domain missing channel for URL: {Url}", videoDomain.AbsoluteRemoteUrl);
+            _logger.LogWarning(
+                "[{MethodName}] Video domain missing channel for URL '{Url}'.",
+                nameof(GetVideoAsync),
+                videoDomain.RemoteIdentity.AbsoluteRemoteUrl);
             return null;
         }
 
-        var channelVm = DomainViewModelMapper.ToViewModel(this, videoDomain.Channel);
-        return DomainViewModelMapper.ToViewModel(this, videoDomain, channelVm);
+        return DomainViewModelMapper.ToViewModel(this, videoDomain);
     }
 
     /// <summary>
-    /// Gets channel details by channel ID. Constructs the canonical URL to compute hash.
+    /// Gets channel details by remote identity input (URL, ID, or supported identifier).
     /// </summary>
-    /// <param name="channelId">The channel's remote identifier.</param>
+    /// <param name="remoteIdentity">The channel's remote identifier (URL, ID, or supported identifier).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A Channel ViewModel wrapping the channel data, or null if not found.</returns>
-    public async Task<Channel?> GetChannelByIdAsync(string channelId, CancellationToken cancellationToken)
+    public async Task<Channel?> GetChannelByIdAsync(string remoteIdentity, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(channelId))
+        if (string.IsNullOrWhiteSpace(remoteIdentity))
         {
-            _logger.LogWarning("GetChannelByIdAsync called with empty channelId");
+            _logger.LogWarning(
+                "[{MethodName}] Empty remote identity.",
+                nameof(GetChannelByIdAsync));
             return null;
         }
 
-        var absoluteRemoteUrl = YouTubeValidator.BuildChannelUrl(channelId);
-        var identity = new IdentityDomain
+        if (!RepositoryManager.TryCreateRemoteIdentity(remoteIdentity, null, out var identity, out var errorMessage))
         {
-            AbsoluteRemoteUrlString = absoluteRemoteUrl.ToString()
-        };
+            _logger.LogWarning(
+                "[{MethodName}] Invalid identity '{Identity}': '{ErrorMessage}'.",
+                nameof(GetChannelByIdAsync),
+                remoteIdentity,
+                errorMessage);
+            return null;
+        }
+
+        if (identity.IdentityType != RemoteIdentityTypeDomain.Channel)
+        {
+            _logger.LogWarning(
+                "[{MethodName}] Identity type mismatch for '{Identity}': '{Type}'.",
+                nameof(GetChannelByIdAsync),
+                remoteIdentity,
+                identity.IdentityType);
+            return null;
+        }
 
         var channelDomain = await RepositoryManager.GetChannelAsync(identity, cancellationToken);
         return channelDomain is null ? null : DomainViewModelMapper.ToViewModel(this, channelDomain);
@@ -139,27 +177,43 @@ public sealed class Super : IDisposable
     /// <summary>
     /// Gets a page of videos from a channel.
     /// </summary>
-    /// <param name="absoluteRemoteUrl">The channel's absolute remote URL.</param>
+    /// <param name="remoteIdentity">The channel's remote identifier (URL, ID, or supported identifier).</param>
     /// <param name="tab">The tab to fetch from.</param>
     /// <param name="continuationToken">Pagination token.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A page of video summaries.</returns>
     public async Task<VideosPage?> GetChannelVideosAsync(
-        Uri absoluteRemoteUrl,
+        string remoteIdentity,
         string tab,
         string? continuationToken,
         CancellationToken cancellationToken)
     {
         _logger.LogDebug(
-            "Getting channel videos: {Url}, tab: {Tab}, hasContinuation: {HasContinuation}",
-            absoluteRemoteUrl,
+            "[{MethodName}] Getting channel videos for '{Identity}' tab '{Tab}' hasContinuation '{HasContinuation}'.",
+            nameof(GetChannelVideosAsync),
+            remoteIdentity,
             tab,
             continuationToken is not null);
 
-        var identity = new IdentityDomain
+        if (!RepositoryManager.TryCreateRemoteIdentity(remoteIdentity, null, out var identity, out var errorMessage))
         {
-            AbsoluteRemoteUrlString = absoluteRemoteUrl.ToString()
-        };
+            _logger.LogWarning(
+                "[{MethodName}] Invalid identity '{Identity}': '{ErrorMessage}'.",
+                nameof(GetChannelVideosAsync),
+                remoteIdentity,
+                errorMessage);
+            return null;
+        }
+
+        if (identity.IdentityType != RemoteIdentityTypeDomain.Channel)
+        {
+            _logger.LogWarning(
+                "[{MethodName}] Identity type mismatch for '{Identity}': '{Type}'.",
+                nameof(GetChannelVideosAsync),
+                remoteIdentity,
+                identity.IdentityType);
+            return null;
+        }
 
         var pageDomain = await RepositoryManager.GetChannelsPageAsync(
             identity,
@@ -182,30 +236,6 @@ public sealed class Super : IDisposable
         return DomainViewModelMapper.ToViewModel(this, pageDomain, channelVm);
     }
 
-    /// <summary>
-    /// Gets the provider fetch URL for an original image URL.
-    /// </summary>
-    /// <param name="originalUrl">The original YouTube CDN URL.</param>
-    /// <returns>The provider-specific fetch URL.</returns>
-    public Uri GetImageFetchUrl(Uri originalUrl)
-    {
-        return Proxy.ProxyImageRemoteUrl(originalUrl);
-    }
-
-    /// <summary>
-    /// Builds a complete image proxy URL for use in HTML img tags.
-    /// The proxy will cache the image using originalUrl as the key and fetch via fetchUrl.
-    /// </summary>
-    /// <param name="originalUrl">The original YouTube CDN URL.</param>
-    /// <returns>A URL to the local image proxy endpoint.</returns>
-    public string BuildImageProxyUrl(Uri originalUrl)
-    {
-        var fetchUrl = Proxy.ProxyImageRemoteUrl(originalUrl);
-        var encodedOriginalUrl = Uri.EscapeDataString(originalUrl.ToString());
-        var encodedFetchUrl = Uri.EscapeDataString(fetchUrl.ToString());
-        return $"/api/ImageProxy?originalUrl={encodedOriginalUrl}&fetchUrl={encodedFetchUrl}";
-    }
-
     public void Dispose()
     {
         if (_disposed)
@@ -217,6 +247,8 @@ public sealed class Super : IDisposable
         _repositoryManagerCts.Dispose();
 
         _disposed = true;
-        _logger.LogDebug("Super disposed");
+        _logger.LogDebug(
+            "[{MethodName}] Disposed.",
+            nameof(Dispose));
     }
 }

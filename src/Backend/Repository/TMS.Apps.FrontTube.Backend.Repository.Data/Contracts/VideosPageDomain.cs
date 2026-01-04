@@ -8,9 +8,9 @@ public sealed class VideosPageDomain
     /// <summary>
     /// Empty page for error cases or when no results are found.
     /// </summary>
-    public static VideosPageDomain Empty(string channelId, string tab = "videos") => new()
+    public static VideosPageDomain Empty(RemoteIdentityDomain channelIdentity, string tab = "videos") => new()
     {
-        ChannelAbsoluteRemoteUrl = channelId,
+        ChannelRemoteIdentity = channelIdentity,
         Tab = tab,
         Videos = [],
         ContinuationToken = null
@@ -19,7 +19,7 @@ public sealed class VideosPageDomain
     /// <summary>
     /// The channel this page belongs to.
     /// </summary>
-    public required string ChannelAbsoluteRemoteUrl { get; set; }
+    public required RemoteIdentityDomain ChannelRemoteIdentity { get; set; }
 
     /// <summary>
     /// The tab this page was retrieved from (e.g., "videos", "shorts", "live").

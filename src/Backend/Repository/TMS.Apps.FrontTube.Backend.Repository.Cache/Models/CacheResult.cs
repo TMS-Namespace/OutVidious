@@ -9,14 +9,14 @@ namespace TMS.Apps.FrontTube.Backend.Repository.Cache.Models;
 
 public record CacheResult<T>(
     EntityStatus Status,
-    CacheableIdentity Identity,
+    RemoteIdentityCommon Identity,
     T? Entity,
     ICacheableCommon? Common,
     string? Error) : ICacheResult
     where T : class, ICacheableEntity
 {
     EntityStatus ICacheResult.ResultType => Status;
-    CacheableIdentity ICacheResult.Identity => Identity;
+    RemoteIdentityCommon ICacheResult.Identity => Identity;
     ICacheableEntity? ICacheResult.EntityNeutral => Entity;
     ICacheableCommon? ICacheResult.Common => Common;
     string? ICacheResult.Error => Error;

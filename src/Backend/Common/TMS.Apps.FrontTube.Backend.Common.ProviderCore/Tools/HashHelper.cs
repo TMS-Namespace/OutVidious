@@ -1,7 +1,7 @@
 using System.IO.Hashing;
 using System.Text;
 
-namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Cache;
+namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools;
 
 /// <summary>
 /// Provides helper methods for computing XxHash64 hashes for cache lookups.

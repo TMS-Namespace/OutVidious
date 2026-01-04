@@ -1,4 +1,3 @@
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Cache;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
@@ -14,11 +13,7 @@ public sealed record StreamMetadataCommon : ICacheableCommon
     /// </summary>
     public required StreamType Type { get; init; }
 
-    /// <summary>
-    /// Absolute URL to the stream.
-    /// Used as the unique identifier for hashing and lookups.
-    /// </summary>
-    public required Uri AbsoluteRemoteUrl { get; init; }
+    public required RemoteIdentityCommon RemoteIdentity { get; init; }
 
     /// <summary>
     /// Container format.
@@ -95,8 +90,5 @@ public sealed record StreamMetadataCommon : ICacheableCommon
     /// </summary>
     public int? Itag { get; init; }
 
-    private long? _hash;
-    public long Hash => _hash ??= HashHelper.ComputeHash(AbsoluteRemoteUrl.ToString());
-    
     public bool IsMetaData => true;
 }

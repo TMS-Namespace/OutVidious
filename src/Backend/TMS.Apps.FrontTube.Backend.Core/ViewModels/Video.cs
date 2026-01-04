@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Core.Enums;
+using TMS.Apps.FrontTube.Backend.Core.Mappers;
 using TMS.Apps.FrontTube.Backend.Core.Tools;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 
@@ -16,32 +17,31 @@ public sealed class Video : ViewModelBase
     private Streams? _streams;
 
     internal VideoDomain Domain { get; private set; }
+    public RemoteIdentity RemoteIdentity { get; private set; }
 
     internal Video(
         Super super,
-        Channel channel,
-        VideoDomain domain,
-        IReadOnlyList<Image> thumbnails)
+        VideoDomain domain)
         : base(super)
     {
         _logger = super.LoggerFactory.CreateLogger<Video>();
-
-        Domain = domain ?? throw new ArgumentNullException(nameof(domain));
-        Channel = channel ?? throw new ArgumentNullException(nameof(channel));
-        Thumbnails = thumbnails ?? [];
-
-        LoadState = string.IsNullOrWhiteSpace(Domain.FetchingError)
-            ? VideoLoadState.Loaded
-            : VideoLoadState.Error;
-
-        ErrorMessage = Domain.FetchingError;
+        UpdateFromDomain(domain);
     }
 
-    internal void UpdateFromDomain(VideoDomain domain, Channel channel, IReadOnlyList<Image> thumbnails)
+    internal void UpdateFromDomain(VideoDomain domain)
     {
         Domain = domain ?? throw new ArgumentNullException(nameof(domain));
-        Channel = channel ?? throw new ArgumentNullException(nameof(channel));
-        Thumbnails = thumbnails ?? [];
+
+        if (Domain.Channel is null)
+        {
+            throw new ArgumentException("VideoDomain.Channel is required.", nameof(domain));
+        }
+
+        RemoteIdentity = DomainViewModelMapper.ToViewModel(domain.RemoteIdentity);
+        Channel = DomainViewModelMapper.ToViewModel(Super, Domain.Channel);
+        Thumbnails = Domain.Thumbnails
+            .Select(thumbnail => DomainViewModelMapper.ToViewModel(Super, thumbnail))
+            .ToList();
 
         LoadState = string.IsNullOrWhiteSpace(Domain.FetchingError)
             ? VideoLoadState.Loaded
@@ -75,11 +75,6 @@ public sealed class Video : ViewModelBase
     /// Event raised when the video state changes.
     /// </summary>
     public event EventHandler? StateChanged;
-
-    /// <summary>
-    /// The video's absolute remote URL on the original platform.
-    /// </summary>
-    public Uri AbsoluteRemoteUrl => new Uri(Domain.AbsoluteRemoteUrl);
 
     /// <summary>
     /// The video title.
@@ -128,7 +123,7 @@ public sealed class Video : ViewModelBase
     /// <summary>
     /// Video thumbnails.
     /// </summary>
-    public IReadOnlyList<Image> Thumbnails { get; private set; }
+    public IReadOnlyList<Image> Thumbnails { get; private set; } = [];
 
     /// <summary>
     /// Channel name.
@@ -136,13 +131,7 @@ public sealed class Video : ViewModelBase
     [Obsolete("Use Channel.Name from Channel property")]
     public string ChannelName => Channel.Name;
 
-    public Channel Channel { get; private set; }
-
-    /// <summary>
-    /// Channel absolute remote URL.
-    /// </summary>
-    [Obsolete("Use Channel.AbsoluteRemoteUrl from Channel property")]
-    public Uri ChannelAbsoluteRemoteUrl => Channel.AbsoluteRemoteUrl;
+    public Channel Channel { get; private set; } = null!;
 
     /// <summary>
     /// Channel avatar images.
@@ -178,7 +167,7 @@ public sealed class Video : ViewModelBase
     /// <summary>
     /// Gets the URL of the best available thumbnail for display.
     /// </summary>
-    public string? GetBestThumbnailUrl()
+    public RemoteIdentity? GetBestThumbnailIdentity()
     {
         if (Thumbnails.Count == 0)
         {
@@ -186,7 +175,7 @@ public sealed class Video : ViewModelBase
         }
 
         var thumbnail = Thumbnails.OrderByDescending(t => t.Width).FirstOrDefault();
-        return thumbnail?.AbsoluteRemoteUrl;
+        return thumbnail?.RemoteIdentity;
     }
 
     private void OnStateChanged()

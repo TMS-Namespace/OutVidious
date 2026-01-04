@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Enums;
 
 namespace TMS.Apps.FrontTube.Backend.Core.Tools;
 
@@ -137,6 +138,41 @@ public sealed partial class ProxyToProvider
     {
         YouTubeValidator.ValidateChannelIdNotEmpty(channelId);
         return CreateUri($"channel/{Uri.EscapeDataString(channelId)}");
+    }
+
+    /// <summary>
+    /// Builds a local proxy URL for video playback segments from a stream identity.
+    /// </summary>
+    /// <param name="streamIdentity">The stream remote identity.</param>
+    /// <returns>The local proxy URL, or null if invalid.</returns>
+    internal string? BuildVideoPlaybackProxyUrl(RemoteIdentity streamIdentity)
+    {
+        ArgumentNullException.ThrowIfNull(streamIdentity);
+
+        if (!Uri.TryCreate(streamIdentity.AbsoluteRemoteUrl, UriKind.RelativeOrAbsolute, out var streamUri))
+        {
+            _logger.LogWarning(
+                "[{MethodName}] Invalid stream URL '{Url}'.",
+                nameof(BuildVideoPlaybackProxyUrl),
+                streamIdentity.AbsoluteRemoteUrl);
+            return null;
+        }
+
+        if (!streamUri.IsAbsoluteUri)
+        {
+            streamUri = new Uri(_providerBaseUrl, streamUri);
+        }
+
+        if (string.IsNullOrWhiteSpace(streamUri.Query))
+        {
+            _logger.LogWarning(
+                "[{MethodName}] Stream URL missing query for '{Url}'.",
+                nameof(BuildVideoPlaybackProxyUrl),
+                streamUri);
+            return null;
+        }
+
+        return $"/api/proxy/videoplayback{streamUri.Query}";
     }
 
     /// <summary>
@@ -421,10 +457,13 @@ public sealed partial class ProxyToProvider
         {
             _logger.LogDebug("ImageProxy: Fetching image: {OriginalUrl} via {FetchUrl}", originalUrl, fetchUrl);
 
-            var identity = new IdentityDomain
+            var isValid = _super.RepositoryManager.TryCreateRemoteIdentity(originalUrl, RemoteIdentityTypeDomain.Image, out var identity, out var errorMessage);
+
+            if (!isValid || identity is null)
             {
-                AbsoluteRemoteUrlString = originalUrl
-            };
+                _logger.LogWarning("ImageProxy: Invalid identity for URL: {OriginalUrl}, Error: {ErrorMessage}", originalUrl, errorMessage);
+                return Results.BadRequest("Invalid image identity.");
+            }
 
             var imageDomain = await _super.RepositoryManager.GetImageContentsAsync(identity, fetchUrl, cancellationToken);
 

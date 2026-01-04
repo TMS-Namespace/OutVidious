@@ -237,29 +237,26 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
 
     private string? GetPosterUrl()
     {
-        var thumbnailUrl = ViewModel?.GetBestThumbnailUrl();
+        var thumbnailIdentity = ViewModel?.GetBestThumbnailIdentity();
         
-        if (string.IsNullOrEmpty(thumbnailUrl))
+        if (thumbnailIdentity is null)
         {
             return null;
         }
 
-        // Convert YouTube URL to Invidious proxy URL, then proxy through our image cache
-        var originalUri = new Uri(thumbnailUrl);
-        var invidiousProxyUrl = Orchestrator.Super.GetImageFetchUrl(originalUri);
-        
         // Now proxy it through our local image proxy endpoint for caching
-        return Orchestrator.Super.BuildImageProxyUrl(originalUri);
+        var proxyUrl = thumbnailIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
+        return string.IsNullOrWhiteSpace(proxyUrl) ? null : proxyUrl;
     }
 
     private string GetAuthorUrl()
     {
-        if (string.IsNullOrEmpty(ProviderBaseUrl) || ViewModel?.ChannelAbsoluteRemoteUrl is null)
+        if (ViewModel?.Channel?.RemoteIdentity is null)
         {
             return "#";
         }
 
-        return $"/channel?url={Uri.EscapeDataString(ViewModel.ChannelAbsoluteRemoteUrl.ToString())}";
+        return ViewModel.Channel.RemoteIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
     }
 
     private static string FormatViewCount(long? count)

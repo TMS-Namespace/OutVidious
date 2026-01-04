@@ -186,41 +186,6 @@ public partial class ImageComponent : ComponentBase, IDisposable
         // Use UseAsyncLoading=false to use browser-based loading via the ImageProxy controller
         Logger.LogWarning("Async image loading via Blazor is not supported with proxy URLs. Use UseAsyncLoading=false. URL: {ImageUrl}", ImageUrl);
         return;
-
-        // NOTE: The code below is kept for reference but is not executed
-        #pragma warning disable CS0162 // Unreachable code detected
-        if (!Uri.TryCreate(ImageUrl, UriKind.Absolute, out var imageUri))
-        {
-            Logger.LogWarning("Invalid image URL: {ImageUrl}", ImageUrl);
-            return;
-        }
-
-        try
-        {
-            var super = Orchestrator.Super;
-            // TODO: To support async loading, we would need to extract remoteId and fetchUrl from the proxy URL
-            // _imageViewModel = super.CreateImageViewModel(remoteId, fetchUrl, PlaceholderUrl);
-            // _imageViewModel.StateChanged += OnImageStateChanged;
-
-            Logger.LogDebug("Starting async image load: {ImageUrl}", ImageUrl);
-
-            // Trigger re-render to show loading state
-            await InvokeAsync(StateHasChanged);
-
-            // Load in background - this doesn't block rendering
-            // await _imageViewModel.LoadAsync(_cts.Token);
-
-            Logger.LogDebug("Image loaded: {ImageUrl}, State: {State}", ImageUrl, _imageViewModel?.LoadState);
-        }
-        catch (OperationCanceledException)
-        {
-            Logger.LogDebug("Image load cancelled: {ImageUrl}", ImageUrl);
-        }
-        catch (Exception ex)
-        {
-        #pragma warning restore CS0162
-            Logger.LogError(ex, "Error loading image: {ImageUrl}", ImageUrl);
-        }
     }
 
     private void OnImageStateChanged(object? sender, EventArgs e)

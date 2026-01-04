@@ -1,6 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
@@ -46,17 +44,17 @@ public class DatabaseSynchronizer
         {
             if (cacheable.IsMetaData)
             {
-                return $"{cacheable.Hash}m";
+                return $"{cacheable.RemoteIdentity.Hash}m";
             }
             else
             {
-                return cacheable.Hash.ToString();
+                return cacheable.RemoteIdentity.Hash.ToString();
             }
         }
 
         if (common is VideosPageCommon videosPage)
         {
-            return $"{HashHelper.ComputeHash(videosPage.ChannelRemoteAbsoluteUrl)}p"; // TODO: fix
+            return $"{videosPage.ChannelRemoteIdentity.Hash}p"; // TODO: fix
         }
 
         throw new InvalidOperationException("Unsupported common contract type for queuing.");
@@ -64,11 +62,33 @@ public class DatabaseSynchronizer
 
     public void Enqueue(ICommonContract common)
     {
+        var key = ToKey(common);
+
+        // we always prefer full common over metadata common
+
+        if (key.EndsWith("m"))
+        {
+            // metadata common
+            if (_commons.TryGetValue(key[..^1], out var existingCommon))
+            {
+                // full common already queued, skip
+                return;
+            }
+        }
+        else if (!key.EndsWith("p"))
+        {
+            // we received full common, remove metadata common if exists
+            if (_commons.TryGetValue($"{key}m", out var existingMetaCommon))
+            {
+                // remove metadata common
+                _commons.TryRemove($"{key}m", out _);
+            }
+        }
+
         if (!_commons.TryAdd(ToKey(common), common))
         {
             _commons[ToKey(common)] = common;
         }
-
 
         _logger.LogDebug("Totally {Count} commons queued for synchronization.", _commons.Count);
     }
@@ -144,7 +164,7 @@ public class DatabaseSynchronizer
             db,
             videosBase
                 .Select(v => v.Channel)
-                .DistinctBy(c => c.Hash)
+                .DistinctBy(c => c.RemoteIdentity.Hash)
                 .Cast<ChannelMetadataCommon>()
                 .ToList(),
             cancellationToken);
@@ -153,8 +173,8 @@ public class DatabaseSynchronizer
         _ = videoCacheResults
             .Join(
                 channelCacheResults,
-                v => ((VideoBaseCommon)v.Common!).Channel.Hash,
-                c => ((ChannelMetadataCommon)c.Common!).Hash,
+                v => ((VideoBaseCommon)v.Common!).Channel.RemoteIdentity.Hash,
+                c => ((ChannelMetadataCommon)c.Common!).RemoteIdentity.Hash,
                 (v, c) =>
                 {
                     v.Entity!.Channel = c.Entity!;
@@ -210,7 +230,7 @@ public class DatabaseSynchronizer
 
         // clean upp all streams in db, since they are always changing
         var videosHashes = videoStreams
-            .Select(vs => vs.VideoCacheResult.Common!.Hash)
+            .Select(vs => vs.VideoCacheResult.Common!.RemoteIdentity.Hash)
             .ToList();
         var streamsToRemove = db.Streams.Where(s => videosHashes.Contains(s.Video.Hash));
         db.Streams.RemoveRange(streamsToRemove);        

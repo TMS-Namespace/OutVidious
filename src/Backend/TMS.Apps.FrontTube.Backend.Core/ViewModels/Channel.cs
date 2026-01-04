@@ -19,40 +19,22 @@ public sealed class Channel : ViewModelBase
     private bool _isDisposed;
 
     internal ChannelDomain Domain { get; private set; }
+    public RemoteIdentity RemoteIdentity { get; private set; }
 
-    internal Channel(Super super, ChannelDomain domain, IReadOnlyList<Image> avatars, IReadOnlyList<Image> banners)
+    internal Channel(
+        Super super,
+        ChannelDomain domain)
         : base(super)
     {
         _super = super ?? throw new ArgumentNullException(nameof(super));
-        Domain = domain ?? throw new ArgumentNullException(nameof(domain));
         _logger = super.LoggerFactory.CreateLogger<Channel>();
-
-        Avatars = avatars ?? [];
-        Banners = banners ?? [];
-
-        AbsoluteRemoteUrl = new Uri(Domain.AbsoluteRemoteUrl);
-        Name = Domain.Title;
-        Description = Domain.Description ?? string.Empty;
-        DescriptionHtml = Domain.DescriptionHtml;
-        SubscriberCount = Domain.SubscriberCount ?? 0;
-        ErrorMessage = Domain.FetchingError;
-
-        var availableTabs = AvailableTabs;
-        if (availableTabs.Count > 0)
-        {
-            _selectedTab = availableTabs[0];
-        }
+        UpdateFromDomain(domain);
     }
 
     /// <summary>
     /// Event raised when the state has changed.
     /// </summary>
     public event EventHandler? StateChanged;
-
-    /// <summary>
-    /// The channel's absolute remote URL on the original platform.
-    /// </summary>
-    public Uri AbsoluteRemoteUrl { get; private set; }
 
     /// <summary>
     /// The channel name.
@@ -83,12 +65,12 @@ public sealed class Channel : ViewModelBase
     /// <summary>
     /// Channel avatar images.
     /// </summary>
-    public IReadOnlyList<Image> Avatars { get; private set; }
+    public IReadOnlyList<Image> Avatars { get; private set; } = [];
 
     /// <summary>
     /// Channel banner images.
     /// </summary>
-    public IReadOnlyList<Image> Banners { get; private set; }
+    public IReadOnlyList<Image> Banners { get; private set; } = [];
 
     /// <summary>
     /// Available channel tab IDs (e.g., "videos", "shorts", "streams").
@@ -140,12 +122,16 @@ public sealed class Channel : ViewModelBase
     /// </summary>
     public string? ErrorMessage { get; private set; }
 
-    internal void UpdateFromDomain(ChannelDomain domain, IReadOnlyList<Image> avatars, IReadOnlyList<Image> banners)
+    internal void UpdateFromDomain(ChannelDomain domain)
     {
         Domain = domain ?? throw new ArgumentNullException(nameof(domain));
-        Avatars = avatars ?? [];
-        Banners = banners ?? [];
-        AbsoluteRemoteUrl = new Uri(Domain.AbsoluteRemoteUrl);
+        RemoteIdentity = DomainViewModelMapper.ToViewModel(domain.RemoteIdentity);
+        Avatars = Domain.Avatars
+            .Select(avatar => DomainViewModelMapper.ToViewModel(Super, avatar))
+            .ToList();
+        Banners = Domain.Banners
+            .Select(banner => DomainViewModelMapper.ToViewModel(Super, banner))
+            .ToList();
         Name = Domain.Title;
         Description = Domain.Description ?? string.Empty;
         DescriptionHtml = Domain.DescriptionHtml;
@@ -165,14 +151,22 @@ public sealed class Channel : ViewModelBase
     /// <returns>The channel URL.</returns>
     public Uri GetChannelUrl()
     {
-        var channelId = YouTubeValidator.ExtractChannelIdFromUrl(AbsoluteRemoteUrl);
-        return _super.Proxy.ProxyChannelUrl(channelId ?? string.Empty);
+        if (string.IsNullOrWhiteSpace(RemoteIdentity.RemoteId))
+        {
+            _logger.LogWarning(
+                "[{MethodName}] Remote ID missing for identity '{@Identity}'.",
+                nameof(GetChannelUrl),
+                RemoteIdentity);
+            return _super.Proxy.ProviderBaseUrl;
+        }
+
+        return _super.Proxy.ProxyChannelUrl(RemoteIdentity.RemoteId);
     }
 
     /// <summary>
     /// Gets the URL of the best available avatar image.
     /// </summary>
-    public string? GetBestAvatarUrl()
+    public RemoteIdentity? GetBestAvatarIdentity()
     {
         if (Avatars.Count == 0)
         {
@@ -184,13 +178,13 @@ public sealed class Channel : ViewModelBase
             .OrderByDescending(a => a.Width)
             .FirstOrDefault() ?? Avatars.First();
 
-        return avatar.AbsoluteRemoteUrl?.ToString();
+        return avatar.RemoteIdentity;
     }
 
     /// <summary>
     /// Gets the URL of the best available banner image.
     /// </summary>
-    public string? GetBestBannerUrl()
+    public RemoteIdentity? GetBestBannerIdentity()
     {
         if (Banners.Count == 0)
         {
@@ -202,7 +196,7 @@ public sealed class Channel : ViewModelBase
             .OrderByDescending(b => b.Width)
             .FirstOrDefault() ?? Banners.First();
 
-        return banner.AbsoluteRemoteUrl?.ToString();
+        return banner.RemoteIdentity;
     }
 
     /// <summary>
@@ -274,10 +268,7 @@ public sealed class Channel : ViewModelBase
 
         try
         {
-            var identity = new IdentityDomain
-            {
-                AbsoluteRemoteUrlString = Domain.AbsoluteRemoteUrl
-            };
+            var identity = Domain.RemoteIdentity;
 
             var page = await Super.RepositoryManager.GetChannelsPageAsync(
                 identity,
@@ -289,7 +280,7 @@ public sealed class Channel : ViewModelBase
             if (page is not null)
             {
                 Videos = page.Videos
-                    .Select(v => DomainViewModelMapper.ToViewModel(Super, v, this))
+                    .Select(v => DomainViewModelMapper.ToViewModel(Super, v))
                     .ToList();
                 HasMore = page.HasMore;
                 _currentContinuationToken = page.ContinuationToken;
@@ -307,11 +298,11 @@ public sealed class Channel : ViewModelBase
         }
         catch (OperationCanceledException)
         {
-            _logger.LogDebug("Videos loading cancelled for channel {ChannelUrl}", AbsoluteRemoteUrl);
+            _logger.LogDebug("Videos loading cancelled for channel {ChannelUrl}", RemoteIdentity.AbsoluteRemoteUrl);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading videos for channel {ChannelUrl}", AbsoluteRemoteUrl);
+            _logger.LogError(ex, "Error loading videos for channel {ChannelUrl}", RemoteIdentity.AbsoluteRemoteUrl);
             if (isInitial)
             {
                 ErrorMessage = "Failed to load videos. Please try again.";

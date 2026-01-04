@@ -1,4 +1,3 @@
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
@@ -31,7 +30,9 @@ public static class ChannelMapper
 
         return new ChannelCommon
         {
-            AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildChannelUrl(dto.AuthorId),
+            RemoteIdentity = new RemoteIdentityCommon(
+                RemoteIdentityTypeCommon.Channel,
+                dto.AuthorId),
             Name = dto.Author,
             Description = dto.Description ?? string.Empty,
             DescriptionHtml = dto.DescriptionHtml,
@@ -59,7 +60,9 @@ public static class ChannelMapper
 
         return new VideoMetadataCommon
         {
-            AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildVideoUrl(dto.VideoId),
+            RemoteIdentity = new RemoteIdentityCommon(
+                RemoteIdentityTypeCommon.Video,
+                dto.VideoId),
             Title = dto.Title,
             Duration = TimeSpan.FromSeconds(dto.LengthSeconds),
             ViewCount = dto.ViewCount,
@@ -70,7 +73,9 @@ public static class ChannelMapper
             PublishedAtUtc = dto.Published > 0 ? DateTimeOffset.FromUnixTimeSeconds(dto.Published) : null,
             Channel = new ChannelMetadataCommon
             {
-                AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildChannelUrl(dto.AuthorId),
+                RemoteIdentity = new RemoteIdentityCommon(
+                    RemoteIdentityTypeCommon.Channel,
+                    dto.AuthorId),
                 Name = dto.Author,
             },
             Thumbnails = dto.VideoThumbnails.Select(ThumbnailMapper.ToThumbnailInfo).ToList(),
@@ -97,7 +102,9 @@ public static class ChannelMapper
         return new ImageMetadataCommon
         {
             Quality = quality,
-            AbsoluteRemoteUrl = originalUrl,
+            RemoteIdentity = new RemoteIdentityCommon(
+                RemoteIdentityTypeCommon.Image,
+                originalUrl.ToString()),
             Width = dto.Width,
             Height = dto.Height
         };

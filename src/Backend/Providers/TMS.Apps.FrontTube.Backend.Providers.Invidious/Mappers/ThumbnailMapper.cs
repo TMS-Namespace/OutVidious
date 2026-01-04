@@ -32,7 +32,9 @@ public static partial class ThumbnailMapper
         return new ImageMetadataCommon
         {
             Quality = ParseThumbnailQuality(dto.Quality),
-            AbsoluteRemoteUrl = originalUrl,
+            RemoteIdentity = new RemoteIdentityCommon(
+                RemoteIdentityTypeCommon.Image,
+                originalUrl.ToString()),
             Width = dto.Width,
             Height = dto.Height
         };
@@ -57,7 +59,9 @@ public static partial class ThumbnailMapper
         return new ImageMetadataCommon
         {
             Quality = quality,
-            AbsoluteRemoteUrl = originalUrl,
+            RemoteIdentity = new RemoteIdentityCommon(
+                RemoteIdentityTypeCommon.Image,
+                originalUrl.ToString()),
             Width = dto.Width,
             Height = dto.Height
         };

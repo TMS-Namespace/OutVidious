@@ -1,5 +1,5 @@
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
 
 namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.Mappers;
@@ -22,7 +22,9 @@ public static class InvidiousMapper
 
         return new VideoCommon
         {
-            AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildVideoUrl(dto.VideoId),
+            RemoteIdentity = new RemoteIdentityCommon(
+                RemoteIdentityTypeCommon.Video,
+                dto.VideoId),
             Title = dto.Title,
             DescriptionText = dto.Description,
             DescriptionHtml = dto.DescriptionHtml,
@@ -66,7 +68,9 @@ public static class InvidiousMapper
     {
         return new ChannelMetadataCommon
         {
-            AbsoluteRemoteUrl = YouTubeUrlBuilder.BuildChannelUrl(dto.AuthorId),
+            RemoteIdentity = new RemoteIdentityCommon(
+                RemoteIdentityTypeCommon.Channel,
+                dto.AuthorId),
             Name = dto.Author,
 #pragma warning disable CS0618 // Type or member is obsolete
             SubscriberCountText = dto.SubCountText,

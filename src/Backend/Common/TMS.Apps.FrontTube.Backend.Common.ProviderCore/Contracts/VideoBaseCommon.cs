@@ -1,4 +1,3 @@
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Cache;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
 namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
@@ -9,11 +8,7 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// </summary>
 public abstract record VideoBaseCommon : ICacheableCommon
 {
-    /// <summary>
-    /// Absolute URL to the video on the remote platform (e.g., https://www.youtube.com/watch?v=...).
-    /// Used as the unique identifier for hashing and lookups.
-    /// </summary>
-    public required Uri AbsoluteRemoteUrl { get; init; }
+    public required RemoteIdentityCommon RemoteIdentity { get; init; }
 
     /// <summary>
     /// Title of the video.
@@ -66,9 +61,6 @@ public abstract record VideoBaseCommon : ICacheableCommon
     /// Whether the video is an upcoming premiere.
     /// </summary>
     public bool IsUpcoming { get; init; }
-
-    private long? _hash;
-    public long Hash => _hash ??= HashHelper.ComputeHash(AbsoluteRemoteUrl.ToString());
 
     public bool IsMetaData => true;
 }

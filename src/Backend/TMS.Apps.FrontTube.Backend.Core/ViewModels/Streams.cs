@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Core.Enums;
+using TMS.Apps.FrontTube.Backend.Core.Mappers;
 using TMS.Apps.FrontTube.Backend.Core.Tools;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 
@@ -17,7 +18,6 @@ public sealed class Streams : ViewModelBase
     private readonly ILogger<Streams> _logger;
     private readonly Video _videoViewModel;
     private readonly List<StreamDomain> _streamDomains;
-    private readonly Uri _videoAbsoluteRemoteUrl;
     private bool _disposed;
 
     /// <summary>
@@ -33,7 +33,6 @@ public sealed class Streams : ViewModelBase
         _logger = super.LoggerFactory.CreateLogger<Streams>();
         _videoViewModel = videoViewModel ?? throw new ArgumentNullException(nameof(videoViewModel));
         _streamDomains = _videoViewModel.Domain.Streams.ToList();
-        _videoAbsoluteRemoteUrl = _videoViewModel.AbsoluteRemoteUrl;
 
         Initialize();
     }
@@ -52,6 +51,11 @@ public sealed class Streams : ViewModelBase
     /// Gets the current stream URL for native player mode.
     /// </summary>
     public string? CurrentStreamUrl { get; private set; }
+
+    /// <summary>
+    /// Gets the identity of the currently selected stream.
+    /// </summary>
+    public RemoteIdentity? CurrentStreamIdentity { get; private set; }
 
     /// <summary>
     /// Gets the embed URL for embedded player mode.
@@ -170,7 +174,18 @@ public sealed class Streams : ViewModelBase
         var selectedStream = _mutexStreams
             .FirstOrDefault(s => s.QualityLabel == SelectedQuality);
 
-        CurrentStreamUrl = selectedStream?.AbsoluteRemoteUrl.ToString();
+        CurrentStreamIdentity = selectedStream is null
+            ? null
+            : DomainViewModelMapper.ToViewModel(selectedStream.RemoteIdentity);
+        if (CurrentStreamIdentity is null)
+        {
+            CurrentStreamUrl = null;
+        }
+        else
+        {
+            var streamUrl = CurrentStreamIdentity.GetProxyUrl(Super.Proxy);
+            CurrentStreamUrl = string.IsNullOrWhiteSpace(streamUrl) ? null : streamUrl;
+        }
         _logger.LogDebug(
             "Stream URL updated for quality {Quality}: {HasUrl}",
             SelectedQuality,
@@ -179,11 +194,14 @@ public sealed class Streams : ViewModelBase
 
     private void UpdateEmbedUrl()
     {
-        var videoId = YouTubeValidator.ExtractVideoIdFromUrl(_videoAbsoluteRemoteUrl);
-        if (string.IsNullOrEmpty(videoId))
+        var videoId = _videoViewModel.RemoteIdentity.RemoteId;
+        if (string.IsNullOrWhiteSpace(videoId))
         {
             EmbedUrl = null;
-            _logger.LogWarning("Cannot extract video ID from URL: {Url}", _videoAbsoluteRemoteUrl);
+            _logger.LogWarning(
+                "[{MethodName}] Remote ID missing for identity '{@Identity}'.",
+                nameof(UpdateEmbedUrl),
+                _videoViewModel.RemoteIdentity);
             return;
         }
 
@@ -193,11 +211,14 @@ public sealed class Streams : ViewModelBase
 
     private void UpdateDashManifestUrl()
     {
-        var videoId = YouTubeValidator.ExtractVideoIdFromUrl(_videoAbsoluteRemoteUrl);
-        if (string.IsNullOrEmpty(videoId))
+        var videoId = _videoViewModel.RemoteIdentity.RemoteId;
+        if (string.IsNullOrWhiteSpace(videoId))
         {
             DashManifestUrl = null;
-            _logger.LogWarning("Cannot extract video ID from URL: {Url}", _videoAbsoluteRemoteUrl);
+            _logger.LogWarning(
+                "[{MethodName}] Remote ID missing for identity '{@Identity}'.",
+                nameof(UpdateDashManifestUrl),
+                _videoViewModel.RemoteIdentity);
             return;
         }
 

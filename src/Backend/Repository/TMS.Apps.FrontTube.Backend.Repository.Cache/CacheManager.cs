@@ -84,14 +84,14 @@ public sealed class CacheManager : ICacheManager
     }
 
     private (
-        List<(CacheableIdentity Identity, ICacheableEntity Entity, ICacheableCommon Common)> UpdatedEntitiesWithCommonAndIdentity,
-        List<(CacheableIdentity Identity, ICacheableEntity Entity, ICacheableCommon Common)> CreatedEntitiesWithCommonAndIdentity)
+        List<(RemoteIdentityCommon Identity, ICacheableEntity Entity, ICacheableCommon Common)> UpdatedEntitiesWithCommonAndIdentity,
+        List<(RemoteIdentityCommon Identity, ICacheableEntity Entity, ICacheableCommon Common)> CreatedEntitiesWithCommonAndIdentity)
     MapCommonToEntities(
-        IReadOnlyList<(CacheableIdentity Identity, ICacheableCommon Common)> commonsWithIdentity,
+        IReadOnlyList<(RemoteIdentityCommon Identity, ICacheableCommon Common)> commonsWithIdentity,
         IReadOnlyList<ICacheableEntity> existingEntities)
     {
-        var updatedEntities = new List<(CacheableIdentity Identity, ICacheableEntity Entity, ICacheableCommon Common)>();
-        var createdEntities = new List<(CacheableIdentity Identity, ICacheableEntity Entity, ICacheableCommon Common)>();
+        var updatedEntities = new List<(RemoteIdentityCommon Identity, ICacheableEntity Entity, ICacheableCommon Common)>();
+        var createdEntities = new List<(RemoteIdentityCommon Identity, ICacheableEntity Entity, ICacheableCommon Common)>();
         ICacheableEntity? result = null;
 
         for (int i = 0; i < commonsWithIdentity.Count; i++)
@@ -145,7 +145,7 @@ public sealed class CacheManager : ICacheManager
     }
 
     private async Task<List<T>> FetchFromDataBaseAsync<T>(
-        IReadOnlyList<CacheableIdentity> identities,
+        IReadOnlyList<RemoteIdentityCommon> identities,
         DataBaseContext dbContext,
         CancellationToken cancellationToken)
         where T : class, ICacheableEntity
@@ -219,9 +219,9 @@ public sealed class CacheManager : ICacheManager
     private async Task<(
         List<T> FreshEntities,
         List<T> StaleEntities,
-        List<CacheableIdentity> NotSavedIdentities)>
+        List<RemoteIdentityCommon> NotSavedIdentities)>
         GetLocallyAsync<T>(
-        IReadOnlyList<CacheableIdentity> identities,
+        IReadOnlyList<RemoteIdentityCommon> identities,
         DataBaseContext dbContext,
         CancellationToken cancellationToken)
         where T : class, ICacheableEntity

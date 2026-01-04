@@ -1,4 +1,5 @@
 using TMS.Apps.FrontTube.Backend.Core.Enums;
+using TMS.Apps.FrontTube.Backend.Core.Mappers;
 using TMS.Apps.FrontTube.Backend.Core.Tools;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 
@@ -15,22 +16,20 @@ public sealed class Image : ViewModelBase
 
     internal ImageDomain Domain { get; private set; }
 
+    public RemoteIdentity RemoteIdentity { get; private set; }
+
     internal Image(
         Super super,
         ImageDomain domain)
         : base(super)
     {
-        Domain = domain ?? throw new ArgumentNullException(nameof(domain));
-
-        if (!string.IsNullOrWhiteSpace(Domain.FetchingError))
-        {
-            LoadState = LoadingState.Failed;
-        }
+        UpdateFromDomain(domain);
     }
 
     internal void UpdateFromDomain(ImageDomain domain)
     {
         Domain = domain ?? throw new ArgumentNullException(nameof(domain));
+        RemoteIdentity = DomainViewModelMapper.ToViewModel(domain.RemoteIdentity);
 
         if (!string.IsNullOrWhiteSpace(Domain.FetchingError))
         {
@@ -42,19 +41,6 @@ public sealed class Image : ViewModelBase
     /// Event raised when the image loading state changes.
     /// </summary>
     public event EventHandler? StateChanged;
-
-    /// <summary>
-    /// The original URL of the image (e.g., YouTube CDN URL).
-    /// This is the unique identifier for the image.
-    /// </summary>
-    public Uri? OriginalUrl => Uri.TryCreate(Domain.AbsoluteRemoteUrl, UriKind.Absolute, out var uri)
-        ? uri
-        : null;
-
-    /// <summary>
-    /// The hash of the original URL, used as cache key.
-    /// </summary>
-    public long Hash => Domain.Hash;
 
     /// <summary>
     /// The current loading state.
@@ -85,13 +71,6 @@ public sealed class Image : ViewModelBase
     /// Image height in pixels (only available after loading).
     /// </summary>
     public int? Height => Domain.Height;
-
-    /// <summary>
-    /// Gets the URL to display - either the loaded data URL or the original URL.
-    /// </summary>
-    public string? DisplayUrl => DataUrl ?? Domain.AbsoluteRemoteUrl;
-
-    public string? AbsoluteRemoteUrl => Domain.AbsoluteRemoteUrl;
 
     /// <summary>
     /// Cancels any pending image load operation.

@@ -200,7 +200,7 @@ public partial class ChannelPage : ComponentBase, IDisposable
 
     protected async Task HandleVideoClick(Video video)
     {
-        var watchUrl = $"/watch?url={Uri.EscapeDataString(video.AbsoluteRemoteUrl.ToString())}";
+        var watchUrl = video.RemoteIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
         NavigationManager.NavigateTo(watchUrl);
         await Task.CompletedTask;
     }
@@ -242,24 +242,26 @@ public partial class ChannelPage : ComponentBase, IDisposable
 
     private string? GetBestAvatar()
     {
-        var avatarUrl = ViewModel?.GetBestAvatarUrl();
-        if (avatarUrl == null)
+        var avatarIdentity = ViewModel?.GetBestAvatarIdentity();
+        if (avatarIdentity is null)
         {
             return null;
         }
 
-        return Orchestrator.Super.BuildImageProxyUrl(new Uri(avatarUrl));
+        var proxyUrl = avatarIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
+        return string.IsNullOrWhiteSpace(proxyUrl) ? null : proxyUrl;
     }
 
     private string? GetBestBanner()
     {
-        var bannerUrl = ViewModel?.GetBestBannerUrl();
-        if (bannerUrl == null)
+        var bannerIdentity = ViewModel?.GetBestBannerIdentity();
+        if (bannerIdentity is null)
         {
             return null;
         }
 
-        return Orchestrator.Super.BuildImageProxyUrl(new Uri(bannerUrl));
+        var proxyUrl = bannerIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
+        return string.IsNullOrWhiteSpace(proxyUrl) ? null : proxyUrl;
     }
 
     private string? GetSelectedTabId()

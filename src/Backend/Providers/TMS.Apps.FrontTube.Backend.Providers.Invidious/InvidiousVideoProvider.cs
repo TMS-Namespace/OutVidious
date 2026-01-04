@@ -5,6 +5,9 @@ using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools.YouTube;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.Converters;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.Mappers;
@@ -16,6 +19,8 @@ namespace TMS.Apps.FrontTube.Backend.Providers.Invidious;
 /// </summary>
 public sealed class InvidiousVideoProvider : ProviderBase
 {
+    private const string DefaultChannelTab = "videos";
+
     private readonly JsonSerializerOptions _jsonOptions;
 
     public InvidiousVideoProvider(
@@ -64,12 +69,9 @@ public sealed class InvidiousVideoProvider : ProviderBase
     public override string Description => "Privacy-focused YouTube frontend providing access to YouTube videos without tracking.";
 
     /// <inheritdoc />
-    public override async Task<VideoCommon?> GetVideoAsync(string videoId, CancellationToken cancellationToken)
+    public override async Task<VideoCommon?> GetVideoAsync(RemoteIdentityCommon videoIdentity, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(videoId))
-        {
-            throw new ArgumentException("Video ID cannot be empty.", nameof(videoId));
-        }
+        var videoId = GetRemoteIdOrThrow(videoIdentity, RemoteIdentityTypeCommon.Video);
 
         var apiUrl = $"{BaseUrl.ToString().TrimEnd('/')}/api/v1/videos/{Uri.EscapeDataString(videoId)}";
         Logger.LogDebug("Fetching video details from Invidious: {ApiUrl}", apiUrl);
@@ -115,23 +117,17 @@ public sealed class InvidiousVideoProvider : ProviderBase
     }
 
     /// <inheritdoc />
-    public override Uri GetEmbedUrl(string videoId)
+    public override Uri GetEmbedUrl(RemoteIdentityCommon videoIdentity)
     {
-        if (string.IsNullOrWhiteSpace(videoId))
-        {
-            throw new ArgumentException("Video ID cannot be empty.", nameof(videoId));
-        }
+        var videoId = GetRemoteIdOrThrow(videoIdentity, RemoteIdentityTypeCommon.Video);
         
         return CreateUri($"embed/{Uri.EscapeDataString(videoId)}?autoplay=1&local=true");
     }
 
     /// <inheritdoc />
-    public override async Task<ChannelCommon?> GetChannelAsync(string channelId, CancellationToken cancellationToken)
+    public override async Task<ChannelCommon?> GetChannelAsync(RemoteIdentityCommon channelIdentity, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(channelId))
-        {
-            throw new ArgumentException("Channel ID cannot be empty.", nameof(channelId));
-        }
+        var channelId = GetRemoteIdOrThrow(channelIdentity, RemoteIdentityTypeCommon.Channel);
 
         var apiUrl = $"{BaseUrl.ToString().TrimEnd('/')}/api/v1/channels/{Uri.EscapeDataString(channelId)}";
         Logger.LogDebug("Fetching channel details from Invidious: {ApiUrl}", apiUrl);
@@ -183,20 +179,15 @@ public sealed class InvidiousVideoProvider : ProviderBase
 
     /// <inheritdoc />
     public override async Task<VideosPageCommon?> GetChannelVideosTabAsync(
-        string channelId,
-        string? tabId,
+        RemoteIdentityCommon channelIdentity,
+        string tab,
         string? continuationToken,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(channelId))
-        {
-            throw new ArgumentException("Channel ID cannot be empty.", nameof(channelId));
-        }
-
-        // Default to "videos" tab if not specified
-        var tab = string.IsNullOrWhiteSpace(tabId) ? "videos" : tabId;
+        var channelId = GetRemoteIdOrThrow(channelIdentity, RemoteIdentityTypeCommon.Channel);
+        var resolvedTab = string.IsNullOrWhiteSpace(tab) ? DefaultChannelTab : tab;
         
-        var apiUrl = BuildChannelVideosUrl(channelId, tab, continuationToken);
+        var apiUrl = BuildChannelVideosUrl(channelId, resolvedTab, continuationToken);
         Logger.LogDebug("Fetching channel videos from Invidious: {ApiUrl}", apiUrl);
 
         try
@@ -209,7 +200,7 @@ public sealed class InvidiousVideoProvider : ProviderBase
                     "Invidious API request failed with status {StatusCode} for channel videos {ChannelId}",
                     response.StatusCode,
                     channelId);
-                return VideosPageCommon.Empty(channelId, tab);
+                return VideosPageCommon.Empty(channelIdentity, resolvedTab);
             }
 
             // TODO: log the actual response when the is error or deserialization fails
@@ -220,15 +211,15 @@ public sealed class InvidiousVideoProvider : ProviderBase
             if (dto == null || dto.Videos == null)
             {
                 Logger.LogWarning("Invidious API returned null for channel videos {ChannelId}", channelId);
-                return VideosPageCommon.Empty(channelId, tab);
+                return VideosPageCommon.Empty(channelIdentity, resolvedTab);
             }
 
             var videos = dto.Videos.Select(v => ChannelMapper.ToVideoSummary(v, BaseUrl)).ToList();
 
             var page = new VideosPageCommon
             {
-                ChannelRemoteAbsoluteUrl = channelId,
-                Tab = tab,
+                ChannelRemoteIdentity = channelIdentity,
+                Tab = resolvedTab,
                 Videos = videos,
                 ContinuationToken = dto.Continuation,
                 TotalVideoCount = null // Invidious doesn't provide total count in paginated responses
@@ -264,5 +255,53 @@ public sealed class InvidiousVideoProvider : ProviderBase
         }
 
         return baseApiUrl;
+    }
+
+    private static string GetRemoteIdOrThrow(RemoteIdentityCommon identity, RemoteIdentityTypeCommon expectedType)
+    {
+        ArgumentNullException.ThrowIfNull(identity);
+
+        if (identity.IdentityType != expectedType)
+        {
+            throw new ArgumentException($"Identity type must be {expectedType}.", nameof(identity));
+        }
+
+        if (!string.IsNullOrWhiteSpace(identity.RemoteId))
+        {
+            return identity.RemoteId;
+        }
+
+        if (!YouTubeIdentityParser.TryParse(identity.AbsoluteRemoteUrl, out var parts))
+        {
+            throw new ArgumentException(
+                $"Remote identity URL '{identity.AbsoluteRemoteUrl}' is not a valid YouTube URL: {string.Join(", ", parts.Errors)}.",
+                nameof(identity));
+        }
+
+        if (!parts.IsSupported())
+        {
+            throw new ArgumentException(
+                $"Remote identity URL '{identity.AbsoluteRemoteUrl}' is not supported by FrontTube, the recognized identity type is '{parts.IdentityType}'.",
+                nameof(identity));
+        }
+
+        if (expectedType == RemoteIdentityTypeCommon.Video && !parts.IsVideo)
+        {
+            throw new ArgumentException($"Remote identity URL '{identity.AbsoluteRemoteUrl}' is not a valid video identity.", nameof(identity));
+        }
+
+        if (expectedType == RemoteIdentityTypeCommon.Channel && !parts.IsChannel)
+        {
+            throw new ArgumentException($"Remote identity URL '{identity.AbsoluteRemoteUrl}' is not a valid channel identity.", nameof(identity));
+        }
+
+        var remoteId = parts.PrimaryRemoteId;
+
+        if (string.IsNullOrWhiteSpace(remoteId))
+        {
+            throw new ArgumentException($"Remote ID is required for {expectedType} identity.", nameof(identity));
+        }
+
+        return remoteId;
     }
 }

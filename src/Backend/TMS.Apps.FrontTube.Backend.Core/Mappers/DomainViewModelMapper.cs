@@ -1,15 +1,42 @@
+using TMS.Apps.FrontTube.Backend.Core.Enums;
 using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Enums;
 
 namespace TMS.Apps.FrontTube.Backend.Core.Mappers;
 
 public static class DomainViewModelMapper
 {
+    public static RemoteIdentity ToViewModel(RemoteIdentityDomain domain)
+    {
+        ArgumentNullException.ThrowIfNull(domain);
+
+        return new RemoteIdentity
+        {
+            IdentityType = ToViewModel(domain.IdentityType),
+            AbsoluteRemoteUrl = domain.AbsoluteRemoteUrl,
+            Hash = domain.Hash,
+            RemoteId = domain.RemoteId
+        };
+    }
+
+    private static RemoteIdentityType ToViewModel(RemoteIdentityTypeDomain type)
+    {
+        return type switch
+        {
+            RemoteIdentityTypeDomain.Video => RemoteIdentityType.Video,
+            RemoteIdentityTypeDomain.Channel => RemoteIdentityType.Channel,
+            RemoteIdentityTypeDomain.Image => RemoteIdentityType.Image,
+            RemoteIdentityTypeDomain.Caption => RemoteIdentityType.Caption,
+            RemoteIdentityTypeDomain.Stream => RemoteIdentityType.Stream,
+            _ => throw new NotSupportedException($"Unsupported identity type: {type}.")
+        };
+    }
+
     public static Image ToViewModel(Super super, ImageDomain domain, Image? target = null)
     {
         ArgumentNullException.ThrowIfNull(super);
         ArgumentNullException.ThrowIfNull(domain);
-
         if (target is null)
         {
             return new Image(super, domain);
@@ -23,54 +50,28 @@ public static class DomainViewModelMapper
     {
         ArgumentNullException.ThrowIfNull(super);
         ArgumentNullException.ThrowIfNull(domain);
-
-        var avatars = domain.Avatars
-            .Select(avatar => ToViewModel(super, avatar))
-            .ToList();
-
-        var banners = domain.Banners
-            .Select(banner => ToViewModel(super, banner))
-            .ToList();
-
         if (target is null)
         {
-            return new Channel(super, domain, avatars, banners);
+            return new Channel(super, domain);
         }
 
-        target.UpdateFromDomain(domain, avatars, banners);
+        target.UpdateFromDomain(domain);
         return target;
     }
 
     public static Video ToViewModel(
         Super super,
         VideoDomain domain,
-        Channel? channel = null,
         Video? target = null)
     {
         ArgumentNullException.ThrowIfNull(super);
         ArgumentNullException.ThrowIfNull(domain);
-
-        var resolvedChannel = channel;
-        if (resolvedChannel is null)
-        {
-            if (domain.Channel is null)
-            {
-                throw new ArgumentException("VideoDomain.Channel is required when no Channel is provided.", nameof(domain));
-            }
-
-            resolvedChannel = ToViewModel(super, domain.Channel);
-        }
-
-        var thumbnails = domain.Thumbnails
-            .Select(thumbnail => ToViewModel(super, thumbnail))
-            .ToList();
-
         if (target is null)
         {
-            return new Video(super, resolvedChannel, domain, thumbnails);
+            return new Video(super, domain);
         }
 
-        target.UpdateFromDomain(domain, resolvedChannel, thumbnails);
+        target.UpdateFromDomain(domain);
         return target;
     }
 
@@ -87,7 +88,7 @@ public static class DomainViewModelMapper
 
         var resolvedVideos = videos?.ToList()
             ?? domain.Videos
-                .Select(video => ToViewModel(super, video, channel))
+                .Select(video => ToViewModel(super, video))
                 .ToList();
 
         if (target is null)

@@ -21,7 +21,9 @@ public static partial class StreamMapper
         return new Common.ProviderCore.Contracts.StreamMetadataCommon
         {
             Type = streamType,
-            AbsoluteRemoteUrl = new Uri(dto.Url, UriKind.RelativeOrAbsolute),
+            RemoteIdentity = new RemoteIdentityCommon(
+                RemoteIdentityTypeCommon.Stream,
+                new Uri(dto.Url, UriKind.RelativeOrAbsolute).ToString()),
             Container = ParseContainer(dto.Container),
             VideoCodec = streamType != StreamType.Audio ? ParseVideoCodec(dto.Encoding) : null,
             AudioCodec = streamType != StreamType.Video ? ParseAudioCodec(dto.Encoding) : null,
@@ -50,7 +52,9 @@ public static partial class StreamMapper
         return new Common.ProviderCore.Contracts.StreamMetadataCommon
         {
             Type = StreamType.Mutex,
-            AbsoluteRemoteUrl = new Uri(dto.Url, UriKind.RelativeOrAbsolute),
+            RemoteIdentity = new RemoteIdentityCommon(
+                RemoteIdentityTypeCommon.Stream,
+                new Uri(dto.Url, UriKind.RelativeOrAbsolute).ToString()),
             Container = ParseContainer(dto.Container),
             VideoCodec = ParseVideoCodec(dto.Encoding),
             AudioCodec = AudioCodec.Aac, // Combined formats typically use AAC

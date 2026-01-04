@@ -1,4 +1,7 @@
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools.YouTube;
+using DomainEnums = TMS.Apps.FrontTube.Backend.Repository.Data.Enums;
 using DomainContracts = TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data.Mappers;
@@ -9,13 +12,26 @@ public static class EntityDomainMapper
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        target ??= new DomainContracts.ChannelDomain();
+        var identity = CreateIdentity(
+            DomainEnums.RemoteIdentityTypeDomain.Channel,
+            entity.AbsoluteRemoteUrl,
+            entity.Hash);
+
+        if (target is null)
+        {
+            target = new DomainContracts.ChannelDomain
+            {
+                RemoteIdentity = identity
+            };
+        }
+        else
+        {
+            target.RemoteIdentity = identity;
+        }
 
         target.Id = entity.Id;
         target.CreatedAt = entity.CreatedAt;
         target.LastSyncedAt = entity.LastSyncedAt;
-        target.Hash = entity.Hash;
-        target.AbsoluteRemoteUrl = entity.AbsoluteRemoteUrl;
         target.Title = entity.Title;
         target.Alias = entity.Alias;
         target.Description = entity.Description;
@@ -60,19 +76,21 @@ public static class EntityDomainMapper
     public static ChannelEntity FromDomain(DomainContracts.ChannelDomain domain, ChannelEntity? target = null)
     {
         ArgumentNullException.ThrowIfNull(domain);
+        ArgumentNullException.ThrowIfNull(domain.RemoteIdentity);
 
+        var identity = domain.RemoteIdentity;
         target ??= new ChannelEntity
         {
-            Hash = domain.Hash,
-            AbsoluteRemoteUrl = domain.AbsoluteRemoteUrl,
+            Hash = identity.Hash,
+            AbsoluteRemoteUrl = identity.AbsoluteRemoteUrl,
             Title = domain.Title
         };
 
         target.Id = domain.Id;
         target.CreatedAt = domain.CreatedAt;
         target.LastSyncedAt = domain.LastSyncedAt;
-        target.Hash = domain.Hash;
-        target.AbsoluteRemoteUrl = domain.AbsoluteRemoteUrl;
+        target.Hash = identity.Hash;
+        target.AbsoluteRemoteUrl = identity.AbsoluteRemoteUrl;
         target.Title = domain.Title;
         target.Alias = domain.Alias;
         target.Description = domain.Description;
@@ -92,13 +110,26 @@ public static class EntityDomainMapper
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        target ??= new DomainContracts.VideoDomain();
+        var identity = CreateIdentity(
+            DomainEnums.RemoteIdentityTypeDomain.Video,
+            entity.AbsoluteRemoteUrl,
+            entity.Hash);
+
+        if (target is null)
+        {
+            target = new DomainContracts.VideoDomain
+            {
+                RemoteIdentity = identity
+            };
+        }
+        else
+        {
+            target.RemoteIdentity = identity;
+        }
 
         target.Id = entity.Id;
         target.CreatedAt = entity.CreatedAt;
         target.LastSyncedAt = entity.LastSyncedAt;
-        target.Hash = entity.Hash;
-        target.AbsoluteRemoteUrl = entity.AbsoluteRemoteUrl;
         target.Title = entity.Title;
         target.Description = entity.Description;
         target.DescriptionHtml = entity.DescriptionHtml;
@@ -152,19 +183,21 @@ public static class EntityDomainMapper
     public static VideoEntity FromDomain(DomainContracts.VideoDomain domain, VideoEntity? target = null)
     {
         ArgumentNullException.ThrowIfNull(domain);
+        ArgumentNullException.ThrowIfNull(domain.RemoteIdentity);
 
+        var identity = domain.RemoteIdentity;
         target ??= new VideoEntity
         {
-            Hash = domain.Hash,
-            AbsoluteRemoteUrl = domain.AbsoluteRemoteUrl,
+            Hash = identity.Hash,
+            AbsoluteRemoteUrl = identity.AbsoluteRemoteUrl,
             Title = domain.Title
         };
 
         target.Id = domain.Id;
         target.CreatedAt = domain.CreatedAt;
         target.LastSyncedAt = domain.LastSyncedAt;
-        target.Hash = domain.Hash;
-        target.AbsoluteRemoteUrl = domain.AbsoluteRemoteUrl;
+        target.Hash = identity.Hash;
+        target.AbsoluteRemoteUrl = identity.AbsoluteRemoteUrl;
         target.Title = domain.Title;
         target.Description = domain.Description;
         target.DescriptionHtml = domain.DescriptionHtml;
@@ -193,13 +226,26 @@ public static class EntityDomainMapper
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        target ??= new DomainContracts.ImageDomain();
+        var identity = CreateIdentity(
+            DomainEnums.RemoteIdentityTypeDomain.Image,
+            entity.AbsoluteRemoteUrl,
+            entity.Hash);
+
+        if (target is null)
+        {
+            target = new DomainContracts.ImageDomain
+            {
+                RemoteIdentity = identity
+            };
+        }
+        else
+        {
+            target.RemoteIdentity = identity;
+        }
 
         target.Id = entity.Id;
         target.CreatedAt = entity.CreatedAt;
         target.LastSyncedAt = entity.LastSyncedAt;
-        target.Hash = entity.Hash;
-        target.AbsoluteRemoteUrl = entity.AbsoluteRemoteUrl;
         target.Data = entity.Data;
         target.Width = entity.Width;
         target.Height = entity.Height;
@@ -211,18 +257,20 @@ public static class EntityDomainMapper
     public static ImageEntity FromDomain(DomainContracts.ImageDomain domain, ImageEntity? target = null)
     {
         ArgumentNullException.ThrowIfNull(domain);
+        ArgumentNullException.ThrowIfNull(domain.RemoteIdentity);
 
+        var identity = domain.RemoteIdentity;
         target ??= new ImageEntity
         {
-            Hash = domain.Hash,
-            AbsoluteRemoteUrl = domain.AbsoluteRemoteUrl
+            Hash = identity.Hash,
+            AbsoluteRemoteUrl = identity.AbsoluteRemoteUrl
         };
 
         target.Id = domain.Id;
         target.CreatedAt = domain.CreatedAt;
         target.LastSyncedAt = domain.LastSyncedAt;
-        target.Hash = domain.Hash;
-        target.AbsoluteRemoteUrl = domain.AbsoluteRemoteUrl;
+        target.Hash = identity.Hash;
+        target.AbsoluteRemoteUrl = identity.AbsoluteRemoteUrl;
         target.Data = domain.Data;
         target.Width = domain.Width;
         target.Height = domain.Height;
@@ -235,14 +283,27 @@ public static class EntityDomainMapper
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        target ??= new DomainContracts.StreamDomain();
+        var identity = CreateIdentity(
+            DomainEnums.RemoteIdentityTypeDomain.Stream,
+            entity.AbsoluteRemoteUrl,
+            entity.Hash);
+
+        if (target is null)
+        {
+            target = new DomainContracts.StreamDomain
+            {
+                RemoteIdentity = identity
+            };
+        }
+        else
+        {
+            target.RemoteIdentity = identity;
+        }
 
         target.Id = entity.Id;
         target.CreatedAt = entity.CreatedAt;
         target.LastSyncedAt = entity.LastSyncedAt;
-        target.Hash = entity.Hash;
         target.VideoId = entity.VideoId;
-        target.AbsoluteRemoteUrl = entity.AbsoluteRemoteUrl;
         target.StreamTypeId = entity.StreamTypeId;
         target.ContainerId = entity.ContainerId;
         target.VideoCodecId = entity.VideoCodecId;
@@ -266,19 +327,21 @@ public static class EntityDomainMapper
     public static StreamEntity FromDomain(DomainContracts.StreamDomain domain, StreamEntity? target = null)
     {
         ArgumentNullException.ThrowIfNull(domain);
+        ArgumentNullException.ThrowIfNull(domain.RemoteIdentity);
 
+        var identity = domain.RemoteIdentity;
         target ??= new StreamEntity
         {
-            Hash = domain.Hash,
-            AbsoluteRemoteUrl = domain.AbsoluteRemoteUrl
+            Hash = identity.Hash,
+            AbsoluteRemoteUrl = identity.AbsoluteRemoteUrl
         };
 
         target.Id = domain.Id;
         target.CreatedAt = domain.CreatedAt;
         target.LastSyncedAt = domain.LastSyncedAt;
-        target.Hash = domain.Hash;
+        target.Hash = identity.Hash;
         target.VideoId = domain.VideoId;
-        target.AbsoluteRemoteUrl = domain.AbsoluteRemoteUrl;
+        target.AbsoluteRemoteUrl = identity.AbsoluteRemoteUrl;
         target.StreamTypeId = domain.StreamTypeId;
         target.ContainerId = domain.ContainerId;
         target.VideoCodecId = domain.VideoCodecId;
@@ -308,17 +371,30 @@ public static class EntityDomainMapper
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        target ??= new DomainContracts.CaptionDomain();
+        var identity = CreateIdentity(
+            DomainEnums.RemoteIdentityTypeDomain.Caption,
+            entity.AbsoluteRemoteUrl,
+            entity.Hash);
+
+        if (target is null)
+        {
+            target = new DomainContracts.CaptionDomain
+            {
+                RemoteIdentity = identity
+            };
+        }
+        else
+        {
+            target.RemoteIdentity = identity;
+        }
 
         target.Id = entity.Id;
         target.CreatedAt = entity.CreatedAt;
         target.LastSyncedAt = entity.LastSyncedAt;
-        target.Hash = entity.Hash;
         target.VideoId = entity.VideoId;
         target.Label = entity.Label;
         target.LanguageCode = entity.LanguageCode;
         target.IsAutoGenerated = entity.IsAutoGenerated;
-        target.AbsoluteRemoteUrl = entity.AbsoluteRemoteUrl;
         target.Text = entity.Text;
 
         return target;
@@ -327,11 +403,13 @@ public static class EntityDomainMapper
     public static CaptionEntity FromDomain(DomainContracts.CaptionDomain domain, CaptionEntity? target = null)
     {
         ArgumentNullException.ThrowIfNull(domain);
+        ArgumentNullException.ThrowIfNull(domain.RemoteIdentity);
 
+        var identity = domain.RemoteIdentity;
         target ??= new CaptionEntity
         {
-            Hash = domain.Hash,
-            AbsoluteRemoteUrl = domain.AbsoluteRemoteUrl,
+            Hash = identity.Hash,
+            AbsoluteRemoteUrl = identity.AbsoluteRemoteUrl,
             Label = domain.Label,
             LanguageCode = domain.LanguageCode
         };
@@ -339,12 +417,12 @@ public static class EntityDomainMapper
         target.Id = domain.Id;
         target.CreatedAt = domain.CreatedAt;
         target.LastSyncedAt = domain.LastSyncedAt;
-        target.Hash = domain.Hash;
+        target.Hash = identity.Hash;
         target.VideoId = domain.VideoId;
         target.Label = domain.Label;
         target.LanguageCode = domain.LanguageCode;
         target.IsAutoGenerated = domain.IsAutoGenerated;
-        target.AbsoluteRemoteUrl = domain.AbsoluteRemoteUrl;
+        target.AbsoluteRemoteUrl = identity.AbsoluteRemoteUrl;
         target.Text = domain.Text;
 
         if (domain.Video is not null)
@@ -355,4 +433,32 @@ public static class EntityDomainMapper
         return target;
     }
 
+    private static DomainContracts.RemoteIdentityDomain CreateIdentity(
+        DomainEnums.RemoteIdentityTypeDomain identityType,
+        string absoluteRemoteUrl,
+        long hash)
+    {
+        var absoluteRemoteUri = new Uri(absoluteRemoteUrl, UriKind.RelativeOrAbsolute);
+
+        string? remoteId = null;
+        if (identityType is DomainEnums.RemoteIdentityTypeDomain.Video or DomainEnums.RemoteIdentityTypeDomain.Channel)
+        {
+            if (YouTubeIdentityParser.TryParse(absoluteRemoteUrl, out var parts)
+                && parts.IsSupported()
+                && ((identityType == DomainEnums.RemoteIdentityTypeDomain.Video && parts.IsVideo)
+                    || (identityType == DomainEnums.RemoteIdentityTypeDomain.Channel && parts.IsChannel)))
+            {
+                remoteId = parts.PrimaryRemoteId;
+            }
+        }
+
+        return new DomainContracts.RemoteIdentityDomain
+        {
+            IdentityType = identityType,
+            AbsoluteRemoteUrl = absoluteRemoteUrl,
+            AbsoluteRemoteUri = absoluteRemoteUri,
+            Hash = hash,
+            RemoteId = remoteId
+        };
+    }
 }

@@ -37,20 +37,20 @@ public abstract class ProviderBase : IProvider
     public virtual bool IsConfigured => BaseUrl.IsAbsoluteUri;
 
     /// <inheritdoc />
-    public abstract Task<VideoCommon?> GetVideoAsync(string videoId, CancellationToken cancellationToken);
+    public abstract Task<VideoCommon?> GetVideoAsync(RemoteIdentityCommon videoIdentity, CancellationToken cancellationToken);
 
     /// <inheritdoc />
-    public abstract Uri GetEmbedUrl(string videoId);
+    public abstract Uri GetEmbedUrl(RemoteIdentityCommon videoIdentity);
 
     /// <inheritdoc />
-    public abstract Task<ChannelCommon?> GetChannelAsync(string channelId, CancellationToken cancellationToken);
+    public abstract Task<ChannelCommon?> GetChannelAsync(RemoteIdentityCommon channelIdentity, CancellationToken cancellationToken);
 
     /// <inheritdoc />
     public abstract Task<VideosPageCommon?> GetChannelVideosTabAsync(
-        string channelId,
-        string tab = "videos",
-        string? continuationToken = null,
-        CancellationToken cancellationToken = default);
+        RemoteIdentityCommon channelIdentity,
+        string tab,
+        string? continuationToken,
+        CancellationToken cancellationToken);
 
     /// <summary>
     /// Creates a URI by combining the base URL with a relative path.

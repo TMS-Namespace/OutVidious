@@ -10,9 +10,9 @@ public sealed record VideosPageCommon : ICommonContract
     /// <summary>
     /// Empty page for error cases or when no results are found.
     /// </summary>
-    public static VideosPageCommon Empty(string channelId, string tab = "videos") => new()
+    public static VideosPageCommon Empty(RemoteIdentityCommon channelIdentity, string tab = "videos") => new()
     {
-        ChannelRemoteAbsoluteUrl = channelId,
+        ChannelRemoteIdentity = channelIdentity,
         Tab = tab,
         Videos = [],
         ContinuationToken = null
@@ -21,7 +21,7 @@ public sealed record VideosPageCommon : ICommonContract
     /// <summary>
     /// The channel this page belongs to.
     /// </summary>
-    public required string ChannelRemoteAbsoluteUrl { get; init; }
+    public required RemoteIdentityCommon ChannelRemoteIdentity { get; init; }
 
     /// <summary>
     /// The tab this page was retrieved from (e.g., "videos", "shorts", "live").

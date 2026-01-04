@@ -79,7 +79,7 @@ public partial class Home : ComponentBase, IDisposable
             // Dispose previous ViewModel if any
             _videoPlayerVm?.Dispose();
             
-            _videoPlayerVm = await Orchestrator.Super.GetVideoByIdAsync(videoId, _cts.Token);
+            _videoPlayerVm = await Orchestrator.Super.GetVideoAsync(videoId, _cts.Token);
             
             if (_videoPlayerVm is not null)
             {

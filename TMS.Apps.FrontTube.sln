@@ -29,6 +29,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.FrontTube.Backend.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.FrontTube.Backend.Repository.Data", "src\Backend\Repository\TMS.Apps.FrontTube.Backend.Repository.Data\TMS.Apps.FrontTube.Backend.Repository.Data.csproj", "{4E3A6411-F897-4D8C-A5A6-40E79E517367}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{7F84455A-0628-4B35-8F38-A7366366CC82}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Backend", "Backend", "{F37D4BA1-59FC-4FFF-B149-2DDB1A3E7E42}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{F2E6AAA0-5D01-4836-A9D4-5D159EE619FA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tests.Unit", "tests\Backend\Common\TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tests.Unit\TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tests.Unit.csproj", "{F477ABFB-5C17-4099-9B6C-267614396984}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +71,10 @@ Global
 		{4E3A6411-F897-4D8C-A5A6-40E79E517367}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4E3A6411-F897-4D8C-A5A6-40E79E517367}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4E3A6411-F897-4D8C-A5A6-40E79E517367}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F477ABFB-5C17-4099-9B6C-267614396984}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F477ABFB-5C17-4099-9B6C-267614396984}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F477ABFB-5C17-4099-9B6C-267614396984}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F477ABFB-5C17-4099-9B6C-267614396984}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -80,5 +92,8 @@ Global
 		{7413122A-1730-4E3C-8C5F-3895B877412D} = {9EFB56BC-C02A-BFC8-8CAF-57F312DE9EAE}
 		{14E6160C-1496-4EF6-8583-1FA573ACF611} = {9EFB56BC-C02A-BFC8-8CAF-57F312DE9EAE}
 		{4E3A6411-F897-4D8C-A5A6-40E79E517367} = {9EFB56BC-C02A-BFC8-8CAF-57F312DE9EAE}
+		{F37D4BA1-59FC-4FFF-B149-2DDB1A3E7E42} = {7F84455A-0628-4B35-8F38-A7366366CC82}
+		{F2E6AAA0-5D01-4836-A9D4-5D159EE619FA} = {F37D4BA1-59FC-4FFF-B149-2DDB1A3E7E42}
+		{F477ABFB-5C17-4099-9B6C-267614396984} = {F2E6AAA0-5D01-4836-A9D4-5D159EE619FA}
 	EndGlobalSection
 EndGlobal

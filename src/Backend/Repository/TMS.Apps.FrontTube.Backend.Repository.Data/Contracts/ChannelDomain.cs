@@ -13,15 +13,7 @@ public sealed class ChannelDomain : ICacheableDomain
 
     public DateTime? LastSyncedAt { get; set; }
 
-    /// <summary>
-    /// XxHash64 hash of the absolute remote URL for unique lookup.
-    /// </summary>
-    public long Hash { get; set; }
-
-    /// <summary>
-    /// The original channel URL.
-    /// </summary>
-    public string AbsoluteRemoteUrl { get; set; } = string.Empty;
+    public required RemoteIdentityDomain RemoteIdentity { get; set; }
 
     /// <summary>
     /// Channel display name/title.

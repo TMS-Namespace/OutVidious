@@ -1,7 +1,5 @@
 using System.Net;
 using Microsoft.Extensions.Logging;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious;
@@ -15,7 +13,10 @@ using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Tools;
 using Microsoft.EntityFrameworkCore;
-using CommonConfig = TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
+using System.Diagnostics.CodeAnalysis;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools.YouTube;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Enums;
 
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data;
@@ -115,10 +116,90 @@ public sealed class RepositoryManager
             _logger.LogDebug("Development user seeded");
         }
 
-       
         _dbSyncWorker.Start(workerCancellationToken);
         _imageDataSyncWorker.Start(workerCancellationToken);
 
+    }
+
+    public bool TryCreateRemoteIdentity(string remoteIdentity, RemoteIdentityTypeDomain? expectedIdentityType, [NotNullWhen(true)] out RemoteIdentityDomain? identity, out string? errorMessage)
+    {
+        if (expectedIdentityType is not null)
+        {
+            identity = new RemoteIdentityDomain
+            {
+                IdentityType = expectedIdentityType.Value,
+                AbsoluteRemoteUrl = remoteIdentity,
+                AbsoluteRemoteUri = new Uri(remoteIdentity, UriKind.RelativeOrAbsolute),
+                Hash = HashHelper.ComputeHash(remoteIdentity),
+                RemoteId = null
+            };
+            errorMessage = null;
+            return true;
+        }
+
+        var isValid = YouTubeIdentityParser.TryParse(remoteIdentity, out var parts);
+
+        if (!isValid)
+        {
+            errorMessage = $"The provided URL '{remoteIdentity}' is not a valid YouTube URL, because: {string.Join(", ", parts.Errors)}.";
+            identity = null;
+            return false;
+        }
+
+        if (!parts.IsSupported())
+        {
+            errorMessage = $"The provided URL '{remoteIdentity}' is not supported by FrontTube, the recognized identity type is '{parts.IdentityType}'.";
+            identity = null;
+            return false;
+        }
+
+        var canonicalUrl = parts.ToUrl() ?? parts.AbsoluteRemoteUrl;
+        if (canonicalUrl is null)
+        {
+            errorMessage = $"The provided URL '{remoteIdentity}' could not be normalized to a canonical URL.";
+            identity = null;
+            return false;
+        }
+
+        RemoteIdentityTypeDomain? identityType = null;
+
+        if (parts.IsVideo)
+        {
+            identityType = RemoteIdentityTypeDomain.Video;
+        }
+        else if (parts.IsChannel)
+        {
+            identityType = RemoteIdentityTypeDomain.Channel;
+        }
+
+        if (identityType is null)
+        {
+            errorMessage = $"The provided URL '{remoteIdentity}' has an unsupported identity type '{parts.IdentityType}'.";
+            identity = null;
+            return false;
+        }
+
+        var hash = HashHelper.ComputeHash(canonicalUrl.ToString());
+
+        var remoteId = parts.PrimaryRemoteId;
+        if (string.IsNullOrWhiteSpace(remoteId))
+        {
+            errorMessage = $"The provided URL '{remoteIdentity}' does not contain a valid remote ID.";
+            identity = null;
+            return false;
+        }
+
+        var absoluteRemoteUrl = canonicalUrl.ToString();
+        identity = new RemoteIdentityDomain
+        {
+            IdentityType = identityType.Value,
+            AbsoluteRemoteUrl = absoluteRemoteUrl,
+            AbsoluteRemoteUri = canonicalUrl,
+            Hash = HashHelper.ComputeHash(absoluteRemoteUrl),
+            RemoteId = remoteId
+        };
+        errorMessage = null;
+        return true;
     }
 
     private async Task<(byte[]? Data, HttpStatusCode StatusCode)> DownloadDataAsync(string url, CancellationToken cancellationToken)
@@ -140,11 +221,11 @@ public sealed class RepositoryManager
     /// Downloads image binary contents, and saved it. Assumes that the image metadata is already cached.
     /// </summary>
     public async Task<ImageDomain> GetImageContentsAsync(
-        IdentityDomain imageIdentity,
+        RemoteIdentityDomain imageIdentity,
         string? providerRedirectedUrl,
         CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(imageIdentity.AbsoluteRemoteUrlString);
+        ArgumentException.ThrowIfNullOrWhiteSpace(imageIdentity.AbsoluteRemoteUrl);
 
         try
         {
@@ -156,8 +237,7 @@ public sealed class RepositoryManager
 
                 return new ImageDomain
                 {
-                    Hash = imageIdentity.Hash,
-                    AbsoluteRemoteUrl = imageIdentity.AbsoluteRemoteUrlString,
+                    RemoteIdentity = imageIdentity,
                     Data = info.Value.Data,
                     Width = info.Value.Width,
                     Height = info.Value.Height,
@@ -168,18 +248,17 @@ public sealed class RepositoryManager
             _logger.LogWarning("Image data not found, fetching for identity: {@ImageIdentity}", imageIdentity);
 
             var (data, statusCode) = await DownloadDataAsync(
-                    providerRedirectedUrl ?? imageIdentity.AbsoluteRemoteUrlString,
+                    providerRedirectedUrl ?? imageIdentity.AbsoluteRemoteUrl,
                     cancellationToken);
 
             if (data == null || statusCode != HttpStatusCode.OK)
             {
                 _logger.LogWarning("Failed to download image data, status: {StatusCode}, originalUrl: {OriginalUrl}, fetchUrl: {FetchUrl}",
-                    statusCode, imageIdentity.AbsoluteRemoteUrlString, providerRedirectedUrl ?? imageIdentity.AbsoluteRemoteUrlString);
+                    statusCode, imageIdentity.AbsoluteRemoteUrl, providerRedirectedUrl ?? imageIdentity.AbsoluteRemoteUrl);
                 
                 return new ImageDomain
                 {
-                    Hash = imageIdentity.Hash,
-                    AbsoluteRemoteUrl = imageIdentity.AbsoluteRemoteUrlString,
+                    RemoteIdentity = imageIdentity,
                     Data = null,
                     LastSyncedAt = DateTime.UtcNow,
                     FetchingError = $"Failed to download image data, status: {statusCode}"
@@ -192,8 +271,7 @@ public sealed class RepositoryManager
 
             return new ImageDomain
             {
-                Hash = imageIdentity.Hash,
-                AbsoluteRemoteUrl = imageIdentity.AbsoluteRemoteUrlString,
+                RemoteIdentity = imageIdentity,
                 Data = data,
                 Width = width,
                 Height = height,
@@ -205,8 +283,7 @@ public sealed class RepositoryManager
             _logger.LogError(ex, "Unexpected error in {MethodName} for identity: {@ImageIdentity}", nameof(GetImageContentsAsync), imageIdentity);
             return new ImageDomain
             {
-                Hash = imageIdentity.Hash,
-                AbsoluteRemoteUrl = imageIdentity.AbsoluteRemoteUrlString,
+                RemoteIdentity = imageIdentity,
                 Data = null,
                 LastSyncedAt = DateTime.UtcNow,
                 FetchingError = $"Unexpected error: {ex.Message}"
@@ -233,17 +310,12 @@ public sealed class RepositoryManager
     }
 
     private async Task<VideoDomain?> GetVideoFromProviderAsync(
-        IdentityDomain videoIdentity,
+        RemoteIdentityDomain videoIdentity,
         CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(videoIdentity.AbsoluteRemoteUrlString);
-
-        var remoteId = YouTubeUrlBuilder.ExtractVideoId(videoIdentity.AbsoluteRemoteUrlString);
-
-
-        var remoteVideo = await _provider.GetVideoAsync(
-            remoteId!,
-            cancellationToken);
+        ArgumentException.ThrowIfNullOrWhiteSpace(videoIdentity.AbsoluteRemoteUrl);
+        var commonIdentity = CommonDomainMapper.FromDomain(videoIdentity);
+        var remoteVideo = await _provider.GetVideoAsync(commonIdentity, cancellationToken);
 
         if (remoteVideo == null)
         {
@@ -257,7 +329,7 @@ public sealed class RepositoryManager
     }
 
     private async Task<VideoDomain?> GetVideoFromDataBaseAsync(
-        IdentityDomain videoIdentity,
+        RemoteIdentityDomain videoIdentity,
         CancellationToken cancellationToken)
     {
         await using var db = await _pool.GetContextAsync(cancellationToken);
@@ -275,7 +347,7 @@ public sealed class RepositoryManager
     }
 
     private async Task<ChannelDomain?> GetChannelFromDataBaseAsync(
-        IdentityDomain channelIdentity,
+        RemoteIdentityDomain channelIdentity,
         CancellationToken cancellationToken)
     {
         await using var db = await _pool.GetContextAsync(cancellationToken);
@@ -293,17 +365,12 @@ public sealed class RepositoryManager
     }
 
     private async Task<ChannelDomain?> GetChannelFromProviderAsync(
-        IdentityDomain channelIdentity,
+        RemoteIdentityDomain channelIdentity,
         CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(channelIdentity.AbsoluteRemoteUrlString);
-
-        var remoteId = YouTubeUrlBuilder.ExtractChannelRemoteId(channelIdentity.AbsoluteRemoteUrlString);
-
-
-        var remoteChannel = await _provider.GetChannelAsync(
-            remoteId!,
-            cancellationToken);
+        ArgumentException.ThrowIfNullOrWhiteSpace(channelIdentity.AbsoluteRemoteUrl);
+        var commonIdentity = CommonDomainMapper.FromDomain(channelIdentity);
+        var remoteChannel = await _provider.GetChannelAsync(commonIdentity, cancellationToken);
 
         if (remoteChannel == null)
         {
@@ -317,17 +384,15 @@ public sealed class RepositoryManager
     }
 
     private async Task<VideosPageDomain?> GetChannelPageFromProviderAsync(
-        IdentityDomain channelIdentity,
+        RemoteIdentityDomain channelIdentity,
         string tab,
         string? continuationToken,
         CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(channelIdentity.AbsoluteRemoteUrlString);
-
-        var remoteId = YouTubeUrlBuilder.ExtractChannelRemoteId(channelIdentity.AbsoluteRemoteUrlString);
-
+        ArgumentException.ThrowIfNullOrWhiteSpace(channelIdentity.AbsoluteRemoteUrl);
+        var commonIdentity = CommonDomainMapper.FromDomain(channelIdentity);
         var remotePage = await _provider.GetChannelVideosTabAsync(
-            remoteId!,
+            commonIdentity,
             tab,
             continuationToken,
             cancellationToken);
@@ -345,7 +410,7 @@ public sealed class RepositoryManager
     }
 
     private async Task<VideosPageDomain?> GetChannelPageFromDataBaseAsync(
-        IdentityDomain channelIdentity,
+        RemoteIdentityDomain channelIdentity,
         string tab,
         string? continuationToken,
         CancellationToken cancellationToken)
@@ -363,7 +428,7 @@ public sealed class RepositoryManager
         {
             var pageDomain = new VideosPageDomain
             {
-                ChannelAbsoluteRemoteUrl = videos.First().Channel!.AbsoluteRemoteUrl,
+                ChannelRemoteIdentity = channelIdentity,
                 Videos = videos
                     .Select(v => EntityDomainMapper.ToDomain(v))
                     .ToList(),
@@ -377,11 +442,11 @@ public sealed class RepositoryManager
     }
 
     public async Task<VideoDomain?> GetVideoAsync(
-        IdentityDomain videoIdentity,
+        RemoteIdentityDomain videoIdentity,
         CancellationToken cancellationToken,
         bool autoSave = true)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(videoIdentity.AbsoluteRemoteUrlString);
+        ArgumentException.ThrowIfNullOrWhiteSpace(videoIdentity.AbsoluteRemoteUrl);
         
         // try to get it from synchronization queue
         if (_dbSynchronizer.TryGetQueued<VideoCommon>(videoIdentity.Hash, false, out var queuedCommon))
@@ -412,11 +477,11 @@ public sealed class RepositoryManager
     }
 
     public async Task<ChannelDomain?> GetChannelAsync(
-        IdentityDomain channelIdentity,
+        RemoteIdentityDomain channelIdentity,
         CancellationToken cancellationToken,
         bool autoSave = true)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(channelIdentity.AbsoluteRemoteUrlString);
+        ArgumentException.ThrowIfNullOrWhiteSpace(channelIdentity.AbsoluteRemoteUrl);
 
         // try to get it from synchronization queue
         if (_dbSynchronizer.TryGetQueued<ChannelCommon>(channelIdentity.Hash, false, out var queuedCommon))        
@@ -447,7 +512,7 @@ public sealed class RepositoryManager
     }
 
     public async Task<VideosPageDomain?> GetChannelsPageAsync(
-        IdentityDomain channelIdentity,
+        RemoteIdentityDomain channelIdentity,
         string tab,
         string? continuationToken,
         CancellationToken cancellationToken,

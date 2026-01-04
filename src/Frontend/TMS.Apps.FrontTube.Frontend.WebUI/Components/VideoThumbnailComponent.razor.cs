@@ -50,7 +50,9 @@ public partial class VideoThumbnailComponentBase : ComponentBase
 
     protected string FormattedDuration => FormatDuration(Video?.Duration ?? TimeSpan.Zero);
 
-    protected string ChannelUrl => $"/channel?url={Uri.EscapeDataString(Video?.ChannelAbsoluteRemoteUrl?.ToString() ?? string.Empty)}";
+    protected string ChannelUrl => Video?.Channel?.RemoteIdentity is null
+        ? "#"
+        : Video.Channel.RemoteIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
 
     protected string CardStyle => Width.HasValue 
         ? $"width: {Width}px; cursor: pointer;" 
@@ -58,9 +60,9 @@ public partial class VideoThumbnailComponentBase : ComponentBase
 
     protected async Task OnChannelClick()
     {
-        if (Video?.ChannelAbsoluteRemoteUrl is not null)
+        if (Video?.Channel?.RemoteIdentity is not null)
         {
-            await OnChannelClicked.InvokeAsync(Video.ChannelAbsoluteRemoteUrl.ToString());
+            await OnChannelClicked.InvokeAsync(Video.Channel.RemoteIdentity.GetProxyUrl(Orchestrator.Super.Proxy));
         }
     }
 
@@ -71,13 +73,14 @@ public partial class VideoThumbnailComponentBase : ComponentBase
             return "/images/placeholder-video.png";
         }
 
-        var thumbnailUrl = Video.GetBestThumbnailUrl();
-        if (thumbnailUrl == null)
+        var thumbnailIdentity = Video.GetBestThumbnailIdentity();
+        if (thumbnailIdentity is null)
         {
             return "/images/placeholder-video.png";
         }
 
-        return Orchestrator.Super.BuildImageProxyUrl(new Uri(thumbnailUrl));
+        var proxyUrl = thumbnailIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
+        return string.IsNullOrWhiteSpace(proxyUrl) ? "/images/placeholder-video.png" : proxyUrl;
     }
 
     private static string FormatDuration(TimeSpan duration)
