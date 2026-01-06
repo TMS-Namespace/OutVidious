@@ -1,6 +1,4 @@
-﻿// Copyright (c) Argo Zhang (argo@163.com). All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-// Website: https://www.blazor.zone or https://argozhang.github.io/
+﻿
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -37,7 +35,7 @@ internal sealed class DockPanelComponentConverter : JsonConverter<List<DockPanel
         writer.WriteStartArray();
         foreach (var item in value)
         {
-            if (item is DockPanelContentComponent content)
+            if (item is DocksCollectionComponent content)
             {
                 writer.WriteRawValue(JsonSerializer.Serialize(content, options));
             }

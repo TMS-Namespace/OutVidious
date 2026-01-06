@@ -3,7 +3,7 @@ using TMS.Libs.Frontend.Web.DockPanels.Services;
 
 namespace TMS.Libs.Frontend.Web.DockPanels.Components;
 
-public partial class DockPanelsComponent
+public partial class DocksCollectionDrawerComponent
 {
     /// <summary>
     /// Gets the underlying dock panel interop service.

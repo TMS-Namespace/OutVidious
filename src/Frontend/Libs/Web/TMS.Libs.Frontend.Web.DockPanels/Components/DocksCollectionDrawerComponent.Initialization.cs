@@ -3,7 +3,7 @@ using TMS.Libs.Frontend.Web.DockPanels.Enums;
 
 namespace TMS.Libs.Frontend.Web.DockPanels.Components;
 
-public partial class DockPanelsComponent
+public partial class DocksCollectionDrawerComponent
 {
     private async Task ApplyInitialConfigurationAsync(CancellationToken cancellationToken)
     {

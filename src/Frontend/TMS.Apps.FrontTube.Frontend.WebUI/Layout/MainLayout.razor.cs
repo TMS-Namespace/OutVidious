@@ -10,7 +10,7 @@ namespace TMS.Apps.FrontTube.Frontend.WebUI.Layout;
 
 /// <summary>
 /// Main layout component for the FrontTube application.
-/// Uses DockPanelsComponent for dockable panels,
+/// Uses DocksCollectionDrawerComponent for dockable panels,
 /// with MudBlazor components inside the panels.
 /// </summary>
 public partial class MainLayout : IAsyncDisposable
@@ -59,7 +59,7 @@ public partial class MainLayout : IAsyncDisposable
     private bool _isDarkMode = true;
     private bool _isDisposed;
     private bool _isDockPanelsReady;
-    private DockPanelsComponent? _dockPanelsComponent;
+    private DocksCollectionDrawerComponent? _dockPanelsComponent;
     private ILogger<MainLayout>? _logger;
     private int _channelAboutRenderVersion;
     private bool _deferChannelAboutActivation;

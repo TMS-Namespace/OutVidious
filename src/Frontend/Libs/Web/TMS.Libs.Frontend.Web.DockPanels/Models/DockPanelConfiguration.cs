@@ -4,7 +4,7 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Models;
 
 /// <summary>
 /// Configuration for a dock panel's initial state after initialization.
-/// Used by <see cref="Components.DockPanelsComponent"/> to configure behavior.
+/// Used by <see cref="Components.DocksCollectionDrawerComponent"/> to configure behavior.
 /// </summary>
 public sealed record DockPanelConfiguration
 {

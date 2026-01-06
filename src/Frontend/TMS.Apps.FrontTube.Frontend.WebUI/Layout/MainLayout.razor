@@ -64,7 +64,7 @@
             </div>
         }
 
-        <DockPanelsComponent
+        <DocksCollectionDrawerComponent
             @ref="_dockPanelsComponent"
             Id="FrontTubeDockView"
             Name="FrontTubeDockView"
@@ -77,9 +77,11 @@
             @bind-IsReady="_isDockPanelsReady"
             OnVisibleStateChangedAsync="@OnVisibleStateChangedAsync"
             OnActiveStateChangedAsync="@OnActiveStateChangedAsync">
-            <DockPanelContentComponent
+            
+            <DocksCollectionComponent
                 Type="DockPanelContentType.Row">
                 @* Main content area - Video Player - pinned and not closable *@
+                
                 <DockPanelComponent
                     Key="videoPlayer"
                     Title="Video Player"
@@ -100,14 +102,14 @@
                 </DockPanelComponent>
 
                 @* Right sidebar with grouped tabs organized in a column *@
-                <DockPanelContentComponent
+                <DocksCollectionComponent
                     Type="DockPanelContentType.Column"
                     Width="30">
                     @* Group 1: Channel Info and Videos - starts hidden, shown via JS when user clicks channel *@
                     @* Only render after first channel open to prevent recreation when closed *@
                     @if (ShouldRenderChannelGroup)
                     {
-                        <DockPanelContentComponent
+                        <DocksCollectionComponent
                             Type="DockPanelContentType.Group"
                             Height="25">
                             <DockPanelComponent
@@ -171,11 +173,11 @@
                                     </div>
                                 </ChildContent>
                             </DockPanelComponent>
-                        </DockPanelContentComponent>
+                        </DocksCollectionComponent>
                     }
 
                     @* Group 2: Search - separate group *@
-                    <DockPanelContentComponent
+                    <DocksCollectionComponent
                         Type="DockPanelContentType.Group"
                         Height="15">
                         <DockPanelComponent
@@ -201,10 +203,10 @@
                                 </div>
                             </ChildContent>
                         </DockPanelComponent>
-                    </DockPanelContentComponent>
+                    </DocksCollectionComponent>
 
                     @* Group 3: Queue + Local Playlists + Favorites + History *@
-                    <DockPanelContentComponent
+                    <DocksCollectionComponent
                         Type="DockPanelContentType.Group"
                         Height="20">
                         <DockPanelComponent
@@ -294,10 +296,10 @@
                                 </div>
                             </ChildContent>
                         </DockPanelComponent>
-                    </DockPanelContentComponent>
+                    </DocksCollectionComponent>
 
                     @* Group 4: Trending + Popular *@
-                    <DockPanelContentComponent
+                    <DocksCollectionComponent
                         Type="DockPanelContentType.Group"
                         Height="20">
                         <DockPanelComponent
@@ -343,10 +345,10 @@
                                 </div>
                             </ChildContent>
                         </DockPanelComponent>
-                    </DockPanelContentComponent>
+                    </DocksCollectionComponent>
 
                     @* Group 5: Video Description + Video Comments + Related Videos *@
-                    <DockPanelContentComponent
+                    <DocksCollectionComponent
                         Type="DockPanelContentType.Group"
                         Height="20">
                         <DockPanelComponent
@@ -414,10 +416,10 @@
                                 </div>
                             </ChildContent>
                         </DockPanelComponent>
-                    </DockPanelContentComponent>
-                </DockPanelContentComponent>
-            </DockPanelContentComponent>
-        </DockPanelsComponent>
+                    </DocksCollectionComponent>
+                </DocksCollectionComponent>
+            </DocksCollectionComponent>
+        </DocksCollectionDrawerComponent>
     </main>
 </div>
 

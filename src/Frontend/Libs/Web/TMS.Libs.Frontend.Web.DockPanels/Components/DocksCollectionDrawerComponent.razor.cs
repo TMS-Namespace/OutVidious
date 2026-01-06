@@ -1,6 +1,4 @@
-// Copyright (c) Argo Zhang (argo@163.com). All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-// Website: https://www.blazor.zone or https://argozhang.github.io/
+
 
 using BootstrapBlazor.Components;
 using Microsoft.AspNetCore.Components;
@@ -16,7 +14,7 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Components;
 /// <summary>
 /// Dock panels host component.
 /// </summary>
-public partial class DockPanelsComponent : IDisposable
+public partial class DocksCollectionDrawerComponent : IDisposable
 {
     private const int DefaultDelayBetweenOperationsMs = 30;
     private const int InitialDelayMs = 100;
@@ -195,7 +193,7 @@ public partial class DockPanelsComponent : IDisposable
     public EventCallback<(string Title, string? Key, bool IsActive)> OnActiveStateChangedAsync { get; set; }
 
     [CascadingParameter]
-    private DockPanelsComponent? DockPanelsParent { get; set; }
+    private DocksCollectionDrawerComponent? DockPanelsParent { get; set; }
 
     [Inject]
     private IConfiguration Configuration { get; set; } = null!;
@@ -223,7 +221,7 @@ public partial class DockPanelsComponent : IDisposable
     {
         base.OnInitialized();
 
-        _logger = LoggerFactory.CreateLogger<DockPanelsComponent>();
+        _logger = LoggerFactory.CreateLogger<DocksCollectionDrawerComponent>();
 
         var section = Configuration.GetSection(nameof(DockPanelOptions));
         _options = section.Exists() ? section.Get<DockPanelOptions>() ?? new DockPanelOptions() : new DockPanelOptions();
@@ -438,7 +436,7 @@ public partial class DockPanelsComponent : IDisposable
                     return panel;
                 }
             }
-            else if (component is DockPanelContentComponent content)
+            else if (component is DocksCollectionComponent content)
             {
                 var found = FindPanelComponent(content.Items, title, key);
                 if (found != null)
