@@ -127,16 +127,16 @@ html, body {
 }
 
 /* ========================================
-   DockViewV2 Configuration
+   Dock Panels Configuration
    ======================================== */
 
-/* DockView container - fill parent completely */
+/* Dock panels container - fill parent completely */
 .fronttube-dockview {
     height: 100% !important;
     width: 100% !important;
 }
 
-/* DockView panel content scrollable */
+/* Dock panel content scrollable */
 .dock-panel-content {
     padding: 1rem;
     height: 100%;
@@ -154,7 +154,7 @@ html, body {
    Theme-specific styles
    ======================================== */
 
-/* Dark theme - DockView tab and control buttons visibility */
+/* Dark theme - dock panel tab and control buttons visibility */
 .dark-theme .dv-default-tab-inactive-action-container,
 .dark-theme .dv-default-tab-action-container,
 .dark-theme .dv-groupview-floating-action-container,

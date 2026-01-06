@@ -13,10 +13,7 @@
              loading="lazy" />
     </div>
     
-    @if (Video is not null && Video.Duration.TotalSeconds > 0)
-    {
-        <div class="video-duration">@FormattedDuration</div>
-    }
+   
     
     @if (Video?.IsLive == true)
     {

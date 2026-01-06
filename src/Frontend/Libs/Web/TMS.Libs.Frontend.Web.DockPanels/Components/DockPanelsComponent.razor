@@ -1,0 +1,58 @@
+@inherits BootstrapModuleComponentBase
+@attribute [JSModuleAutoLoader("./_content/TMS.Libs.Frontend.Web.DockPanels/Components/DockPanelsComponent.razor.js", JSObjectReference = true)]
+
+<div
+    @attributes="@AdditionalAttributes"
+    id="@Id"
+    class="@ClassString">
+    <template>
+        @if (DockPanelsParent == null)
+        {
+            <DockPanelIconComponent
+                IconName="bar" />
+
+            <DockPanelIconComponent
+                IconName="close" />
+
+            <DockPanelIconComponent
+                IconName="lock" />
+
+            <DockPanelIconComponent
+                IconName="unlock" />
+
+            <DockPanelIconComponent
+                IconName="full" />
+
+            <DockPanelIconComponent
+                IconName="restore" />
+
+            <DockPanelIconComponent
+                IconName="float" />
+
+            <DockPanelIconComponent
+                IconName="dock" />
+
+            <DockPanelIconComponent
+                IconName="down" />
+
+            <DockPanelIconComponent
+                IconName="pin" />
+
+            <DockPanelIconComponent
+                IconName="pushpin" />
+
+            <DockPanelDropdownIconComponent
+                IconName="dropdown" />
+        }
+
+        <CascadingValue
+            Value="this"
+            IsFixed="true">
+            <CascadingValue
+                Value="_components"
+                IsFixed="true">
+                @ChildContent
+            </CascadingValue>
+        </CascadingValue>
+    </template>
+</div>

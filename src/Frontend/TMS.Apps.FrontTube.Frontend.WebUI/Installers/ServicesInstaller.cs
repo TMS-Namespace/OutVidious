@@ -1,5 +1,5 @@
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
-using TMS.Libs.Frontend.Web.DockViewWrapper;
+using TMS.Libs.Frontend.Web.DockPanels;
 
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Installers;
 
@@ -14,7 +14,7 @@ internal static class ServicesInstaller
     internal static IServiceCollection AddServices(this IServiceCollection services)
     {
         services.AddSingleton<Orchestrator>();
-        services.AddDockViewWrapper();
+        services.AddDockPanels();
         services.AddScoped<BrowserConsoleCapture>();
 
         return services;

@@ -1,310 +1,430 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
 @* MudBlazor providers for dialogs, snackbars, etc. - still needed for MudBlazor components *@
-<MudThemeProvider @bind-IsDarkMode="@_isDarkMode"
-                  Theme="_theme" />
+<MudThemeProvider
+    @bind-IsDarkMode="@_isDarkMode"
+    Theme="_theme" />
+
 <MudPopoverProvider />
+
 <MudDialogProvider />
+
 <MudSnackbarProvider />
 
-@* Simple container-based layout for DockViewV2 with theme support *@
-<div class="fronttube-app @(_isDarkMode ? "dark-theme" : "light-theme")"
-     data-bs-theme="@BootstrapTheme">
+@* Simple container-based layout for dock panels with theme support *@
+<div
+    class="fronttube-app @(_isDarkMode ? "dark-theme" : "light-theme")"
+    data-bs-theme="@BootstrapTheme">
     @* Header *@
-    <header class="fronttube-header">
-        <span class="fronttube-title">
+    <header
+        class="fronttube-header">
+        <span
+            class="fronttube-title">
             FrontTube
         </span>
-        
-        <div class="fronttube-header-actions">
-            <a href="/settings"
-               class="header-btn"
-               title="Settings">
-                <i class="fa-solid fa-gear"></i>
+
+        <div
+            class="fronttube-header-actions">
+            <a
+                href="/settings"
+                class="header-btn"
+                title="Settings">
+                <i
+                    class="fa-solid fa-gear"></i>
             </a>
-            
-            <button class="header-btn"
-                    title="@(_isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")"
-                    @onclick="ToggleDarkMode">
-                <i class="@(_isDarkMode ? "fa-solid fa-sun" : "fa-solid fa-moon")"></i>
+
+            <button
+                class="header-btn"
+                title="@(_isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")"
+                @onclick="ToggleDarkMode">
+                <i
+                    class="@(_isDarkMode ? "fa-solid fa-sun" : "fa-solid fa-moon")"></i>
             </button>
         </div>
     </header>
-    
-    @* Main content with DockViewV2 *@
-    <main class="fronttube-main">
-        @* Loading overlay shown while dockview is initializing *@
-        @if (!_isDockViewReady)
+
+    @* Main content with dock panels *@
+    <main
+        class="fronttube-main">
+        @* Loading overlay shown while dock panels are initializing *@
+        @if (!_isDockPanelsReady)
         {
-            <div class="fronttube-loading-overlay">
-                <MudProgressCircular Color="Color.Primary"
-                                     Indeterminate="true"
-                                     Size="Size.Large" />
-                <MudText Typo="Typo.body1"
-                         Class="mt-4">
+            <div
+                class="fronttube-loading-overlay">
+                <MudProgressCircular
+                    Color="Color.Primary"
+                    Indeterminate="true"
+                    Size="Size.Large" />
+
+                <MudText
+                    Typo="Typo.body1"
+                    Class="mt-4">
                     Loading...
                 </MudText>
             </div>
         }
-        
-        <DockViewV2Wrapper @ref="_dockViewWrapper"
-                           Id="FrontTubeDockView"
-                           Name="FrontTubeDockView"
-                           Class="@GetDockViewClass()"
-                           HiddenClass="fronttube-dockview-hidden"
-                           EnableLocalStorage="false"
-                           Theme="@DockViewTheme"
-                           GroupConfigurations="@_groupConfigurations"
-                           DefaultDrawerWidthPx="500"
-                           @bind-IsReady="_isDockViewReady"
-                           OnVisibleStateChangedAsync="@OnVisibleStateChangedAsync">
-            <DockViewContent Type="DockViewContentType.Row">
+
+        <DockPanelsComponent
+            @ref="_dockPanelsComponent"
+            Id="FrontTubeDockView"
+            Name="FrontTubeDockView"
+            class="@GetDockPanelsClass()"
+            HiddenClass="fronttube-dockview-hidden"
+            EnableLocalStorage="false"
+            Theme="@CurrentDockPanelTheme"
+            GroupConfigurations="@_groupConfigurations"
+            DefaultDrawerWidthPx="500"
+            @bind-IsReady="_isDockPanelsReady"
+            OnVisibleStateChangedAsync="@OnVisibleStateChangedAsync"
+            OnActiveStateChangedAsync="@OnActiveStateChangedAsync">
+            <DockPanelContentComponent
+                Type="DockPanelContentType.Row">
                 @* Main content area - Video Player - pinned and not closable *@
-                <DockViewComponent Key="videoPlayer"
-                                   Title="Video Player"
-                                   ShowClose="false"
-                                   Width="70">
+                <DockPanelComponent
+                    Key="videoPlayer"
+                    Title="Video Player"
+                    ShowClose="false"
+                    Width="70">
                     <TitleTemplate>
-                        <i class="fa-solid fa-play"></i>
+                        <i
+                            class="fa-solid fa-play"></i>
                         <span>Video Player</span>
                     </TitleTemplate>
+
                     <ChildContent>
-                        <div class="main-content-wrapper">
+                        <div
+                            class="main-content-wrapper">
                             @Body
                         </div>
                     </ChildContent>
-                </DockViewComponent>
+                </DockPanelComponent>
 
                 @* Right sidebar with grouped tabs organized in a column *@
-                <DockViewContent Type="DockViewContentType.Column"
-                                 Width="30">
-                    
+                <DockPanelContentComponent
+                    Type="DockPanelContentType.Column"
+                    Width="30">
                     @* Group 1: Channel Info and Videos - starts hidden, shown via JS when user clicks channel *@
-                    <DockViewContent Type="DockViewContentType.Group"
-                                     Height="25">
-                        <DockViewComponent Key="channel-about"
-                                           Title="About"
-                                           ShowClose="true">
-                            <TitleTemplate>
-                                <i class="fa-solid fa-info-circle"></i>
-                                <span> About</span>
-                            </TitleTemplate>
-                            <ChildContent>
-                                <div class="dock-panel-content">
-                                    @if (IsChannelAboutPanelActive)
-                                    {
-                                        <ChannelAboutComponent IsActive="@IsChannelAboutPanelActive"
-                                                               ChannelId="@ChannelId" />
-                                    }
-                                </div>
-                            </ChildContent>
-                        </DockViewComponent>
-                        
-                        <DockViewComponent Key="channel-videos"
-                                           Title="Videos"
-                                           ShowClose="true">
-                            <TitleTemplate>
-                                <i class="fa-solid fa-video"></i>
-                                <span> Videos</span>
-                            </TitleTemplate>
-                            <ChildContent>
-                                <div class="dock-panel-content">
-                                    @if (IsChannelVideosPanelActive)
-                                    {
-                                        <ChannelVideosComponent IsActive="@IsChannelVideosPanelActive"
-                                                                ChannelId="@ChannelId" />
-                                    }
-                                </div>
-                            </ChildContent>
-                        </DockViewComponent>
-                    </DockViewContent>
+                    @* Only render after first channel open to prevent recreation when closed *@
+                    @if (ShouldRenderChannelGroup)
+                    {
+                        <DockPanelContentComponent
+                            Type="DockPanelContentType.Group"
+                            Height="25">
+                            <DockPanelComponent
+                                @key="_channelAboutRenderVersion"
+                                GroupId="@ChannelDrawerGroupId"
+                                Key="@ChannelAboutPanelKey"
+                                Title="@ChannelAboutPanelTitle"
+                                Visible="@IsChannelAboutPanelVisible"
+                                IsActive="true"
+                                ShowClose="true"
+                                CloseMode="DockPanelCloseMode.HideDrawerTab"
+                                FloatType="DockPanelFloatType.Drawer"
+                                Direction="DockPanelDrawerDirection.Right"
+                                Drawer="@ChannelDrawerOptions">
+                                <TitleTemplate>
+                                    <i
+                                        class="fa-solid fa-info-circle"></i>
+                                    <span> About</span>
+                                </TitleTemplate>
+
+                                <ChildContent>
+                                    <div
+                                        class="dock-panel-content">
+                                        @if (IsChannelAboutPanelActive)
+                                        {
+                                            <ChannelAboutComponent
+                                                IsActive="@IsChannelAboutPanelActive"
+                                                ChannelId="@ChannelId" />
+                                        }
+                                    </div>
+                                </ChildContent>
+                            </DockPanelComponent>
+
+                            <DockPanelComponent
+                                GroupId="@ChannelDrawerGroupId"
+                                Key="@ChannelVideosPanelKey"
+                                Title="@ChannelVideosPanelTitle"
+                                Visible="@IsChannelVideosPanelVisible"
+                                ShowClose="true"
+                                CloseMode="DockPanelCloseMode.HideDrawerTab"
+                                FloatType="DockPanelFloatType.Drawer"
+                                Direction="DockPanelDrawerDirection.Right"
+                                Drawer="@ChannelDrawerOptions">
+                                <TitleTemplate>
+                                    <i
+                                        class="fa-solid fa-video"></i>
+                                    <span> Videos</span>
+                                </TitleTemplate>
+
+                                <ChildContent>
+                                    <div
+                                        class="dock-panel-content">
+                                        @if (IsChannelVideosPanelActive)
+                                        {
+                                            <ChannelVideosComponent
+                                                IsActive="@IsChannelVideosPanelActive"
+                                                ChannelId="@ChannelId" />
+                                        }
+                                    </div>
+                                </ChildContent>
+                            </DockPanelComponent>
+                        </DockPanelContentComponent>
+                    }
 
                     @* Group 2: Search - separate group *@
-                    <DockViewContent Type="DockViewContentType.Group"
-                                     Height="15">
-                        <DockViewComponent Key="search"
-                                           Title="Search"
-                                           ShowClose="true">
+                    <DockPanelContentComponent
+                        Type="DockPanelContentType.Group"
+                        Height="15">
+                        <DockPanelComponent
+                            Key="search"
+                            Title="Search"
+                            Visible="@IsPanelVisible("Search")"
+                            ShowClose="true">
                             <TitleTemplate>
-                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <i
+                                    class="fa-solid fa-magnifying-glass"></i>
                                 <span>Search</span>
                             </TitleTemplate>
+
                             <ChildContent>
-                                <div class="dock-panel-content">
-                                    <MudTextField T="string"
-                                                  Label="Search videos..."
-                                                  Variant="Variant.Outlined"
-                                                  Adornment="Adornment.End"
-                                                  AdornmentIcon="@Icons.Material.Filled.Search" />
+                                <div
+                                    class="dock-panel-content">
+                                    <MudTextField
+                                        T="string"
+                                        Label="Search videos..."
+                                        Variant="Variant.Outlined"
+                                        Adornment="Adornment.End"
+                                        AdornmentIcon="@Icons.Material.Filled.Search" />
                                 </div>
                             </ChildContent>
-                        </DockViewComponent>
-                    </DockViewContent>
+                        </DockPanelComponent>
+                    </DockPanelContentComponent>
 
                     @* Group 3: Queue + Local Playlists + Favorites + History *@
-                    <DockViewContent Type="DockViewContentType.Group"
-                                     Height="20">
-                        <DockViewComponent Key="queue"
-                                           Title="Queue"
-                                           ShowClose="true">
+                    <DockPanelContentComponent
+                        Type="DockPanelContentType.Group"
+                        Height="20">
+                        <DockPanelComponent
+                            Key="queue"
+                            Title="Queue"
+                            Visible="@IsPanelVisible("Queue")"
+                            ShowClose="true">
                             <TitleTemplate>
-                                <i class="fa-solid fa-list-ol"></i>
+                                <i
+                                    class="fa-solid fa-list-ol"></i>
                                 <span>Queue</span>
                             </TitleTemplate>
+
                             <ChildContent>
-                                <div class="dock-panel-content">
-                                    <MudText Typo="Typo.body1">
+                                <div
+                                    class="dock-panel-content">
+                                    <MudText
+                                        Typo="Typo.body1">
                                         Queue content will be added here.
                                     </MudText>
                                 </div>
                             </ChildContent>
-                        </DockViewComponent>
+                        </DockPanelComponent>
 
-                        <DockViewComponent Key="localPlaylists"
-                                           Title="Local Playlists"
-                                           ShowClose="true">
+                        <DockPanelComponent
+                            Key="localPlaylists"
+                            Title="Local Playlists"
+                            Visible="@IsPanelVisible("Local Playlists")"
+                            ShowClose="true">
                             <TitleTemplate>
-                                <i class="fa-solid fa-folder"></i>
+                                <i
+                                    class="fa-solid fa-folder"></i>
                                 <span>Local Playlists</span>
                             </TitleTemplate>
+
                             <ChildContent>
-                                <div class="dock-panel-content">
-                                    <MudText Typo="Typo.body1">
+                                <div
+                                    class="dock-panel-content">
+                                    <MudText
+                                        Typo="Typo.body1">
                                         Local playlists content will be added here.
                                     </MudText>
                                 </div>
                             </ChildContent>
-                        </DockViewComponent>
+                        </DockPanelComponent>
 
-                        <DockViewComponent Key="favorites"
-                                           Title="Favorites"
-                                           ShowClose="true">
+                        <DockPanelComponent
+                            Key="favorites"
+                            Title="Favorites"
+                            Visible="@IsPanelVisible("Favorites")"
+                            ShowClose="true">
                             <TitleTemplate>
-                                <i class="fa-solid fa-heart"></i>
+                                <i
+                                    class="fa-solid fa-heart"></i>
                                 <span>Favorites</span>
                             </TitleTemplate>
+
                             <ChildContent>
-                                <div class="dock-panel-content">
-                                    <MudText Typo="Typo.body1">
+                                <div
+                                    class="dock-panel-content">
+                                    <MudText
+                                        Typo="Typo.body1">
                                         Favorites content will be added here.
                                     </MudText>
                                 </div>
                             </ChildContent>
-                        </DockViewComponent>
+                        </DockPanelComponent>
 
-                        <DockViewComponent Key="history"
-                                           Title="History"
-                                           ShowClose="true">
+                        <DockPanelComponent
+                            Key="history"
+                            Title="History"
+                            Visible="@IsPanelVisible("History")"
+                            ShowClose="true">
                             <TitleTemplate>
-                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                <i
+                                    class="fa-solid fa-clock-rotate-left"></i>
                                 <span>History</span>
                             </TitleTemplate>
+
                             <ChildContent>
-                                <div class="dock-panel-content">
-                                    <MudText Typo="Typo.body1">
+                                <div
+                                    class="dock-panel-content">
+                                    <MudText
+                                        Typo="Typo.body1">
                                         Watch history content will be added here.
                                     </MudText>
                                 </div>
                             </ChildContent>
-                        </DockViewComponent>
-                    </DockViewContent>
+                        </DockPanelComponent>
+                    </DockPanelContentComponent>
 
                     @* Group 4: Trending + Popular *@
-                    <DockViewContent Type="DockViewContentType.Group"
-                                     Height="20">
-                        <DockViewComponent Key="trending"
-                                           Title="Trending"
-                                           ShowClose="true">
+                    <DockPanelContentComponent
+                        Type="DockPanelContentType.Group"
+                        Height="20">
+                        <DockPanelComponent
+                            Key="trending"
+                            Title="Trending"
+                            Visible="@IsPanelVisible("Trending")"
+                            ShowClose="true">
                             <TitleTemplate>
-                                <i class="fa-solid fa-fire"></i>
+                                <i
+                                    class="fa-solid fa-fire"></i>
                                 <span>Trending</span>
                             </TitleTemplate>
+
                             <ChildContent>
-                                <div class="dock-panel-content">
-                                    <MudText Typo="Typo.body1">
+                                <div
+                                    class="dock-panel-content">
+                                    <MudText
+                                        Typo="Typo.body1">
                                         Trending videos content will be added here.
                                     </MudText>
                                 </div>
                             </ChildContent>
-                        </DockViewComponent>
+                        </DockPanelComponent>
 
-                        <DockViewComponent Key="popular"
-                                           Title="Popular"
-                                           ShowClose="true">
+                        <DockPanelComponent
+                            Key="popular"
+                            Title="Popular"
+                            Visible="@IsPanelVisible("Popular")"
+                            ShowClose="true">
                             <TitleTemplate>
-                                <i class="fa-solid fa-chart-line"></i>
+                                <i
+                                    class="fa-solid fa-chart-line"></i>
                                 <span>Popular</span>
                             </TitleTemplate>
+
                             <ChildContent>
-                                <div class="dock-panel-content">
-                                    <MudText Typo="Typo.body1">
+                                <div
+                                    class="dock-panel-content">
+                                    <MudText
+                                        Typo="Typo.body1">
                                         Popular videos content will be added here.
                                     </MudText>
                                 </div>
                             </ChildContent>
-                        </DockViewComponent>
-                    </DockViewContent>
+                        </DockPanelComponent>
+                    </DockPanelContentComponent>
 
                     @* Group 5: Video Description + Video Comments + Related Videos *@
-                    <DockViewContent Type="DockViewContentType.Group"
-                                     Height="20">
-                        <DockViewComponent Key="videoDescription"
-                                           Title="Description"
-                                           ShowClose="true">
+                    <DockPanelContentComponent
+                        Type="DockPanelContentType.Group"
+                        Height="20">
+                        <DockPanelComponent
+                            Key="videoDescription"
+                            Title="Description"
+                            Visible="@IsPanelVisible("Description")"
+                            ShowClose="true">
                             <TitleTemplate>
-                                <i class="fa-solid fa-file-lines"></i>
+                                <i
+                                    class="fa-solid fa-file-lines"></i>
                                 <span>Description</span>
                             </TitleTemplate>
+
                             <ChildContent>
-                                <div class="dock-panel-content">
-                                    <MudText Typo="Typo.body1">
+                                <div
+                                    class="dock-panel-content">
+                                    <MudText
+                                        Typo="Typo.body1">
                                         Video description will be shown here when a video is playing.
                                     </MudText>
                                 </div>
                             </ChildContent>
-                        </DockViewComponent>
+                        </DockPanelComponent>
 
-                        <DockViewComponent Key="videoComments"
-                                           Title="Comments"
-                                           ShowClose="true">
+                        <DockPanelComponent
+                            Key="videoComments"
+                            Title="Comments"
+                            Visible="@IsPanelVisible("Comments")"
+                            ShowClose="true">
                             <TitleTemplate>
-                                <i class="fa-solid fa-comments"></i>
+                                <i
+                                    class="fa-solid fa-comments"></i>
                                 <span>Comments</span>
                             </TitleTemplate>
+
                             <ChildContent>
-                                <div class="dock-panel-content">
-                                    <MudText Typo="Typo.body1">
+                                <div
+                                    class="dock-panel-content">
+                                    <MudText
+                                        Typo="Typo.body1">
                                         Video comments will be shown here when a video is playing.
                                     </MudText>
                                 </div>
                             </ChildContent>
-                        </DockViewComponent>
+                        </DockPanelComponent>
 
-                        <DockViewComponent Key="relatedVideos"
-                                           Title="Related Videos"
-                                           ShowClose="true">
+                        <DockPanelComponent
+                            Key="relatedVideos"
+                            Title="Related Videos"
+                            Visible="@IsPanelVisible("Related Videos")"
+                            ShowClose="true">
                             <TitleTemplate>
-                                <i class="fa-solid fa-video"></i>
+                                <i
+                                    class="fa-solid fa-video"></i>
                                 <span>Related Videos</span>
                             </TitleTemplate>
+
                             <ChildContent>
-                                <div class="dock-panel-content">
-                                    <MudText Typo="Typo.body1">
+                                <div
+                                    class="dock-panel-content">
+                                    <MudText
+                                        Typo="Typo.body1">
                                         Related videos will be shown here when a video is playing.
                                     </MudText>
                                 </div>
                             </ChildContent>
-                        </DockViewComponent>
-                    </DockViewContent>
-
-                </DockViewContent>
-            </DockViewContent>
-        </DockViewV2Wrapper>
+                        </DockPanelComponent>
+                    </DockPanelContentComponent>
+                </DockPanelContentComponent>
+            </DockPanelContentComponent>
+        </DockPanelsComponent>
     </main>
 </div>
 
-<div id="blazor-error-ui">
+<div
+    id="blazor-error-ui">
     An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
+    <a
+        href=""
+        class="reload">Reload</a>
+    <a
+        class="dismiss">🗙</a>
 </div>
