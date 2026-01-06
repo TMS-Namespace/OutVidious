@@ -49,3 +49,647 @@ h1:focus {
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
+
+/* ========================================
+   FrontTube App Layout
+   ======================================== */
+
+/* Full viewport height for html/body */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* App container - full viewport flexbox */
+.fronttube-app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+/* Header - fixed height */
+.fronttube-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    min-height: 56px;
+    padding: 0 1rem;
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+    color: white;
+    flex-shrink: 0;
+}
+
+.fronttube-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.fronttube-header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.header-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: white;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.header-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.header-btn i {
+    font-size: 1.2rem;
+}
+
+/* Main content area - fill remaining space */
+.fronttube-main {
+    flex: 1;
+    height: calc(100vh - 56px);
+    overflow: hidden;
+}
+
+/* ========================================
+   DockViewV2 Configuration
+   ======================================== */
+
+/* DockView container - fill parent completely */
+.fronttube-dockview {
+    height: 100% !important;
+    width: 100% !important;
+}
+
+/* DockView panel content scrollable */
+.dock-panel-content {
+    padding: 1rem;
+    height: 100%;
+    overflow: auto;
+}
+
+/* Main content wrapper inside dock panel */
+.main-content-wrapper {
+    padding: 1rem;
+    height: 100%;
+    overflow: auto;
+}
+
+/* ========================================
+   Theme-specific styles
+   ======================================== */
+
+/* Dark theme - DockView tab and control buttons visibility */
+.dark-theme .dv-default-tab-inactive-action-container,
+.dark-theme .dv-default-tab-action-container,
+.dark-theme .dv-groupview-floating-action-container,
+.dark-theme .dv-tab-close-btn,
+.dark-theme .dv-panel-tab-content-close-btn,
+.dark-theme .dv-default-tab-action {
+    color: #e0e0e0 !important;
+    opacity: 0.9 !important;
+}
+
+.dark-theme .dv-default-tab-inactive-action-container:hover,
+.dark-theme .dv-default-tab-action-container:hover,
+.dark-theme .dv-tab-close-btn:hover,
+.dark-theme .dv-panel-tab-content-close-btn:hover,
+.dark-theme .dv-default-tab-action:hover {
+    color: #ffffff !important;
+    opacity: 1 !important;
+    background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Dark theme - DockView tab text */
+.dark-theme .dv-default-tab {
+    color: #e0e0e0 !important;
+}
+
+.dark-theme .dv-default-tab.dv-tab-active {
+    color: #ffffff !important;
+}
+
+/* Dark theme - dock panel content background */
+.dark-theme .dock-panel-content,
+.dark-theme .main-content-wrapper {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+/* Light theme - dock panel content background */
+.light-theme .dock-panel-content,
+.light-theme .main-content-wrapper {
+    background-color: #ffffff;
+    color: #212121;
+}
+
+/* Dark theme header styling */
+.dark-theme .fronttube-header {
+    background: linear-gradient(135deg, #1e1e1e 0%, #121212 100%);
+}
+
+/* Light theme header styling */
+.light-theme .fronttube-header {
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+}
+
+/* ========================================
+   DockView Dark Theme - Extended Coverage
+   Covers collapsed/unpinned sidebar elements
+   ======================================== */
+
+/* Dark theme - Overall DockView container backgrounds */
+.dark-theme .dv-split-view-container,
+.dark-theme .dv-pane-container,
+.dark-theme .dv-view-container,
+.dark-theme .dv-branch-node,
+.dark-theme .dv-groupview {
+    background-color: #1e1e1e !important;
+}
+
+/* Dark theme - Tabs and actions container (collapsed dock sidebar tabs) */
+.dark-theme .dv-tabs-and-actions-container {
+    background-color: #252526 !important;
+}
+
+/* Dark theme - Sash (resize handles between panels) */
+.dark-theme .dv-sash {
+    background-color: #3c3c3c !important;
+}
+
+.dark-theme .dv-sash:hover,
+.dark-theme .dv-sash:active {
+    background-color: #007acc !important;
+}
+
+/* Dark theme - Paneview header (collapsed dock panel headers) */
+.dark-theme .dv-pane-header,
+.dark-theme .dv-default-header {
+    background-color: #252526 !important;
+    color: #e0e0e0 !important;
+    border-color: #3c3c3c !important;
+}
+
+/* Dark theme - Content container */
+.dark-theme .dv-content-container {
+    background-color: #1e1e1e !important;
+}
+
+/* Dark theme - Floating/overlay containers */
+.dark-theme .dv-resize-container {
+    background-color: #1e1e1e !important;
+    border-color: #3c3c3c !important;
+}
+
+/* Dark theme - Tab elements in collapsed sidebar */
+.dark-theme .dv-tab,
+.dark-theme .dv-default-tab {
+    color: #e0e0e0 !important;
+}
+
+.dark-theme .dv-tab.dv-active-tab,
+.dark-theme .dv-default-tab.dv-tab-active {
+    background-color: #1e1e1e !important;
+    color: #ffffff !important;
+}
+
+.dark-theme .dv-tab.dv-inactive-tab,
+.dark-theme .dv-default-tab.dv-tab-inactive {
+    background-color: #2d2d2d !important;
+    color: #969696 !important;
+}
+
+/* Dark theme - Pane body (expanded content area of collapsed panels) */
+.dark-theme .dv-pane-body {
+    background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+}
+
+/* Dark theme - View elements */
+.dark-theme .dv-view {
+    background-color: #1e1e1e !important;
+}
+
+/* Dark theme - Separator borders */
+.dark-theme .dv-separator-border .dv-view:not(:first-child)::before {
+    background-color: #3c3c3c !important;
+}
+
+/* Dark theme - Scrollbars within DockView */
+.dark-theme .dv-split-view-container::-webkit-scrollbar,
+.dark-theme .dv-pane-container::-webkit-scrollbar,
+.dark-theme .dv-view::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.dark-theme .dv-split-view-container::-webkit-scrollbar-track,
+.dark-theme .dv-pane-container::-webkit-scrollbar-track,
+.dark-theme .dv-view::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+.dark-theme .dv-split-view-container::-webkit-scrollbar-thumb,
+.dark-theme .dv-pane-container::-webkit-scrollbar-thumb,
+.dark-theme .dv-view::-webkit-scrollbar-thumb {
+    background-color: #5a5a5a;
+    border-radius: 4px;
+}
+
+/* Dark theme - Watermark/empty state */
+.dark-theme .dv-watermark {
+    background-color: #1e1e1e !important;
+    color: #666666 !important;
+}
+
+/* ========================================
+   DockView Light Theme - Extended Coverage
+   ======================================== */
+
+/* Light theme - Overall DockView container backgrounds */
+.light-theme .dv-split-view-container,
+.light-theme .dv-pane-container,
+.light-theme .dv-view-container,
+.light-theme .dv-branch-node,
+.light-theme .dv-groupview {
+    background-color: #ffffff !important;
+}
+
+/* Light theme - Tabs and actions container */
+.light-theme .dv-tabs-and-actions-container {
+    background-color: #f3f3f3 !important;
+}
+
+/* Light theme - Sash (resize handles) */
+.light-theme .dv-sash {
+    background-color: #e0e0e0 !important;
+}
+
+.light-theme .dv-sash:hover,
+.light-theme .dv-sash:active {
+    background-color: #007acc !important;
+}
+
+/* Light theme - Paneview header */
+.light-theme .dv-pane-header,
+.light-theme .dv-default-header {
+    background-color: #f3f3f3 !important;
+    color: #333333 !important;
+    border-color: #e0e0e0 !important;
+}
+
+/* Light theme - Content container */
+.light-theme .dv-content-container {
+    background-color: #ffffff !important;
+}
+
+/* Light theme - Floating containers */
+.light-theme .dv-resize-container {
+    background-color: #ffffff !important;
+    border-color: #e0e0e0 !important;
+}
+
+/* Light theme - Tab elements */
+.light-theme .dv-tab,
+.light-theme .dv-default-tab {
+    color: #333333 !important;
+}
+
+.light-theme .dv-tab.dv-active-tab,
+.light-theme .dv-default-tab.dv-tab-active {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+.light-theme .dv-tab.dv-inactive-tab,
+.light-theme .dv-default-tab.dv-tab-inactive {
+    background-color: #ececec !important;
+    color: #666666 !important;
+}
+
+/* Light theme - Pane body */
+.light-theme .dv-pane-body {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+/* Light theme - View elements */
+.light-theme .dv-view {
+    background-color: #ffffff !important;
+}
+
+/* Light theme - Watermark */
+.light-theme .dv-watermark {
+    background-color: #ffffff !important;
+    color: #999999 !important;
+}
+
+/* ========================================
+   DockView CSS Variables Override
+   Override internal DockView theme variables
+   ======================================== */
+
+/* Dark theme CSS variables */
+.dark-theme {
+    --dv-group-view-background-color: #1e1e1e;
+    --dv-tabs-and-actions-container-background-color: #252526;
+    --dv-activegroup-visiblepanel-tab-background-color: #1e1e1e;
+    --dv-activegroup-hiddenpanel-tab-background-color: #2d2d2d;
+    --dv-inactivegroup-visiblepanel-tab-background-color: #2d2d2d;
+    --dv-inactivegroup-hiddenpanel-tab-background-color: #252526;
+    --dv-tab-divider-color: #252526;
+    --dv-activegroup-visiblepanel-tab-color: #ffffff;
+    --dv-activegroup-hiddenpanel-tab-color: #969696;
+    --dv-inactivegroup-visiblepanel-tab-color: #969696;
+    --dv-inactivegroup-hiddenpanel-tab-color: #626262;
+    --dv-separator-border: #3c3c3c;
+    --dv-paneview-header-border-color: #3c3c3c;
+    --dv-scrollbar-background-color: #5a5a5a;
+    --dv-paneview-active-outline-color: #007acc;
+}
+
+/* Light theme CSS variables */
+.light-theme {
+    --dv-group-view-background-color: #ffffff;
+    --dv-tabs-and-actions-container-background-color: #f3f3f3;
+    --dv-activegroup-visiblepanel-tab-background-color: #ffffff;
+    --dv-activegroup-hiddenpanel-tab-background-color: #ececec;
+    --dv-inactivegroup-visiblepanel-tab-background-color: #ffffff;
+    --dv-inactivegroup-hiddenpanel-tab-background-color: #ececec;
+    --dv-tab-divider-color: #ffffff;
+    --dv-activegroup-visiblepanel-tab-color: #333333;
+    --dv-activegroup-hiddenpanel-tab-color: #666666;
+    --dv-inactivegroup-visiblepanel-tab-color: #666666;
+    --dv-inactivegroup-hiddenpanel-tab-color: #999999;
+    --dv-separator-border: #e0e0e0;
+    --dv-paneview-header-border-color: #e0e0e0;
+    --dv-scrollbar-background-color: rgba(0, 0, 0, 0.25);
+    --dv-paneview-active-outline-color: #007acc;
+}
+
+/* ========================================
+   DockView Additional Element Coverage
+   ======================================== */
+
+/* Dark theme - Sash container (parent of resize handles) */
+.dark-theme .dv-sash-container {
+    background-color: transparent !important;
+}
+
+/* Dark theme - Any remaining view containers and wrappers */
+.dark-theme .dv-splitview,
+.dark-theme .dv-gridview,
+.dark-theme .dv-paneview,
+.dark-theme .dv-horizontal,
+.dark-theme .dv-vertical {
+    background-color: #1e1e1e !important;
+}
+
+/* Dark theme - Floating/popout windows */
+.dark-theme .dv-floating-box,
+.dark-theme .dv-popout-window {
+    background-color: #1e1e1e !important;
+}
+
+/* Dark theme - Drop target overlay */
+.dark-theme .dv-drop-target-dropzone {
+    background-color: rgba(0, 122, 204, 0.2) !important;
+    border-color: #007acc !important;
+}
+
+/* Dark theme - Global scrollbar styling for all DockView elements */
+.dark-theme [class*="dv-"]::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+    background-color: #1e1e1e;
+}
+
+.dark-theme [class*="dv-"]::-webkit-scrollbar-track {
+    background-color: #1e1e1e;
+}
+
+.dark-theme [class*="dv-"]::-webkit-scrollbar-thumb {
+    background-color: #5a5a5a;
+    border-radius: 5px;
+    border: 2px solid #1e1e1e;
+}
+
+.dark-theme [class*="dv-"]::-webkit-scrollbar-thumb:hover {
+    background-color: #787878;
+}
+
+.dark-theme [class*="dv-"]::-webkit-scrollbar-corner {
+    background-color: #1e1e1e;
+}
+
+/* Light theme - Sash container */
+.light-theme .dv-sash-container {
+    background-color: transparent !important;
+}
+
+/* Light theme - Any remaining view containers and wrappers */
+.light-theme .dv-splitview,
+.light-theme .dv-gridview,
+.light-theme .dv-paneview,
+.light-theme .dv-horizontal,
+.light-theme .dv-vertical {
+    background-color: #ffffff !important;
+}
+
+/* Light theme - Floating/popout windows */
+.light-theme .dv-floating-box,
+.light-theme .dv-popout-window {
+    background-color: #ffffff !important;
+}
+
+/* Light theme - Drop target overlay */
+.light-theme .dv-drop-target-dropzone {
+    background-color: rgba(0, 122, 204, 0.1) !important;
+    border-color: #007acc !important;
+}
+
+/* Light theme - Global scrollbar styling for all DockView elements */
+.light-theme [class*="dv-"]::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+    background-color: #f3f3f3;
+}
+
+.light-theme [class*="dv-"]::-webkit-scrollbar-track {
+    background-color: #f3f3f3;
+}
+
+.light-theme [class*="dv-"]::-webkit-scrollbar-thumb {
+    background-color: #c1c1c1;
+    border-radius: 5px;
+    border: 2px solid #f3f3f3;
+}
+
+.light-theme [class*="dv-"]::-webkit-scrollbar-thumb:hover {
+    background-color: #a1a1a1;
+}
+
+.light-theme [class*="dv-"]::-webkit-scrollbar-corner {
+    background-color: #f3f3f3;
+}
+
+/* ========================================
+   BootstrapBlazor [data-bs-theme] Integration
+   Additional selectors for BootstrapBlazor theme compatibility
+   ======================================== */
+
+/* Dark theme via data-bs-theme attribute */
+[data-bs-theme="dark"] {
+    --dv-group-view-background-color: #1e1e1e;
+    --dv-tabs-and-actions-container-background-color: #252526;
+    --dv-activegroup-visiblepanel-tab-background-color: #1e1e1e;
+    --dv-activegroup-hiddenpanel-tab-background-color: #2d2d2d;
+    --dv-inactivegroup-visiblepanel-tab-background-color: #2d2d2d;
+    --dv-inactivegroup-hiddenpanel-tab-background-color: #252526;
+    --dv-tab-divider-color: #252526;
+    --dv-activegroup-visiblepanel-tab-color: #ffffff;
+    --dv-activegroup-hiddenpanel-tab-color: #969696;
+    --dv-inactivegroup-visiblepanel-tab-color: #969696;
+    --dv-inactivegroup-hiddenpanel-tab-color: #626262;
+    --dv-separator-border: #3c3c3c;
+    --dv-paneview-header-border-color: #3c3c3c;
+    --dv-scrollbar-background-color: #5a5a5a;
+    --dv-paneview-active-outline-color: #007acc;
+}
+
+[data-bs-theme="dark"] .dv-split-view-container,
+[data-bs-theme="dark"] .dv-pane-container,
+[data-bs-theme="dark"] .dv-view-container,
+[data-bs-theme="dark"] .dv-branch-node,
+[data-bs-theme="dark"] .dv-groupview,
+[data-bs-theme="dark"] .dv-splitview,
+[data-bs-theme="dark"] .dv-gridview,
+[data-bs-theme="dark"] .dv-paneview {
+    background-color: #1e1e1e !important;
+}
+
+[data-bs-theme="dark"] .dv-tabs-and-actions-container {
+    background-color: #252526 !important;
+}
+
+[data-bs-theme="dark"] .dv-sash {
+    background-color: #3c3c3c !important;
+}
+
+[data-bs-theme="dark"] .dv-pane-header,
+[data-bs-theme="dark"] .dv-default-header {
+    background-color: #252526 !important;
+    color: #e0e0e0 !important;
+}
+
+[data-bs-theme="dark"] .dv-content-container,
+[data-bs-theme="dark"] .dv-pane-body,
+[data-bs-theme="dark"] .dv-view {
+    background-color: #1e1e1e !important;
+}
+
+/* Dark theme - All scrollbars via data-bs-theme */
+[data-bs-theme="dark"] [class*="dv-"]::-webkit-scrollbar,
+[data-bs-theme="dark"] ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+    background-color: #1e1e1e;
+}
+
+[data-bs-theme="dark"] [class*="dv-"]::-webkit-scrollbar-track,
+[data-bs-theme="dark"] ::-webkit-scrollbar-track {
+    background-color: #1e1e1e;
+}
+
+[data-bs-theme="dark"] [class*="dv-"]::-webkit-scrollbar-thumb,
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb {
+    background-color: #5a5a5a;
+    border-radius: 5px;
+    border: 2px solid #1e1e1e;
+}
+
+[data-bs-theme="dark"] [class*="dv-"]::-webkit-scrollbar-corner,
+[data-bs-theme="dark"] ::-webkit-scrollbar-corner {
+    background-color: #1e1e1e;
+}
+
+/* Dark theme - Body and main container background fallback */
+[data-bs-theme="dark"] .fronttube-app,
+[data-bs-theme="dark"] .fronttube-main,
+[data-bs-theme="dark"] .fronttube-dockview {
+    background-color: #1e1e1e !important;
+}
+
+/* Light theme via data-bs-theme attribute */
+[data-bs-theme="light"] {
+    --dv-group-view-background-color: #ffffff;
+    --dv-tabs-and-actions-container-background-color: #f3f3f3;
+    --dv-activegroup-visiblepanel-tab-background-color: #ffffff;
+    --dv-activegroup-hiddenpanel-tab-background-color: #ececec;
+    --dv-inactivegroup-visiblepanel-tab-background-color: #ffffff;
+    --dv-inactivegroup-hiddenpanel-tab-background-color: #ececec;
+    --dv-tab-divider-color: #ffffff;
+    --dv-activegroup-visiblepanel-tab-color: #333333;
+    --dv-activegroup-hiddenpanel-tab-color: #666666;
+    --dv-inactivegroup-visiblepanel-tab-color: #666666;
+    --dv-inactivegroup-hiddenpanel-tab-color: #999999;
+    --dv-separator-border: #e0e0e0;
+    --dv-paneview-header-border-color: #e0e0e0;
+    --dv-scrollbar-background-color: rgba(0, 0, 0, 0.25);
+    --dv-paneview-active-outline-color: #007acc;
+}
+
+[data-bs-theme="light"] .dv-split-view-container,
+[data-bs-theme="light"] .dv-pane-container,
+[data-bs-theme="light"] .dv-view-container,
+[data-bs-theme="light"] .dv-branch-node,
+[data-bs-theme="light"] .dv-groupview,
+[data-bs-theme="light"] .dv-splitview,
+[data-bs-theme="light"] .dv-gridview,
+[data-bs-theme="light"] .dv-paneview {
+    background-color: #ffffff !important;
+}
+
+[data-bs-theme="light"] .dv-tabs-and-actions-container {
+    background-color: #f3f3f3 !important;
+}
+
+[data-bs-theme="light"] .dv-sash {
+    background-color: #e0e0e0 !important;
+}
+
+[data-bs-theme="light"] .dv-pane-header,
+[data-bs-theme="light"] .dv-default-header {
+    background-color: #f3f3f3 !important;
+    color: #333333 !important;
+}
+
+[data-bs-theme="light"] .dv-content-container,
+[data-bs-theme="light"] .dv-pane-body,
+[data-bs-theme="light"] .dv-view {
+    background-color: #ffffff !important;
+}
+
+/* Light theme - Body and main container background fallback */
+[data-bs-theme="light"] .fronttube-app,
+[data-bs-theme="light"] .fronttube-main,
+[data-bs-theme="light"] .fronttube-dockview {
+    background-color: #ffffff !important;
+}
+
+

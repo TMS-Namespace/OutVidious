@@ -1,0 +1,19 @@
+@using BootstrapBlazor.Components
+
+<CascadingValue Value="this"
+                IsFixed="true">
+    <DockViewV2 @ref="_innerDockView"
+                Id="@Id"
+                Name="@Name"
+                Class="@GetCombinedClass()"
+                EnableLocalStorage="@EnableLocalStorage"
+                Theme="@Theme"
+                ShowLock="@ShowLock"
+                ShowMaximize="@ShowMaximize"
+                ShowFloat="@ShowFloat"
+                Version="@Version"
+                OnInitializedCallbackAsync="@HandleInitializedAsync"
+                OnVisibleStateChangedAsync="@HandleVisibleStateChangedAsync">
+        @ChildContent
+    </DockViewV2>
+</CascadingValue>

@@ -1,0 +1,31 @@
+@if (IsLoading)
+{
+    <MudPaper Class="pa-4 mb-4"
+              Elevation="1">
+        <MudStack Row="true"
+                  AlignItems="AlignItems.Center"
+                  Justify="Justify.Center">
+            <MudProgressCircular Size="Size.Large"
+                                 Indeterminate="true" />
+            <MudText Typo="Typo.h6"
+                     Class="ml-3">
+                Loading video...
+            </MudText>
+        </MudStack>
+    </MudPaper>
+}
+else if (ViewModel is not null)
+{
+    <VideoPlayerComponent ViewModel="ViewModel"
+                          ProviderBaseUrl="@ProviderBaseUrl" />
+}
+else
+{
+    <MudPaper Class="pa-4 mb-4"
+              Elevation="1">
+        <MudText Typo="Typo.body1"
+                 Color="Color.Secondary">
+            No video loaded. Enter a video ID and click Load Video.
+        </MudText>
+    </MudPaper>
+}

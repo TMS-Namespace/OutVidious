@@ -9,6 +9,8 @@
 
   <ItemGroup>
     <PackageReference Include="MudBlazor" />
+    <PackageReference Include="BootstrapBlazor" />
+    <PackageReference Include="BootstrapBlazor.DockView" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="Serilog.Sinks.File" />
@@ -16,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../Backend/TMS.Apps.FrontTube.Backend.Core/TMS.Apps.FrontTube.Backend.Core.csproj" />
+    <ProjectReference Include="../Libs/Web/TMS.Libs.Frontend.Web.DockViewWrapper/TMS.Libs.Frontend.Web.DockViewWrapper.csproj" />
   </ItemGroup>
 
     <PropertyGroup>

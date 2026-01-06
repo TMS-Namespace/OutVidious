@@ -50,20 +50,23 @@ public partial class VideoThumbnailComponentBase : ComponentBase
 
     protected string FormattedDuration => FormatDuration(Video?.Duration ?? TimeSpan.Zero);
 
-    protected string ChannelUrl => Video?.Channel?.RemoteIdentity is null
-        ? "#"
-        : Video.Channel.RemoteIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
-
     protected string CardStyle => Width.HasValue 
         ? $"width: {Width}px; cursor: pointer;" 
         : "cursor: pointer;";
 
-    protected async Task OnChannelClick()
+    /// <summary>
+    /// Handles click on the channel name.
+    /// Opens the channel in the Channel dock panel.
+    /// </summary>
+    protected void OnChannelClick()
     {
-        if (Video?.Channel?.RemoteIdentity is not null)
+        var channelId = Video?.Channel?.RemoteIdentity?.RemoteId;
+        if (string.IsNullOrWhiteSpace(channelId))
         {
-            await OnChannelClicked.InvokeAsync(Video.Channel.RemoteIdentity.GetProxyUrl(Orchestrator.Super.Proxy));
+            return;
         }
+
+        Orchestrator.OpenChannel(channelId);
     }
 
     private string GetBestThumbnail()

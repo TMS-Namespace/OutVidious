@@ -9,7 +9,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link href="_content/BootstrapBlazor/css/bootstrap.blazor.bundle.min.css" rel="stylesheet" />
+    <link href="_content/BootstrapBlazor/css/motronic.min.css" rel="stylesheet" />
+    @* DockView CSS is loaded dynamically by the DockViewV2 component via dockview-bb.css (which imports dockview.css) *@
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="TMS.Apps.FrontTube.Frontend.WebUI.styles.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
@@ -19,6 +23,8 @@
 <body>
     <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="_content/BootstrapBlazor/js/bootstrap.blazor.bundle.min.js"></script>
+    @* DockView JS is loaded automatically by the DockViewV2 Blazor component *@
     <script src="_framework/blazor.web.js"></script>
     
     @* Shaka Player for DASH adaptive streaming (1080p+, separate audio/video) *@

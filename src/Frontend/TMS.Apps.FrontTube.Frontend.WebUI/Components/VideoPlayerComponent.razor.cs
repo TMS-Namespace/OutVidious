@@ -249,14 +249,19 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
         return string.IsNullOrWhiteSpace(proxyUrl) ? null : proxyUrl;
     }
 
-    private string GetAuthorUrl()
+    /// <summary>
+    /// Handles click on the channel link.
+    /// Opens the channel in the Channel dock panel without navigation.
+    /// </summary>
+    private void OnChannelLinkClicked()
     {
-        if (ViewModel?.Channel?.RemoteIdentity is null)
+        var channelId = ViewModel?.Channel?.RemoteIdentity?.RemoteId;
+        if (string.IsNullOrWhiteSpace(channelId))
         {
-            return "#";
+            return;
         }
 
-        return ViewModel.Channel.RemoteIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
+        Orchestrator.OpenChannel(channelId);
     }
 
     private static string FormatViewCount(long? count)

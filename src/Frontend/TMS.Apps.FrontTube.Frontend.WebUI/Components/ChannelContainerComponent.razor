@@ -1,0 +1,152 @@
+@if (IsActive)
+{
+    <MudContainer
+        MaxWidth="MaxWidth.ExtraLarge"
+        Class="pa-4">
+        @if (IsInitialLoading)
+        {
+            <MudStack
+                AlignItems="AlignItems.Center"
+                Justify="Justify.Center"
+                Class="channel-loading">
+                <MudProgressCircular
+                    Indeterminate="true"
+                    Size="Size.Large"
+                    Color="Color.Primary" />
+
+                <MudText
+                    Typo="Typo.body1"
+                    Class="mt-2">
+                    Loading channel...
+                </MudText>
+            </MudStack>
+        }
+        else if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <MudAlert
+                Severity="Severity.Error"
+                Class="ma-4">
+                @ErrorMessage
+            </MudAlert>
+        }
+        else if (ViewModel is not null)
+        {
+            <!-- Channel Header -->
+            <MudStack
+                Spacing="2"
+                Class="channel-header">
+                @if (BannerUrl is not null)
+                {
+                    <MudPaper
+                        Elevation="0"
+                        Class="channel-banner">
+                        <ImageComponent
+                            ImageUrl="@BannerUrl"
+                            Alt="Channel Banner"
+                            Class="channel-banner-image"
+                            ObjectFit="ObjectFit.Cover"
+                            UseAsyncLoading="false" />
+                    </MudPaper>
+                }
+
+                <MudPaper
+                    Elevation="1"
+                    Class="pa-4 channel-info-panel">
+                    <MudStack
+                        Row="true"
+                        AlignItems="AlignItems.Center"
+                        Spacing="3"
+                        Wrap="Wrap.Wrap"
+                        Class="channel-info-stack">
+                        <MudAvatar
+                            Size="Size.Large"
+                            Class="channel-avatar">
+                            <ImageComponent
+                                ImageUrl="@AvatarUrl"
+                                Alt="@ViewModel.Name"
+                                ObjectFit="ObjectFit.Cover"
+                                UseAsyncLoading="false" />
+                        </MudAvatar>
+
+                        <MudStack>
+                            <MudText
+                                Typo="Typo.h4"
+                                Class="channel-name">
+                                @ViewModel.Name
+                            </MudText>
+
+                            <MudText
+                                Typo="Typo.body2"
+                                Color="Color.Secondary">
+                                @ViewModel.SubscriberCount.ToString("N0") subscribers
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+            </MudStack>
+
+            <!-- Tab Navigation -->
+            @if (Tabs.Count > 0)
+            {
+                <MudTabs
+                    @bind-ActivePanelIndex="SelectedTabIndex"
+                    Elevation="0"
+                    ApplyEffectsToContainer="true"
+                    Class="channel-tabs">
+                    @foreach (var tabId in Tabs)
+                    {
+                        <MudTabPanel
+                            Text="@GetTabLabel(tabId)"
+                            ID="@tabId" />
+                    }
+                </MudTabs>
+            }
+
+            @if (IsAboutTabSelected)
+            {
+                <MudPaper
+                    Elevation="0"
+                    Class="pa-4 channel-about">
+                    @if (HasChannelDescription)
+                    {
+                        <MudText
+                            Typo="Typo.body2"
+                            Class="channel-description">
+                            @ChannelDescriptionMarkup
+                        </MudText>
+                    }
+                </MudPaper>
+            }
+            else
+            {
+                <VideosGridComponent
+                    Videos="@ViewModel.Videos"
+                    ShowChannelName="false"
+                    IsLoading="@ViewModel.IsLoading"
+                    IsLoadingMore="@ViewModel.IsLoadingMore"
+                    HasMore="@ViewModel.HasMore"
+                    OnVideoClick="HandleVideoClick"
+                    OnLoadMore="HandleLoadMore" />
+            }
+        }
+        else
+        {
+            <MudStack
+                AlignItems="AlignItems.Center"
+                Justify="Justify.Center"
+                Class="channel-empty">
+                <MudIcon
+                    Icon="@Icons.Material.Filled.PersonSearch"
+                    Size="Size.Large"
+                    Color="Color.Secondary" />
+
+                <MudText
+                    Typo="Typo.body1"
+                    Color="Color.Secondary"
+                    Class="mt-2">
+                    No channel loaded. Search for a channel or click on a channel link.
+                </MudText>
+            </MudStack>
+        }
+    </MudContainer>
+}

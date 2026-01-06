@@ -2,26 +2,23 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-  
   <ItemGroup>
     <!-- Plugins -->
     <PackageVersion Include="System.Composition" Version="9.0.10" />
     <PackageVersion Include="System.Composition.AttributedModel" Version="9.0.10" />
     <PackageVersion Include="System.Composition.Hosting" Version="9.0.10" />
     <PackageVersion Include="McMaster.NETCore.Plugins" Version="2.0.0" />
-
     <!-- Icons -->
     <PackageVersion Include="MimeTypeCore" Version="2.0.4" />
-
     <!-- Cache -->
     <PackageVersion Include="BitFaster.Caching" Version="2.5.4" />
-        <PackageVersion Include="System.IO.Hashing" Version="9.0.0" />
-        <PackageVersion Include="TrackableEntities.EF.Core" Version="8.0.0" />
-    
+    <PackageVersion Include="System.IO.Hashing" Version="9.0.0" />
+    <PackageVersion Include="TrackableEntities.EF.Core" Version="8.0.0" />
     <!-- UI Components -->
-    <PackageVersion Include="BlazorMonaco" Version="3.3.0" />
     <PackageVersion Include="MudBlazor" Version="8.13.0" />
-    
+    <PackageVersion Include="BootstrapBlazor" Version="10.2.0" />
+    <PackageVersion Include="BootstrapBlazor.DockView" Version="10.0.2" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="8.0.22" />
     <!-- Logging -->
     <PackageVersion Include="Serilog" Version="4.3.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="8.0.3" />
@@ -29,24 +26,18 @@
     <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.10" />
-
     <!-- Security and Encryption -->
     <PackageVersion Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
-    
     <!-- Serialization -->
     <PackageVersion Include="System.Text.Json" Version="8.0.5" />
-    
     <!-- Polly for Retry Policies -->
     <PackageVersion Include="Polly" Version="8.5.0" />
     <PackageVersion Include="Polly.Extensions" Version="8.5.0" />
-    
     <!-- Text -->
     <PackageVersion Include="UTF.Unknown" Version="2.6.0" />
-
     <!-- HTTP -->
     <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="8.0.0" />
-
     <!-- Entity Framework Core -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.11" />
@@ -55,7 +46,6 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
     <PackageVersion Include="EFCoreSecondLevelCacheInterceptor" Version="5.3.6" />
     <PackageVersion Include="EFCoreSecondLevelCacheInterceptor.MemoryCache" Version="5.3.6" />
-
     <!-- Testing -->
     <PackageVersion Include="xunit" Version="2.9.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />

@@ -1,31 +1,22 @@
-using System.Net;
 using Microsoft.AspNetCore.Components;
-using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Pages;
 
 /// <summary>
-/// Page for displaying a YouTube channel's content.
+/// Redirect page for channel URLs.
+/// Opens the channel in the dock panel and navigates back to the home page.
 /// </summary>
-public partial class ChannelPage : ComponentBase, IDisposable
+public partial class ChannelPage : ComponentBase
 {
-    private const string AboutTabId = "about";
-    private const string AboutTabLabel = "About";
-    private int _selectedTabIndex;
-    private bool _isDisposed;
-    private bool _initialLoadComplete;
-    private string? _loadedChannelId;
-    private CancellationTokenSource? _cts;
-
     [Inject]
     private Orchestrator Orchestrator { get; set; } = null!;
 
     [Inject]
-    private ILogger<ChannelPage> Logger { get; set; } = null!;
+    private NavigationManager NavigationManager { get; set; } = null!;
 
     [Inject]
-    private NavigationManager NavigationManager { get; set; } = null!;
+    private ILogger<ChannelPage> Logger { get; set; } = null!;
 
     /// <summary>
     /// The channel ID from the route.
@@ -33,275 +24,17 @@ public partial class ChannelPage : ComponentBase, IDisposable
     [Parameter]
     public string? ChannelId { get; set; }
 
-    protected Channel? ViewModel { get; private set; }
-
-    protected bool IsInitialLoading { get; private set; } = true;
-
-    protected string? ErrorMessage { get; private set; }
-
-    protected string PageTitle => ViewModel?.Name ?? "Channel";
-
-    protected int SelectedTabIndex
+    protected override void OnParametersSet()
     {
-        get => _selectedTabIndex;
-        set
+        if (!string.IsNullOrWhiteSpace(ChannelId))
         {
-            if (_selectedTabIndex != value)
-            {
-                _selectedTabIndex = value;
-                
-                // Only trigger tab change after initial load is complete
-                // to avoid clearing videos when MudTabs first binds
-                if (_initialLoadComplete)
-                {
-                    _ = OnTabChangedAsync(value);
-                }
-            }
+            Logger.LogDebug("[{MethodName}] Opening channel '{ChannelId}' in dock panel.", nameof(OnParametersSet), ChannelId);
+            
+            // Trigger channel opening in the dock panel via Orchestrator
+            Orchestrator.OpenChannel(ChannelId);
+            
+            // Navigate back to home page (the channel will be shown in the dock panel)
+            NavigationManager.NavigateTo("/", replace: true);
         }
-    }
-
-    protected string? AvatarUrl => GetBestAvatar();
-
-    protected string? BannerUrl => GetBestBanner();
-
-    protected IReadOnlyList<string> Tabs
-    {
-        get
-        {
-            if (ViewModel is null)
-            {
-                return [];
-            }
-
-            var tabs = ViewModel.AvailableTabs.ToList();
-
-            if (!tabs.Any(t => string.Equals(t, AboutTabId, StringComparison.OrdinalIgnoreCase)))
-            {
-                tabs.Add(AboutTabId);
-            }
-
-            return tabs;
-        }
-    }
-
-    protected bool IsAboutTabSelected
-    {
-        get
-        {
-            var tabId = GetSelectedTabId();
-            return tabId != null && string.Equals(tabId, AboutTabId, StringComparison.OrdinalIgnoreCase);
-        }
-    }
-
-    protected bool HasChannelDescription => !string.IsNullOrWhiteSpace(ViewModel?.DescriptionHtml)
-        || !string.IsNullOrWhiteSpace(ViewModel?.Description);
-
-    protected MarkupString ChannelDescriptionMarkup
-    {
-        get
-        {
-            if (ViewModel is null)
-            {
-                return new MarkupString(string.Empty);
-            }
-
-            if (!string.IsNullOrWhiteSpace(ViewModel.DescriptionHtml))
-            {
-                return new MarkupString(ViewModel.DescriptionHtml);
-            }
-
-            if (string.IsNullOrWhiteSpace(ViewModel.Description))
-            {
-                return new MarkupString(string.Empty);
-            }
-
-            var encoded = WebUtility.HtmlEncode(ViewModel.Description);
-            var withLineBreaks = encoded
-                .Replace("\r\n", "<br />")
-                .Replace("\n", "<br />");
-
-            return new MarkupString(withLineBreaks);
-        }
-    }
-
-    protected override void OnInitialized()
-    {
-        _cts = new CancellationTokenSource();
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        // Only load if channel ID changed or hasn't been loaded yet
-        if (!string.IsNullOrWhiteSpace(ChannelId) && 
-            _cts is not null && 
-            _loadedChannelId != ChannelId)
-        {
-            await LoadChannelAsync(ChannelId);
-        }
-    }
-
-    private async Task LoadChannelAsync(string channelId)
-    {
-        if (_cts is null)
-        {
-            return;
-        }
-
-        IsInitialLoading = true;
-        _initialLoadComplete = false;
-        ErrorMessage = null;
-        StateHasChanged();
-
-        try
-        {
-            Logger.LogDebug("Loading channel: {ChannelId}", channelId);
-
-            // Dispose previous ViewModel if any
-            if (ViewModel is not null)
-            {
-                ViewModel.StateChanged -= OnViewModelStateChanged;
-                ViewModel.Dispose();
-            }
-
-            ViewModel = await Orchestrator.Super.GetChannelByIdAsync(channelId, _cts.Token);
-
-            if (ViewModel is null)
-            {
-                ErrorMessage = $"Channel '{channelId}' not found.";
-                Logger.LogWarning("Channel not found: {ChannelId}", channelId);
-                return;
-            }
-
-            ViewModel.StateChanged += OnViewModelStateChanged;
-
-            Logger.LogDebug("Channel loaded: {ChannelName}", ViewModel.Name);
-
-            // Mark initial load complete and show content - videos will load in background
-            _initialLoadComplete = true;
-            _loadedChannelId = channelId;
-            IsInitialLoading = false;
-            StateHasChanged();
-
-            // Load initial videos in background (don't await - let UI render first)
-            _ = ViewModel.LoadInitialVideosAsync(_cts.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            Logger.LogDebug("Channel loading cancelled for: {ChannelId}", channelId);
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = "Failed to load channel. Please try again.";
-            Logger.LogError(ex, "Error loading channel: {ChannelId}", channelId);
-            IsInitialLoading = false;
-            StateHasChanged();
-        }
-    }
-
-    protected async Task HandleVideoClick(Video video)
-    {
-        var watchUrl = video.RemoteIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
-        NavigationManager.NavigateTo(watchUrl);
-        await Task.CompletedTask;
-    }
-
-    protected async Task HandleLoadMore()
-    {
-        if (_cts is not null && ViewModel is not null)
-        {
-            await ViewModel.LoadMoreVideosAsync(_cts.Token);
-        }
-    }
-
-    private async Task OnTabChangedAsync(int tabIndex)
-    {
-        var tabs = Tabs;
-
-        if (ViewModel is null || 
-            tabIndex < 0 || 
-            tabIndex >= tabs.Count ||
-            _cts is null)
-        {
-            return;
-        }
-
-        var tabId = tabs[tabIndex];
-
-        if (string.Equals(tabId, AboutTabId, StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        await ViewModel.SelectTabAsync(tabId, _cts.Token);
-    }
-
-    private void OnViewModelStateChanged(object? sender, EventArgs e)
-    {
-        InvokeAsync(StateHasChanged);
-    }
-
-    private string? GetBestAvatar()
-    {
-        var avatarIdentity = ViewModel?.GetBestAvatarIdentity();
-        if (avatarIdentity is null)
-        {
-            return null;
-        }
-
-        var proxyUrl = avatarIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
-        return string.IsNullOrWhiteSpace(proxyUrl) ? null : proxyUrl;
-    }
-
-    private string? GetBestBanner()
-    {
-        var bannerIdentity = ViewModel?.GetBestBannerIdentity();
-        if (bannerIdentity is null)
-        {
-            return null;
-        }
-
-        var proxyUrl = bannerIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
-        return string.IsNullOrWhiteSpace(proxyUrl) ? null : proxyUrl;
-    }
-
-    private string? GetSelectedTabId()
-    {
-        var tabs = Tabs;
-
-        if (_selectedTabIndex < 0 || _selectedTabIndex >= tabs.Count)
-        {
-            return null;
-        }
-
-        return tabs[_selectedTabIndex];
-    }
-
-    protected static string GetTabLabel(string tabId)
-    {
-        if (string.Equals(tabId, AboutTabId, StringComparison.OrdinalIgnoreCase))
-        {
-            return AboutTabLabel;
-        }
-
-        return tabId;
-    }
-
-    public void Dispose()
-    {
-        if (_isDisposed)
-        {
-            return;
-        }
-
-        if (ViewModel is not null)
-        {
-            ViewModel.StateChanged -= OnViewModelStateChanged;
-            ViewModel.Dispose();
-        }
-
-        _cts?.Cancel();
-        _cts?.Dispose();
-
-        _isDisposed = true;
     }
 }

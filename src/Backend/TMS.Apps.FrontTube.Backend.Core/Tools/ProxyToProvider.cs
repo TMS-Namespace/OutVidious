@@ -398,11 +398,22 @@ public sealed partial class ProxyToProvider
                 await response.Content.CopyToAsync(context.Response.Body, cancellationToken);
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Client disconnected - this is expected behavior, not an error.
+            // Don't try to modify the response as it may have already started.
+            _logger.LogDebug("[{MethodName}] Client disconnected during video proxy streaming.", nameof(ProxyVideoPlaybackAsync));
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to proxy video playback: {Url}", proxyUrl);
-            context.Response.StatusCode = 500;
-            await context.Response.WriteAsync($"Failed to proxy video: {ex.Message}", cancellationToken);
+            _logger.LogError(ex, "[{MethodName}] Failed to proxy video playback: '{Url}'.", nameof(ProxyVideoPlaybackAsync), proxyUrl);
+            
+            // Only set error response if the response hasn't started yet
+            if (!context.Response.HasStarted)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync($"Failed to proxy video: {ex.Message}", CancellationToken.None);
+            }
         }
     }
 

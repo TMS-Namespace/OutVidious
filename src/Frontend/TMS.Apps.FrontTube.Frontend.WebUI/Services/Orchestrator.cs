@@ -12,6 +12,16 @@ public sealed class Orchestrator : IDisposable
     private readonly Lazy<Super> _super;
     private bool _disposed;
 
+    /// <summary>
+    /// Event raised when a channel should be opened in the dock panel.
+    /// </summary>
+    public event EventHandler<string>? ChannelOpenRequested;
+
+    /// <summary>
+    /// Gets or sets the currently active channel ID.
+    /// </summary>
+    public string? ActiveChannelId { get; private set; }
+
     public Orchestrator(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
@@ -45,6 +55,22 @@ public sealed class Orchestrator : IDisposable
     /// Gets the video provider base URL.
     /// </summary>
     public string ProviderBaseUrl => Super.Proxy.ProviderBaseUrl.ToString().TrimEnd('/');
+
+    /// <summary>
+    /// Requests to open a channel in the dock panel.
+    /// </summary>
+    /// <param name="channelId">The channel ID to open.</param>
+    public void OpenChannel(string channelId)
+    {
+        if (string.IsNullOrWhiteSpace(channelId))
+        {
+            return;
+        }
+
+        _logger.LogDebug("[{MethodName}] Opening channel '{ChannelId}'.", nameof(OpenChannel), channelId);
+        ActiveChannelId = channelId;
+        ChannelOpenRequested?.Invoke(this, channelId);
+    }
 
     public void Dispose()
     {

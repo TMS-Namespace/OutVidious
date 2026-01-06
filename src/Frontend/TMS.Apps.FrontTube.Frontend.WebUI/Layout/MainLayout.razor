@@ -1,70 +1,300 @@
 ﻿@inherits LayoutComponentBase
 
-<MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="_theme" />
+@* MudBlazor providers for dialogs, snackbars, etc. - still needed for MudBlazor components *@
+<MudThemeProvider @bind-IsDarkMode="@_isDarkMode"
+                  Theme="_theme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudLayout>
-    <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Class="ml-3">FrontTube</MudText>
-        <MudSpacer />
-        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" 
-                       Color="Color.Inherit" 
-                       OnClick="@ToggleDarkMode" />
-        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" 
-                       Color="Color.Inherit" 
-                       Href="https://github.com/TMS-Namespace/FrontTube" 
-                       Target="_blank" />
-    </MudAppBar>
+@* Simple container-based layout for DockViewV2 with theme support *@
+<div class="fronttube-app @(_isDarkMode ? "dark-theme" : "light-theme")"
+     data-bs-theme="@BootstrapTheme">
+    @* Header *@
+    <header class="fronttube-header">
+        <span class="fronttube-title">
+            FrontTube
+        </span>
+        
+        <div class="fronttube-header-actions">
+            <a href="/settings"
+               class="header-btn"
+               title="Settings">
+                <i class="fa-solid fa-gear"></i>
+            </a>
+            
+            <button class="header-btn"
+                    title="@(_isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")"
+                    @onclick="ToggleDarkMode">
+                <i class="@(_isDarkMode ? "fa-solid fa-sun" : "fa-solid fa-moon")"></i>
+            </button>
+        </div>
+    </header>
     
-    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
-        <NavMenu />
-    </MudDrawer>
-    
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-4">
-            @Body
-        </MudContainer>
-    </MudMainContent>
-</MudLayout>
+    @* Main content with DockViewV2 *@
+    <main class="fronttube-main">
+        @* Loading overlay shown while dockview is initializing *@
+        @if (!_isDockViewReady)
+        {
+            <div class="fronttube-loading-overlay">
+                <MudProgressCircular Color="Color.Primary"
+                                     Indeterminate="true"
+                                     Size="Size.Large" />
+                <MudText Typo="Typo.body1"
+                         Class="mt-4">
+                    Loading...
+                </MudText>
+            </div>
+        }
+        
+        <DockViewV2Wrapper @ref="_dockViewWrapper"
+                           Id="FrontTubeDockView"
+                           Name="FrontTubeDockView"
+                           Class="@GetDockViewClass()"
+                           HiddenClass="fronttube-dockview-hidden"
+                           EnableLocalStorage="false"
+                           Theme="@DockViewTheme"
+                           GroupConfigurations="@_groupConfigurations"
+                           DefaultDrawerWidthPx="500"
+                           @bind-IsReady="_isDockViewReady"
+                           OnVisibleStateChangedAsync="@OnVisibleStateChangedAsync">
+            <DockViewContent Type="DockViewContentType.Row">
+                @* Main content area - Video Player - pinned and not closable *@
+                <DockViewComponent Key="videoPlayer"
+                                   Title="Video Player"
+                                   ShowClose="false"
+                                   Width="70">
+                    <TitleTemplate>
+                        <i class="fa-solid fa-play"></i>
+                        <span>Video Player</span>
+                    </TitleTemplate>
+                    <ChildContent>
+                        <div class="main-content-wrapper">
+                            @Body
+                        </div>
+                    </ChildContent>
+                </DockViewComponent>
+
+                @* Right sidebar with grouped tabs organized in a column *@
+                <DockViewContent Type="DockViewContentType.Column"
+                                 Width="30">
+                    
+                    @* Group 1: Channel - starts hidden, shown via JS when user clicks channel *@
+                    <DockViewContent Type="DockViewContentType.Group"
+                                     Height="25">
+                        <DockViewComponent Key="channel"
+                                           Title="Channel"
+                                           ShowClose="true">
+                            <TitleTemplate>
+                                <i class="fa-solid fa-user"></i>
+                                <span> Channel</span>
+                            </TitleTemplate>
+                            <ChildContent>
+                                <div class="dock-panel-content">
+                                    @if (IsChannelPanelActive)
+                                    {
+                                        <ChannelContainerComponent IsActive="@IsChannelPanelActive"
+                                                                   ChannelId="@ChannelId" />
+                                    }
+                                </div>
+                            </ChildContent>
+                        </DockViewComponent>
+                         <DockViewComponent Key="about"
+                                           Title="About"
+                                           ShowClose="true">
+                            <TitleTemplate>
+                                <i class="fa-solid fa-user"></i>
+                                <span> About</span>
+                            </TitleTemplate>
+                        </DockViewComponent>
+                    </DockViewContent>
+
+                    @* Group 2: Search - separate group *@
+                    <DockViewContent Type="DockViewContentType.Group"
+                                     Height="15">
+                        <DockViewComponent Key="search"
+                                           Title="Search"
+                                           ShowClose="true">
+                            <TitleTemplate>
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <span>Search</span>
+                            </TitleTemplate>
+                            <ChildContent>
+                                <div class="dock-panel-content">
+                                    <MudTextField T="string"
+                                                  Label="Search videos..."
+                                                  Variant="Variant.Outlined"
+                                                  Adornment="Adornment.End"
+                                                  AdornmentIcon="@Icons.Material.Filled.Search" />
+                                </div>
+                            </ChildContent>
+                        </DockViewComponent>
+                    </DockViewContent>
+
+                    @* Group 3: Queue + Local Playlists + Favorites + History *@
+                    <DockViewContent Type="DockViewContentType.Group"
+                                     Height="20">
+                        <DockViewComponent Key="queue"
+                                           Title="Queue"
+                                           ShowClose="true">
+                            <TitleTemplate>
+                                <i class="fa-solid fa-list-ol"></i>
+                                <span>Queue</span>
+                            </TitleTemplate>
+                            <ChildContent>
+                                <div class="dock-panel-content">
+                                    <MudText Typo="Typo.body1">
+                                        Queue content will be added here.
+                                    </MudText>
+                                </div>
+                            </ChildContent>
+                        </DockViewComponent>
+
+                        <DockViewComponent Key="localPlaylists"
+                                           Title="Local Playlists"
+                                           ShowClose="true">
+                            <TitleTemplate>
+                                <i class="fa-solid fa-folder"></i>
+                                <span>Local Playlists</span>
+                            </TitleTemplate>
+                            <ChildContent>
+                                <div class="dock-panel-content">
+                                    <MudText Typo="Typo.body1">
+                                        Local playlists content will be added here.
+                                    </MudText>
+                                </div>
+                            </ChildContent>
+                        </DockViewComponent>
+
+                        <DockViewComponent Key="favorites"
+                                           Title="Favorites"
+                                           ShowClose="true">
+                            <TitleTemplate>
+                                <i class="fa-solid fa-heart"></i>
+                                <span>Favorites</span>
+                            </TitleTemplate>
+                            <ChildContent>
+                                <div class="dock-panel-content">
+                                    <MudText Typo="Typo.body1">
+                                        Favorites content will be added here.
+                                    </MudText>
+                                </div>
+                            </ChildContent>
+                        </DockViewComponent>
+
+                        <DockViewComponent Key="history"
+                                           Title="History"
+                                           ShowClose="true">
+                            <TitleTemplate>
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                <span>History</span>
+                            </TitleTemplate>
+                            <ChildContent>
+                                <div class="dock-panel-content">
+                                    <MudText Typo="Typo.body1">
+                                        Watch history content will be added here.
+                                    </MudText>
+                                </div>
+                            </ChildContent>
+                        </DockViewComponent>
+                    </DockViewContent>
+
+                    @* Group 4: Trending + Popular *@
+                    <DockViewContent Type="DockViewContentType.Group"
+                                     Height="20">
+                        <DockViewComponent Key="trending"
+                                           Title="Trending"
+                                           ShowClose="true">
+                            <TitleTemplate>
+                                <i class="fa-solid fa-fire"></i>
+                                <span>Trending</span>
+                            </TitleTemplate>
+                            <ChildContent>
+                                <div class="dock-panel-content">
+                                    <MudText Typo="Typo.body1">
+                                        Trending videos content will be added here.
+                                    </MudText>
+                                </div>
+                            </ChildContent>
+                        </DockViewComponent>
+
+                        <DockViewComponent Key="popular"
+                                           Title="Popular"
+                                           ShowClose="true">
+                            <TitleTemplate>
+                                <i class="fa-solid fa-chart-line"></i>
+                                <span>Popular</span>
+                            </TitleTemplate>
+                            <ChildContent>
+                                <div class="dock-panel-content">
+                                    <MudText Typo="Typo.body1">
+                                        Popular videos content will be added here.
+                                    </MudText>
+                                </div>
+                            </ChildContent>
+                        </DockViewComponent>
+                    </DockViewContent>
+
+                    @* Group 5: Video Description + Video Comments + Related Videos *@
+                    <DockViewContent Type="DockViewContentType.Group"
+                                     Height="20">
+                        <DockViewComponent Key="videoDescription"
+                                           Title="Description"
+                                           ShowClose="true">
+                            <TitleTemplate>
+                                <i class="fa-solid fa-file-lines"></i>
+                                <span>Description</span>
+                            </TitleTemplate>
+                            <ChildContent>
+                                <div class="dock-panel-content">
+                                    <MudText Typo="Typo.body1">
+                                        Video description will be shown here when a video is playing.
+                                    </MudText>
+                                </div>
+                            </ChildContent>
+                        </DockViewComponent>
+
+                        <DockViewComponent Key="videoComments"
+                                           Title="Comments"
+                                           ShowClose="true">
+                            <TitleTemplate>
+                                <i class="fa-solid fa-comments"></i>
+                                <span>Comments</span>
+                            </TitleTemplate>
+                            <ChildContent>
+                                <div class="dock-panel-content">
+                                    <MudText Typo="Typo.body1">
+                                        Video comments will be shown here when a video is playing.
+                                    </MudText>
+                                </div>
+                            </ChildContent>
+                        </DockViewComponent>
+
+                        <DockViewComponent Key="relatedVideos"
+                                           Title="Related Videos"
+                                           ShowClose="true">
+                            <TitleTemplate>
+                                <i class="fa-solid fa-video"></i>
+                                <span>Related Videos</span>
+                            </TitleTemplate>
+                            <ChildContent>
+                                <div class="dock-panel-content">
+                                    <MudText Typo="Typo.body1">
+                                        Related videos will be shown here when a video is playing.
+                                    </MudText>
+                                </div>
+                            </ChildContent>
+                        </DockViewComponent>
+                    </DockViewContent>
+
+                </DockViewContent>
+            </DockViewContent>
+        </DockViewV2Wrapper>
+    </main>
+</div>
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
-
-@code {
-    private bool _drawerOpen = true;
-    private bool _isDarkMode = true;
-    
-    private readonly MudTheme _theme = new()
-    {
-        PaletteLight = new PaletteLight
-        {
-            Primary = "#1976d2",
-            Secondary = "#dc004e",
-            AppbarBackground = "#1976d2"
-        },
-        PaletteDark = new PaletteDark
-        {
-            Primary = "#90caf9",
-            Secondary = "#f48fb1",
-            AppbarBackground = "#1e1e1e",
-            Surface = "#121212",
-            Background = "#0a0a0a"
-        }
-    };
-    
-    private void ToggleDrawer()
-    {
-        _drawerOpen = !_drawerOpen;
-    }
-    
-    private void ToggleDarkMode()
-    {
-        _isDarkMode = !_isDarkMode;
-    }
-}

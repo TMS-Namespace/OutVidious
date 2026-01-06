@@ -18,6 +18,7 @@ try
         .AddHttpClient()
         .AddBlazorComponents()
         .AddMudBlazor()
+        .AddBootstrapBlazorServices()
         .AddServices();
 
     var app = builder.Build();

@@ -156,7 +156,9 @@ else if (ViewModel.LoadState == VideoLoadState.Loaded)
                 <MudAvatar Size="Size.Medium" Color="Color.Primary">
                     @(ViewModel.ChannelName?.FirstOrDefault().ToString().ToUpperInvariant() ?? "?")
                 </MudAvatar>
-                <MudLink Href="@GetAuthorUrl()" Target="_blank" Typo="Typo.subtitle1">
+                <MudLink OnClick="@OnChannelLinkClicked"
+                         Typo="Typo.subtitle1"
+                         Style="cursor: pointer;">
                     @ViewModel.ChannelName
                 </MudLink>
             </MudStack>
