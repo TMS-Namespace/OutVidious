@@ -36,6 +36,11 @@ public partial class MainLayout : IAsyncDisposable
     private const string ChannelVideosPanelTitle = "Videos";
 
     /// <summary>
+    /// The static drawer title for the channel group.
+    /// </summary>
+    private const string ChannelGroupTitle = "Channel Info";
+
+    /// <summary>
     /// The default width in pixels for the channel drawer when it expands.
     /// </summary>
     private const int ChannelDrawerWidthPx = 800;
@@ -373,7 +378,7 @@ public partial class MainLayout : IAsyncDisposable
 
             if (drawerReady)
             {
-                await _dockPanelsComponent.SetGroupStaticTitleByKeyAsync(ChannelAboutPanelKey, "Channel Info", CancellationToken.None);
+                await _dockPanelsComponent.SetGroupStaticTitleByKeyAsync(ChannelAboutPanelKey, ChannelGroupTitle, CancellationToken.None);
             }
 
             // If showResult is false, the panel was orphaned and removed by JS
@@ -393,7 +398,7 @@ public partial class MainLayout : IAsyncDisposable
                 await WaitForPanelByTitleAsync(ChannelAboutPanelTitle, CancellationToken.None);
                 await _dockPanelsComponent.ShowDrawerTabAsync(ChannelAboutPanelTitle, ChannelDrawerWidthPx, CancellationToken.None);
                 await _dockPanelsComponent.SetActivePanelByKeyAsync(ChannelAboutPanelKey, CancellationToken.None);
-                await _dockPanelsComponent.SetGroupStaticTitleByKeyAsync(ChannelAboutPanelKey, "Channel Info", CancellationToken.None);
+                await _dockPanelsComponent.SetGroupStaticTitleByKeyAsync(ChannelAboutPanelKey, ChannelGroupTitle, CancellationToken.None);
             }
 
             // Step 2: C# delay - this gives the browser event loop time to fully process the DOM changes

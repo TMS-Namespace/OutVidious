@@ -424,10 +424,18 @@ const createDrawerHandle = (floatingGroup, isRight) => {
 const createDrawerBtn = (floatingGroup, isRight) => {
     const dockview = floatingGroup.api.accessor
     const btn = document.createElement('div')
-    const title = floatingGroup.activePanel?.title || floatingGroup.panels[0]?.title
+    const params = floatingGroup.getParams?.() || {}
+    const staticTitle = params.staticGroupTitle
+    const title = staticTitle || floatingGroup.activePanel?.title || floatingGroup.panels[0]?.title
     btn.innerHTML = title
     btn.setAttribute('groupid', dockview.id + '_' + floatingGroup.id)
     btn.classList.add('bb-dockview-aside-button')
+    if (staticTitle) {
+        btn.dataset.staticTitle = staticTitle
+        if (floatingGroup.activePanel?.title) {
+            btn.dataset.panelTitle = floatingGroup.activePanel.title
+        }
+    }
     if (floatingGroup.element.parentElement.classList.contains('active')) {
         btn.classList.add('active')
     }
@@ -493,10 +501,18 @@ const removeDrawerBtn = group => {
 }
 
 const setDrawerTitle = group => {
-    const title = group.activePanel?.title || group.panels[0]?.title
+    const params = group.getParams?.() || {}
+    const staticTitle = params.staticGroupTitle
+    const title = staticTitle || group.activePanel?.title || group.panels[0]?.title
     const groupId = group.api.accessor.id + '_' + group.id
     const btnEle = group.api.accessor.element.parentElement.parentElement.querySelector(`.bb-dockview-aside>[groupId="${groupId}"]`)
     if (!btnEle) return
+    if (staticTitle) {
+        btnEle.dataset.staticTitle = staticTitle
+        if (group.activePanel?.title) {
+            btnEle.dataset.panelTitle = group.activePanel.title
+        }
+    }
     btnEle.innerHTML = title
 }
 

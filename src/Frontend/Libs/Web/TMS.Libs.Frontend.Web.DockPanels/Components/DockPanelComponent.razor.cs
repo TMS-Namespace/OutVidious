@@ -154,6 +154,13 @@ public partial class DockPanelComponent
     public DockPanelCloseMode CloseMode { get; set; }
 
     /// <summary>
+    /// Gets or sets a static group title for drawer sidebar buttons.
+    /// </summary>
+    [Parameter]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? StaticGroupTitle { get; set; }
+
+    /// <summary>
     /// 获得/设置 是否一直显示 默认 null 未设置时取 DockView 的配置
     /// </summary>
     [Parameter]
