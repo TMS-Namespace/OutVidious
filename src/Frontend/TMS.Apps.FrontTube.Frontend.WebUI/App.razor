@@ -13,7 +13,7 @@
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
     <link href="_content/BootstrapBlazor/css/bootstrap.blazor.bundle.min.css" rel="stylesheet" />
     <link href="_content/BootstrapBlazor/css/motronic.min.css" rel="stylesheet" />
-    @* Dock panels CSS is loaded dynamically by the DocksCollectionDrawerComponent via dockview-bb.css (which imports dockview.css) *@
+    @* Dock panels CSS is loaded dynamically by the DocksHostComponent via dockview-bb.css (which imports dockview.css) *@
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="TMS.Apps.FrontTube.Frontend.WebUI.styles.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
@@ -24,7 +24,7 @@
     <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="_content/BootstrapBlazor/js/bootstrap.blazor.bundle.min.js"></script>
-    @* Dock panels JS is loaded automatically by the DocksCollectionDrawerComponent *@
+    @* Dock panels JS is loaded automatically by the DocksHostComponent *@
     <script src="_framework/blazor.web.js"></script>
     
     @* Shaka Player for DASH adaptive streaming (1080p+, separate audio/video) *@

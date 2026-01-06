@@ -3,7 +3,7 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Enums;
 /// <summary>
 /// Represents the initial pin state of a dock panel when the layout initializes.
 /// </summary>
-public enum DockPanelPinState
+public enum DocksCollectionPinState
 {
     /// <summary>
     /// The panel starts pinned to the grid (default dock behavior).

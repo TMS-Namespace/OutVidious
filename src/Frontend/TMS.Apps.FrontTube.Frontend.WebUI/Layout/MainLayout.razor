@@ -64,7 +64,7 @@
             </div>
         }
 
-        <DocksCollectionDrawerComponent
+        <DocksHostComponent
             @ref="_dockPanelsComponent"
             Id="FrontTubeDockView"
             Name="FrontTubeDockView"
@@ -79,7 +79,7 @@
             OnActiveStateChangedAsync="@OnActiveStateChangedAsync">
             
             <DocksCollectionComponent
-                Type="DockPanelContentType.Row">
+                Type="DockCollectionType.Row">
                 @* Main content area - Video Player - pinned and not closable *@
                 
                 <DockPanelComponent
@@ -103,14 +103,14 @@
 
                 @* Right sidebar with grouped tabs organized in a column *@
                 <DocksCollectionComponent
-                    Type="DockPanelContentType.Column"
+                    Type="DockCollectionType.Column"
                     Width="30">
                     @* Group 1: Channel Info and Videos - starts hidden, shown via JS when user clicks channel *@
                     @* Only render after first channel open to prevent recreation when closed *@
                     @if (ShouldRenderChannelGroup)
                     {
                         <DocksCollectionComponent
-                            Type="DockPanelContentType.Group"
+                            Type="DockCollectionType.Group"
                             Height="25">
                             <DockPanelComponent
                                 @key="_channelAboutRenderVersion"
@@ -178,7 +178,7 @@
 
                     @* Group 2: Search - separate group *@
                     <DocksCollectionComponent
-                        Type="DockPanelContentType.Group"
+                        Type="DockCollectionType.Group"
                         Height="15">
                         <DockPanelComponent
                             Key="search"
@@ -207,7 +207,7 @@
 
                     @* Group 3: Queue + Local Playlists + Favorites + History *@
                     <DocksCollectionComponent
-                        Type="DockPanelContentType.Group"
+                        Type="DockCollectionType.Group"
                         Height="20">
                         <DockPanelComponent
                             Key="queue"
@@ -300,7 +300,7 @@
 
                     @* Group 4: Trending + Popular *@
                     <DocksCollectionComponent
-                        Type="DockPanelContentType.Group"
+                        Type="DockCollectionType.Group"
                         Height="20">
                         <DockPanelComponent
                             Key="trending"
@@ -349,7 +349,7 @@
 
                     @* Group 5: Video Description + Video Comments + Related Videos *@
                     <DocksCollectionComponent
-                        Type="DockPanelContentType.Group"
+                        Type="DockCollectionType.Group"
                         Height="20">
                         <DockPanelComponent
                             Key="videoDescription"
@@ -419,7 +419,7 @@
                     </DocksCollectionComponent>
                 </DocksCollectionComponent>
             </DocksCollectionComponent>
-        </DocksCollectionDrawerComponent>
+        </DocksHostComponent>
     </main>
 </div>
 

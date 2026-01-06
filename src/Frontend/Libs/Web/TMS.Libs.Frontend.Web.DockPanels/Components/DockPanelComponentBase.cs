@@ -16,7 +16,7 @@ public abstract class DockPanelComponentBase : IdComponentBase, IDisposable
     /// 获得/设置 渲染类型 默认 Component
     /// </summary>
     [Parameter]
-    public DockPanelContentType Type { get; set; }
+    public DockCollectionType Type { get; set; }
 
     /// <summary>
     /// 获得/设置 组件宽度百分比 默认 null 未设置

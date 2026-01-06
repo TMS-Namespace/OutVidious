@@ -10,7 +10,7 @@ namespace TMS.Apps.FrontTube.Frontend.WebUI.Layout;
 
 /// <summary>
 /// Main layout component for the FrontTube application.
-/// Uses DocksCollectionDrawerComponent for dockable panels,
+/// Uses DocksHostComponent for dockable panels,
 /// with MudBlazor components inside the panels.
 /// </summary>
 public partial class MainLayout : IAsyncDisposable
@@ -59,7 +59,7 @@ public partial class MainLayout : IAsyncDisposable
     private bool _isDarkMode = true;
     private bool _isDisposed;
     private bool _isDockPanelsReady;
-    private DocksCollectionDrawerComponent? _dockPanelsComponent;
+    private DocksHostComponent? _dockPanelsComponent;
     private ILogger<MainLayout>? _logger;
     private int _channelAboutRenderVersion;
     private bool _deferChannelAboutActivation;
@@ -77,7 +77,7 @@ public partial class MainLayout : IAsyncDisposable
         new DockGroupConfiguration
         {
             GroupIndex = 1,
-            PinState = DockPanelPinState.Drawer,
+            PinState = DocksCollectionPinState.Drawer,
             Panels =
             [
                 new DockPanelInitConfig { Key = "search" }
@@ -87,7 +87,7 @@ public partial class MainLayout : IAsyncDisposable
         new DockGroupConfiguration
         {
             GroupIndex = 2,
-            PinState = DockPanelPinState.Drawer,
+            PinState = DocksCollectionPinState.Drawer,
             GroupTitle = "Collections",
             Panels =
             [
@@ -99,7 +99,7 @@ public partial class MainLayout : IAsyncDisposable
         {
             GroupIndex = 3,
             GroupTitle = "Discover",
-            PinState = DockPanelPinState.Drawer,
+            PinState = DocksCollectionPinState.Drawer,
             Panels =
             [
                 new DockPanelInitConfig { Key = "trending" }
@@ -110,7 +110,7 @@ public partial class MainLayout : IAsyncDisposable
         {
             GroupIndex = 4,
             GroupTitle = "Video Info",
-            PinState = DockPanelPinState.Drawer,
+            PinState = DocksCollectionPinState.Drawer,
             Panels =
             [
                 new DockPanelInitConfig { Key = "videoDescription" }
@@ -378,7 +378,7 @@ public partial class MainLayout : IAsyncDisposable
 
             if (drawerReady)
             {
-                await _dockPanelsComponent.SetGroupStaticTitleByKeyAsync(ChannelAboutPanelKey, ChannelGroupTitle, CancellationToken.None);
+                await _dockPanelsComponent.SetDockCollectionTitleByKeyAsync(ChannelAboutPanelKey, ChannelGroupTitle, CancellationToken.None);
             }
 
             // If showResult is false, the panel was orphaned and removed by JS
@@ -398,7 +398,7 @@ public partial class MainLayout : IAsyncDisposable
                 await WaitForPanelByTitleAsync(ChannelAboutPanelTitle, CancellationToken.None);
                 await _dockPanelsComponent.ShowDrawerTabAsync(ChannelAboutPanelTitle, ChannelDrawerWidthPx, CancellationToken.None);
                 await _dockPanelsComponent.SetActivePanelByKeyAsync(ChannelAboutPanelKey, CancellationToken.None);
-                await _dockPanelsComponent.SetGroupStaticTitleByKeyAsync(ChannelAboutPanelKey, ChannelGroupTitle, CancellationToken.None);
+                await _dockPanelsComponent.SetDockCollectionTitleByKeyAsync(ChannelAboutPanelKey, ChannelGroupTitle, CancellationToken.None);
             }
 
             // Step 2: C# delay - this gives the browser event loop time to fully process the DOM changes

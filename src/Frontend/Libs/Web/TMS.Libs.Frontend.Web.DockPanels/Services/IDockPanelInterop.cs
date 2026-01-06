@@ -336,7 +336,7 @@ public interface IDockPanelInterop : IAsyncDisposable
     /// <param name="staticTitle">The static title to display on the sidebar button.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>True if the operation succeeded.</returns>
-    Task<bool> SetGroupStaticTitleByKeyAsync(
+    Task<bool> SetDockCollectionTitleByKeyAsync(
         string dockViewId,
         string panelKey,
         string staticTitle,

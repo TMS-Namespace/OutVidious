@@ -200,7 +200,7 @@ public partial class DockPanelComponent
     {
         base.OnInitialized();
 
-        Type = DockPanelContentType.Component;
+        Type = DockCollectionType.Component;
         _isActive = IsActive;
         _hasActivated = IsActive;
     }

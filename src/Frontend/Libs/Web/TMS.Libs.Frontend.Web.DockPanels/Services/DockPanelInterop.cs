@@ -310,7 +310,7 @@ internal sealed class DockPanelInterop : IDockPanelInterop
     }
 
     /// <inheritdoc/>
-    public Task<bool> SetGroupStaticTitleByKeyAsync(
+    public Task<bool> SetDockCollectionTitleByKeyAsync(
         string dockViewId,
         string panelKey,
         string staticTitle,
@@ -318,7 +318,7 @@ internal sealed class DockPanelInterop : IDockPanelInterop
     {
         return InvokeInteropAsync<bool>(
             "setGroupStaticTitleByKey",
-            nameof(SetGroupStaticTitleByKeyAsync),
+            nameof(SetDockCollectionTitleByKeyAsync),
             cancellationToken,
             dockViewId,
             panelKey,

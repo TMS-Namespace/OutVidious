@@ -3,7 +3,7 @@ using TMS.Libs.Frontend.Web.DockPanels.Services;
 
 namespace TMS.Libs.Frontend.Web.DockPanels.Components;
 
-public partial class DocksCollectionDrawerComponent
+public partial class DocksHostComponent
 {
     /// <summary>
     /// Gets the underlying dock panel interop service.
@@ -216,9 +216,9 @@ public partial class DocksCollectionDrawerComponent
     /// <param name="panelKey">The panel key.</param>
     /// <param name="staticTitle">The static title to set.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> SetGroupStaticTitleByKeyAsync(string panelKey, string staticTitle, CancellationToken cancellationToken)
+    public Task<bool> SetDockCollectionTitleByKeyAsync(string panelKey, string staticTitle, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.SetGroupStaticTitleByKeyAsync(DockPanelId, panelKey, staticTitle, cancellationToken);
+        return DockPanelInterop.SetDockCollectionTitleByKeyAsync(DockPanelId, panelKey, staticTitle, cancellationToken);
     }
 
     /// <summary>

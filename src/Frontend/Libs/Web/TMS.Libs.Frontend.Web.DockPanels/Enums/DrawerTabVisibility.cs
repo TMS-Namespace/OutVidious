@@ -2,7 +2,7 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Enums;
 
 /// <summary>
 /// Represents the initial visibility of a dock panel's drawer tab when the layout initializes.
-/// Only applicable when <see cref="DockPanelPinState"/> is <see cref="DockPanelPinState.Drawer"/>.
+/// Only applicable when <see cref="DocksCollectionPinState"/> is <see cref="DocksCollectionPinState.Drawer"/>.
 /// </summary>
 public enum DrawerTabVisibility
 {

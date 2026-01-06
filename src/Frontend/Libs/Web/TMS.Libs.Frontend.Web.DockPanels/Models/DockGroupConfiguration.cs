@@ -15,7 +15,7 @@ public sealed class DockGroupConfiguration
     /// <summary>
     /// Gets or sets the initial pin state of the group.
     /// </summary>
-    public DockPanelPinState PinState { get; init; } = DockPanelPinState.Pinned;
+    public DocksCollectionPinState PinState { get; init; } = DocksCollectionPinState.Pinned;
 
     /// <summary>
     /// Gets or sets a static title for the group's sidebar button when in drawer mode.

@@ -8,7 +8,7 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Enums;
 /// Dock panel content layout type.
 /// </summary>
 [JsonEnumConverter(true)]
-public enum DockPanelContentType
+public enum DockCollectionType
 {
     /// <summary>
     /// 行排列 水平排列

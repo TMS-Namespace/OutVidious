@@ -3,7 +3,7 @@ using TMS.Libs.Frontend.Web.DockPanels.Enums;
 
 namespace TMS.Libs.Frontend.Web.DockPanels.Components;
 
-public partial class DocksCollectionDrawerComponent
+public partial class DocksHostComponent
 {
     private async Task ApplyInitialConfigurationAsync(CancellationToken cancellationToken)
     {
@@ -22,7 +22,7 @@ public partial class DocksCollectionDrawerComponent
 
         foreach (var groupConfig in GroupConfigurations.OrderByDescending(group => group.GroupIndex))
         {
-            if (groupConfig.PinState != DockPanelPinState.Drawer)
+            if (groupConfig.PinState != DocksCollectionPinState.Drawer)
             {
                 continue;
             }
@@ -76,7 +76,7 @@ public partial class DocksCollectionDrawerComponent
                 }
             }
 
-            if (groupConfig.PinState == DockPanelPinState.Drawer
+            if (groupConfig.PinState == DocksCollectionPinState.Drawer
                 && !string.IsNullOrWhiteSpace(groupConfig.GroupTitle)
                 && groupConfig.Panels.Count > 0)
             {
@@ -101,7 +101,7 @@ public partial class DocksCollectionDrawerComponent
                     }
                     
                     // Now set the static title (the sidebar button should exist)
-                    await DockPanelInterop.SetGroupStaticTitleByKeyAsync(
+                    await DockPanelInterop.SetDockCollectionTitleByKeyAsync(
                         DockPanelId,
                         firstPanelKey,
                         groupConfig.GroupTitle,

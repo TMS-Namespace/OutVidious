@@ -14,7 +14,7 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Components;
 /// <summary>
 /// Dock panels host component.
 /// </summary>
-public partial class DocksCollectionDrawerComponent : IDisposable
+public partial class DocksHostComponent : IDisposable
 {
     private const int DefaultDelayBetweenOperationsMs = 30;
     private const int InitialDelayMs = 100;
@@ -193,7 +193,7 @@ public partial class DocksCollectionDrawerComponent : IDisposable
     public EventCallback<(string Title, string? Key, bool IsActive)> OnActiveStateChangedAsync { get; set; }
 
     [CascadingParameter]
-    private DocksCollectionDrawerComponent? DockPanelsParent { get; set; }
+    private DocksHostComponent? DockPanelsParent { get; set; }
 
     [Inject]
     private IConfiguration Configuration { get; set; } = null!;
@@ -221,7 +221,7 @@ public partial class DocksCollectionDrawerComponent : IDisposable
     {
         base.OnInitialized();
 
-        _logger = LoggerFactory.CreateLogger<DocksCollectionDrawerComponent>();
+        _logger = LoggerFactory.CreateLogger<DocksHostComponent>();
 
         var section = Configuration.GetSection(nameof(DockPanelOptions));
         _options = section.Exists() ? section.Get<DockPanelOptions>() ?? new DockPanelOptions() : new DockPanelOptions();
