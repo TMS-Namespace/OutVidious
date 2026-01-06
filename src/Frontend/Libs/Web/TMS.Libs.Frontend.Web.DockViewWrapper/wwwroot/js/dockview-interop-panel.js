@@ -3,7 +3,72 @@
  * Handles panel state, activation, and lifecycle operations.
  */
 
-import { getDockview, findPanelByTitle, findGroupByPanelTitle, getGroupByIndex } from './dockview-interop-core.js';
+import { getDockview, findPanelByTitle, findPanelByKey, findGroupByPanelTitle, getGroupByIndex } from './dockview-interop-core.js';
+
+/**
+ * Finds a sidebar button by panel key using data-panel-key attribute.
+ * Falls back to checking the panel's title if no key-based match is found.
+ * @param {HTMLElement} dockviewEl - The dockview container element.
+ * @param {string} panelKey - The panel key to search for.
+ * @param {object} panel - The panel object (for title fallback).
+ * @returns {HTMLElement|null} The matched button or null.
+ */
+function findSidebarButtonByKey(dockviewEl, panelKey, panel) {
+    const asideButtons = dockviewEl.querySelectorAll('.bb-dockview-aside-button');
+    console.log(`[DockViewInterop] findSidebarButtonByKey: Looking for key '${panelKey}', found ${asideButtons.length} buttons`);
+    
+    for (const btn of asideButtons) {
+        // Check by data-panel-key attribute (most reliable)
+        if (btn.dataset.panelKey === panelKey) {
+            console.log(`[DockViewInterop] findSidebarButtonByKey: Found by panelKey attr`);
+            return btn;
+        }
+        
+        // Check by data-hidden-panel-key for hidden buttons
+        if (btn.dataset.hiddenPanelKey === panelKey) {
+            console.log(`[DockViewInterop] findSidebarButtonByKey: Found by hiddenPanelKey attr`);
+            return btn;
+        }
+    }
+    
+    // Second pass: check by panel title if available
+    if (panel) {
+        const panelTitle = panel.title;
+        console.log(`[DockViewInterop] findSidebarButtonByKey: Trying title fallback for '${panelTitle}'`);
+        
+        for (const btn of asideButtons) {
+            const btnText = btn.textContent?.trim();
+            const spanText = btn.querySelector('span')?.textContent?.trim();
+            const dataPanelTitle = btn.dataset.panelTitle;
+            const hiddenPanelTitle = btn.dataset.hiddenPanelTitle;
+            const staticTitle = btn.dataset.staticTitle;
+            
+            const isMatch = btnText === panelTitle || 
+                            spanText === panelTitle || 
+                            btnText?.includes(panelTitle) || 
+                            dataPanelTitle === panelTitle || 
+                            hiddenPanelTitle === panelTitle;
+            
+            if (isMatch) {
+                console.log(`[DockViewInterop] findSidebarButtonByKey: Found by title match, btnText='${btnText}'`);
+                // Tag this button with the key for future lookups
+                btn.dataset.panelKey = panelKey;
+                return btn;
+            }
+        }
+    }
+    
+    console.log(`[DockViewInterop] findSidebarButtonByKey: No match found. Button details:`, 
+        Array.from(asideButtons).map(btn => ({
+            text: btn.textContent?.trim()?.substring(0, 30),
+            panelKey: btn.dataset.panelKey,
+            panelTitle: btn.dataset.panelTitle,
+            hiddenPanelKey: btn.dataset.hiddenPanelKey,
+            display: btn.style.display
+        })));
+    
+    return null;
+}
 
 /**
  * Collapses a floating panel (shows only the header).
@@ -123,17 +188,6 @@ export async function activatePanel(dockViewId, panelTitle) {
         const params = group.getParams?.() || {};
         
         if (params.floatType === 'drawer') {
-            // Don't trust group.api.isVisible - it doesn't reflect actual DOM state after our hide/show operations
-            // Instead, check if the drawer container is actually visible in the DOM
-            const drawerContainer = group.element?.closest('.dv-resize-container');
-            const isActuallyVisible = drawerContainer && 
-                                      drawerContainer.style.display !== 'none' && 
-                                      drawerContainer.offsetWidth > 0 &&
-                                      drawerContainer.offsetHeight > 0;
-            
-            console.log(`[DockViewInterop] activatePanel: API isVisible=${group.api?.isVisible}, DOM isActuallyVisible=${isActuallyVisible}`);
-            console.log(`[DockViewInterop] activatePanel: drawerContainer found=${!!drawerContainer}, display='${drawerContainer?.style.display}', offsetWidth=${drawerContainer?.offsetWidth}`);
-            
             // Find and click the sidebar button to expand the drawer
             const dockviewEl = document.getElementById(dockViewId);
             
@@ -144,7 +198,10 @@ export async function activatePanel(dockViewId, panelTitle) {
                 for (const btn of asideButtons) {
                     const btnText = btn.textContent?.trim();
                     const spanText = btn.querySelector('span')?.textContent?.trim();
-                    const isMatch = btnText === panelTitle || spanText === panelTitle || btnText?.includes(panelTitle);
+                    // Also check data-panel-title for static title groups and data-hidden-panel-title for hidden buttons
+                    const dataPanelTitle = btn.dataset.panelTitle;
+                    const hiddenPanelTitle = btn.dataset.hiddenPanelTitle;
+                    const isMatch = btnText === panelTitle || spanText === panelTitle || btnText?.includes(panelTitle) || dataPanelTitle === panelTitle || hiddenPanelTitle === panelTitle;
                     
                     if (isMatch) {
                         matchedBtn = btn;
@@ -157,28 +214,54 @@ export async function activatePanel(dockViewId, panelTitle) {
                     const isButtonVisible = matchedBtn.style.display !== 'none';
                     console.log(`[DockViewInterop] activatePanel: button found, isButtonVisible=${isButtonVisible}`);
                     
-                    // If drawer is NOT actually visible in DOM, click to expand
-                    // Also click if the button was previously hidden (we just showed it)
-                    if (!isActuallyVisible || matchedBtn.dataset.justShown === 'true') {
-                        // Ensure the button is visible before clicking
-                        if (!isButtonVisible) {
-                            matchedBtn.style.display = '';
-                            delete matchedBtn.dataset.hiddenByFrontTube;
-                            delete matchedBtn.dataset.hiddenPanelTitle;
-                            console.log(`[DockViewInterop] Made sidebar button visible for '${panelTitle}'.`);
-                            await new Promise(resolve => setTimeout(resolve, 50));
+                    // Ensure button is visible first
+                    if (!isButtonVisible) {
+                        matchedBtn.style.display = '';
+                        delete matchedBtn.dataset.hiddenByFrontTube;
+                        delete matchedBtn.dataset.hiddenPanelTitle;
+                        console.log(`[DockViewInterop] Made sidebar button visible for '${panelTitle}'.`);
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+                    
+                    // Check drawer expansion state using reliable heuristics
+                    const isActive = matchedBtn.classList.contains('active');
+                    
+                    // Check if any other drawer button is currently active
+                    let anyOtherButtonActive = false;
+                    for (const btn of asideButtons) {
+                        if (btn !== matchedBtn && btn.classList.contains('active') && btn.style.display !== 'none') {
+                            anyOtherButtonActive = true;
+                            break;
                         }
-                        
+                    }
+                    
+                    // Check if there's a visible drawer content in DOM with actual width
+                    const drawerWrappers = dockviewEl.querySelectorAll('.bb-dockview-drawer-right, .bb-dockview-drawer-left');
+                    let anyDrawerHasWidth = false;
+                    for (const wrapper of drawerWrappers) {
+                        if (wrapper.offsetWidth > 100) {
+                            anyDrawerHasWidth = true;
+                            break;
+                        }
+                    }
+                    
+                    console.log(`[DockViewInterop] activatePanel: isActive=${isActive}, anyOtherButtonActive=${anyOtherButtonActive}, anyDrawerHasWidth=${anyDrawerHasWidth}`);
+                    
+                    // Determine if THIS drawer is actually expanded
+                    let isExpanded = false;
+                    if (isActive && anyDrawerHasWidth && !anyOtherButtonActive) {
+                        isExpanded = true;
+                    }
+                    
+                    // Also check justShown flag
+                    if (!isExpanded || matchedBtn.dataset.justShown === 'true') {
                         console.log(`[DockViewInterop] activatePanel: Clicking button to expand drawer for '${panelTitle}'`);
                         matchedBtn.click();
-                        
-                        // Clear the justShown flag
                         delete matchedBtn.dataset.justShown;
-                        
                         console.log(`[DockViewInterop] ========== activatePanel END (clicked) ==========`);
                         return true;
                     } else {
-                        console.log(`[DockViewInterop] activatePanel: Drawer already visible in DOM, skipping click`);
+                        console.log(`[DockViewInterop] activatePanel: Drawer already visible, skipping click`);
                     }
                 } else {
                     console.warn(`[DockViewInterop] Could not find sidebar button for drawer '${panelTitle}'.`);
@@ -341,6 +424,204 @@ export async function removePanel(dockViewId, panelTitle) {
         return true;
     } catch (error) {
         console.error(`[DockViewInterop] Error removing panel '${panelTitle}':`, error);
+        return false;
+    }
+}
+
+// ============================================================================
+// Key-based functions (preferred over title-based)
+// ============================================================================
+
+/**
+ * Checks if a drawer is currently expanded by examining the DOM.
+ * @param {object} group - The dockview group object.
+ * @returns {boolean} True if the drawer is expanded.
+ */
+function isDrawerExpanded(group) {
+    // The drawer content is in a .bb-dockview-drawer-right container
+    // When expanded, it has a significant width and is visible; when collapsed, it's hidden or has no width
+    const groupElement = group.element;
+    console.log(`[DockViewInterop] isDrawerExpanded: groupElement exists=${!!groupElement}`);
+    
+    if (!groupElement) {
+        console.log(`[DockViewInterop] isDrawerExpanded: No group element, returning false`);
+        return false;
+    }
+    
+    // Check the group's parent container for the drawer wrapper
+    const drawerWrapper = groupElement.closest('.bb-dockview-drawer-right, .bb-dockview-drawer-left');
+    console.log(`[DockViewInterop] isDrawerExpanded: drawerWrapper exists=${!!drawerWrapper}`);
+    
+    if (drawerWrapper) {
+        const width = drawerWrapper.offsetWidth;
+        const style = window.getComputedStyle(drawerWrapper);
+        const display = style.display;
+        const visibility = style.visibility;
+        console.log(`[DockViewInterop] isDrawerExpanded: drawerWrapper width=${width}, display=${display}, visibility=${visibility}`);
+        
+        // Check if actually visible
+        if (display === 'none' || visibility === 'hidden') {
+            return false;
+        }
+        return width > 50;
+    }
+    
+    // Alternative: check the resize container
+    const resizeContainer = groupElement.closest('.dv-resize-container');
+    console.log(`[DockViewInterop] isDrawerExpanded: resizeContainer exists=${!!resizeContainer}`);
+    
+    if (resizeContainer) {
+        const width = resizeContainer.offsetWidth;
+        const style = window.getComputedStyle(resizeContainer);
+        const display = style.display;
+        const visibility = style.visibility;
+        console.log(`[DockViewInterop] isDrawerExpanded: resizeContainer width=${width}, display=${display}, visibility=${visibility}`);
+        
+        // Check if actually visible
+        if (display === 'none' || visibility === 'hidden') {
+            return false;
+        }
+        return width > 50;
+    }
+    
+    console.log(`[DockViewInterop] isDrawerExpanded: No container found, returning false`);
+    return false;
+}
+
+/**
+ * Activates (focuses) a panel by key and ensures its group is visible.
+ * If the panel is in a drawer, the drawer will be expanded by clicking the sidebar button.
+ * @param {string} dockViewId - The DockViewV2 element ID.
+ * @param {string} panelKey - The unique key of the panel to activate.
+ * @returns {Promise<boolean>} True if the operation succeeded.
+ */
+export async function activatePanelByKey(dockViewId, panelKey) {
+    console.log(`[DockViewInterop] ========== activatePanelByKey START for key '${panelKey}' ==========`);
+    try {
+        const dockview = await getDockview(dockViewId);
+        if (!dockview) {
+            console.error(`[DockViewInterop] activatePanelByKey: dockview not found for '${dockViewId}'`);
+            return false;
+        }
+        
+        const panel = findPanelByKey(dockview, panelKey);
+        if (!panel) {
+            console.warn(`[DockViewInterop] Panel with key '${panelKey}' not found.`);
+            return false;
+        }
+        
+        const group = panel.group;
+        if (!group) {
+            console.warn(`[DockViewInterop] Panel with key '${panelKey}' has no group.`);
+            return false;
+        }
+        
+        // Check if this is a drawer
+        const params = group.getParams?.() || {};
+        console.log(`[DockViewInterop] activatePanelByKey: group params floatType='${params.floatType}'`);
+        
+        if (params.floatType === 'drawer') {
+            const dockviewEl = document.getElementById(dockViewId);
+            
+            if (dockviewEl) {
+                // Find sidebar button by key
+                const matchedBtn = findSidebarButtonByKey(dockviewEl, panelKey, panel);
+                
+                if (matchedBtn) {
+                    const isButtonVisible = matchedBtn.style.display !== 'none';
+                    console.log(`[DockViewInterop] activatePanelByKey: button found, isButtonVisible=${isButtonVisible}`);
+                    
+                    // Ensure button is visible first
+                    if (!isButtonVisible) {
+                        matchedBtn.style.display = '';
+                        delete matchedBtn.dataset.hiddenByFrontTube;
+                        delete matchedBtn.dataset.hiddenPanelKey;
+                        delete matchedBtn.dataset.hiddenPanelTitle;
+                        console.log(`[DockViewInterop] Made sidebar button visible for key '${panelKey}'.`);
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+                    
+                    // Check drawer expansion state
+                    // The button's 'active' class indicates if the drawer was opened
+                    // BUT: when user closes drawer by clicking outside, the button keeps 'active' class incorrectly
+                    // SO: we need to check if ANY button is active and if the drawer content is actually visible
+                    const isActive = matchedBtn.classList.contains('active');
+                    
+                    // Check if any other drawer button is currently active
+                    const allButtons = dockviewEl.querySelectorAll('.bb-dockview-aside-button');
+                    let anyOtherButtonActive = false;
+                    for (const btn of allButtons) {
+                        if (btn !== matchedBtn && btn.classList.contains('active') && btn.style.display !== 'none') {
+                            anyOtherButtonActive = true;
+                            break;
+                        }
+                    }
+                    
+                    // Check if there's a visible drawer content in DOM with actual width
+                    // The drawer wrapper gains width when expanded
+                    const drawerWrappers = dockviewEl.querySelectorAll('.bb-dockview-drawer-right, .bb-dockview-drawer-left');
+                    let anyDrawerHasWidth = false;
+                    for (const wrapper of drawerWrappers) {
+                        // Check if the wrapper has substantial width (indicating an open drawer)
+                        if (wrapper.offsetWidth > 100) {
+                            anyDrawerHasWidth = true;
+                            break;
+                        }
+                    }
+                    
+                    console.log(`[DockViewInterop] activatePanelByKey: isActive=${isActive}, anyOtherButtonActive=${anyOtherButtonActive}, anyDrawerHasWidth=${anyDrawerHasWidth}`);
+                    
+                    // Determine if THIS drawer is actually expanded:
+                    // - If this button is NOT active, drawer is definitely closed -> click to open
+                    // - If this button IS active AND there's a drawer with width, it might be this one -> check further
+                    // - If this button IS active BUT no drawer has width, drawer was closed externally -> click to open
+                    let isExpanded = false;
+                    if (isActive && anyDrawerHasWidth && !anyOtherButtonActive) {
+                        // This button is active, a drawer is visible, and no other button is active
+                        // So this drawer is likely the one that's open
+                        isExpanded = true;
+                    }
+                    
+                    console.log(`[DockViewInterop] activatePanelByKey: isExpanded=${isExpanded}`);
+                    
+                    if (!isExpanded) {
+                        console.log(`[DockViewInterop] activatePanelByKey: Clicking button to expand drawer for key '${panelKey}'`);
+                        matchedBtn.click();
+                        console.log(`[DockViewInterop] ========== activatePanelByKey END (clicked) ==========`);
+                        return true;
+                    } else {
+                        console.log(`[DockViewInterop] activatePanelByKey: Drawer already expanded, skipping click`);
+                    }
+                } else {
+                    // No sidebar button found - the group may have been closed via X button
+                    // The panel is in a "zombie" state - exists in dockview.panels but disconnected from layout
+                    // Remove it so Blazor can recreate it properly
+                    console.warn(`[DockViewInterop] Could not find sidebar button for drawer key '${panelKey}'. Panel is orphaned, removing...`);
+                    
+                    try {
+                        dockview.removePanel(panel);
+                        console.log(`[DockViewInterop] Removed orphaned panel '${panelKey}'. Blazor should recreate it.`);
+                    } catch (removeError) {
+                        console.warn(`[DockViewInterop] Failed to remove orphaned panel: ${removeError.message}`);
+                    }
+                    
+                    console.log(`[DockViewInterop] ========== activatePanelByKey END (orphan removed) ==========`);
+                    return false; // Signal failure so caller knows to retry/recreate
+                }
+            }
+            
+            console.log(`[DockViewInterop] ========== activatePanelByKey END (drawer) ==========`);
+            return true;
+        }
+        
+        // Activate the panel (for non-drawer panels)
+        panel.api?.setActive();
+        
+        console.log(`[DockViewInterop] Activated panel with key '${panelKey}'.`);
+        console.log(`[DockViewInterop] ========== activatePanelByKey END ==========`);
+        return true;
+    } catch (error) {
+        console.error(`[DockViewInterop] Error activating panel with key '${panelKey}':`, error);
         return false;
     }
 }

@@ -692,4 +692,32 @@ html, body {
     background-color: #ffffff !important;
 }
 
+/* ============================================
+   Channel Banner Styles
+   ============================================ */
 
+/* Container for the banner image */
+.channel-banner {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    display: block;
+    overflow: hidden;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* The banner image itself - must constrain to container width */
+.channel-banner img,
+.channel-banner .mud-image,
+.channel-banner-image,
+.channel-banner-image img {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: 220px !important;
+    object-fit: cover !important;
+    display: block;
+    box-sizing: border-box;
+}

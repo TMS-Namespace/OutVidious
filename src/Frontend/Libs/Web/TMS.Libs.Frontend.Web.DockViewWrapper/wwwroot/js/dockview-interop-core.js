@@ -84,6 +84,49 @@ export function findGroupByPanelTitle(dockview, panelTitle) {
 }
 
 /**
+ * Finds a panel by its key (unique identifier).
+ * The key is set via the Key property on DockViewComponent.
+ * If no Key is specified, the Title is used as the key.
+ * @param {object} dockview - The dockview instance.
+ * @param {string} panelKey - The key/id of the panel to find.
+ * @returns {object|null} The panel or null if not found.
+ */
+export function findPanelByKey(dockview, panelKey) {
+    if (!dockview || !dockview.panels) {
+        return null;
+    }
+    
+    // Try multiple locations where the key might be stored:
+    // 1. panel.id - the internal dockview id (BootstrapBlazor uses Key as id)
+    // 2. panel.params?.key or panel.params?.Key - the Key property from DockViewComponent
+    // 3. panel.title - fall back to title match
+    const found = dockview.panels.find(p => 
+        p.id === panelKey || 
+        p.params?.key === panelKey ||
+        p.params?.Key === panelKey ||
+        p.title === panelKey
+    );
+    
+    if (!found) {
+        console.log(`[DockViewInterop] findPanelByKey: Panel with key '${panelKey}' not found. Available panels:`, 
+            dockview.panels.map(p => ({ id: p.id, title: p.title, paramsKey: p.params?.key || p.params?.Key })));
+    }
+    
+    return found || null;
+}
+
+/**
+ * Finds a group containing a panel with the given key.
+ * @param {object} dockview - The dockview instance.
+ * @param {string} panelKey - The key of the panel.
+ * @returns {object|null} The group or null if not found.
+ */
+export function findGroupByPanelKey(dockview, panelKey) {
+    const panel = findPanelByKey(dockview, panelKey);
+    return panel?.group || null;
+}
+
+/**
  * Gets a group by its index.
  * @param {object} dockview - The dockview instance.
  * @param {number} groupIndex - The 0-based index of the group.

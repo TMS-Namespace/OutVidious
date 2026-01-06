@@ -3,7 +3,54 @@
  * Handles setting and clearing static titles on group sidebar buttons.
  */
 
-import { getDockview, findPanelByTitle } from './dockview-interop-core.js';
+import { getDockview, findPanelByTitle, findPanelByKey } from './dockview-interop-core.js';
+
+/**
+ * Finds a sidebar button by panel key using data-panel-key attribute.
+ * Falls back to checking the panel's title if no key-based match is found.
+ * @param {HTMLElement} dockviewEl - The dockview container element.
+ * @param {string} panelKey - The panel key to search for.
+ * @param {object} panel - The panel object (for title fallback).
+ * @returns {HTMLElement|null} The matched button or null.
+ */
+function findSidebarButtonByKey(dockviewEl, panelKey, panel) {
+    const asideButtons = dockviewEl.querySelectorAll('.bb-dockview-aside-button');
+    
+    for (const btn of asideButtons) {
+        // Check by data-panel-key attribute (most reliable)
+        if (btn.dataset.panelKey === panelKey) {
+            return btn;
+        }
+        
+        // Check by data-hidden-panel-key for hidden buttons
+        if (btn.dataset.hiddenPanelKey === panelKey) {
+            return btn;
+        }
+        
+        // Fallback: check by panel title if available
+        if (panel) {
+            const btnText = btn.textContent?.trim();
+            const spanText = btn.querySelector('span')?.textContent?.trim();
+            const dataPanelTitle = btn.dataset.panelTitle;
+            const hiddenPanelTitle = btn.dataset.hiddenPanelTitle;
+            const panelTitle = panel.title;
+            
+            const isMatch = btnText === panelTitle || 
+                            spanText === panelTitle || 
+                            btnText?.includes(panelTitle) || 
+                            dataPanelTitle === panelTitle || 
+                            hiddenPanelTitle === panelTitle;
+            
+            if (isMatch) {
+                // Tag this button with the key for future lookups
+                btn.dataset.panelKey = panelKey;
+                return btn;
+            }
+        }
+    }
+    
+    return null;
+}
 
 /**
  * Sets a static title for a group's sidebar button that persists across panel changes.
@@ -40,10 +87,13 @@ export async function setGroupStaticTitle(dockViewId, panelTitle, staticTitle) {
         for (const btn of asideButtons) {
             const btnText = btn.textContent?.trim();
             const spanText = btn.querySelector('span')?.textContent?.trim();
+            // Also check data-panel-title for already-set static titles and data-hidden-panel-title
+            const dataPanelTitle = btn.dataset.panelTitle;
+            const hiddenPanelTitle = btn.dataset.hiddenPanelTitle;
             
-            console.log(`[DockViewInterop]   Checking button: text='${btnText}', spanText='${spanText}'`);
+            console.log(`[DockViewInterop]   Checking button: text='${btnText}', spanText='${spanText}', dataPanelTitle='${dataPanelTitle}'`);
             
-            if (btnText === panelTitle || spanText === panelTitle || btnText?.includes(panelTitle)) {
+            if (btnText === panelTitle || spanText === panelTitle || btnText?.includes(panelTitle) || dataPanelTitle === panelTitle || hiddenPanelTitle === panelTitle) {
                 matchedBtn = btn;
                 console.log(`[DockViewInterop]   Matched!`);
                 break;
@@ -129,6 +179,79 @@ export async function clearGroupStaticTitle(dockViewId, panelTitle) {
         return true;
     } catch (error) {
         console.error(`[DockViewInterop] Error clearing static title for panel '${panelTitle}':`, error);
+        return false;
+    }
+}
+
+// ============================================================================
+// Key-based functions (preferred over title-based)
+// ============================================================================
+
+/**
+ * Sets a static title for a group's sidebar button by panel key.
+ * @param {string} dockViewId - The DockViewV2 element ID.
+ * @param {string} panelKey - The unique key of any panel in the group.
+ * @param {string} staticTitle - The static title to display on the sidebar button.
+ * @returns {Promise<boolean>} True if the operation succeeded.
+ */
+export async function setGroupStaticTitleByKey(dockViewId, panelKey, staticTitle) {
+    try {
+        const dockview = await getDockview(dockViewId);
+        if (!dockview) return false;
+        
+        const panel = findPanelByKey(dockview, panelKey);
+        if (!panel) {
+            console.warn(`[DockViewInterop] Panel with key '${panelKey}' not found.`);
+            return false;
+        }
+        
+        const dockviewEl = document.getElementById(dockViewId);
+        if (!dockviewEl) {
+            console.warn(`[DockViewInterop] DockView element '${dockViewId}' not found.`);
+            return false;
+        }
+        
+        // Find sidebar button by key
+        const matchedBtn = findSidebarButtonByKey(dockviewEl, panelKey, panel);
+        
+        if (!matchedBtn) {
+            console.warn(`[DockViewInterop] Sidebar button not found for panel key '${panelKey}'.`);
+            return false;
+        }
+        
+        // Set the static title
+        matchedBtn.textContent = staticTitle;
+        matchedBtn.dataset.staticTitle = staticTitle;
+        matchedBtn.dataset.panelKey = panelKey;
+        matchedBtn.dataset.panelTitle = panel.title; // Keep for legacy compatibility
+        
+        // Set up MutationObserver to re-apply static title if DockView tries to change it
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                if (mutation.type === 'characterData' || mutation.type === 'childList') {
+                    const currentText = matchedBtn.textContent?.trim();
+                    const expectedTitle = matchedBtn.dataset.staticTitle;
+                    
+                    if (expectedTitle && currentText !== expectedTitle) {
+                        observer.disconnect();
+                        matchedBtn.textContent = expectedTitle;
+                        observer.observe(matchedBtn, { characterData: true, childList: true, subtree: true });
+                        console.log(`[DockViewInterop] Re-applied static title '${expectedTitle}' to sidebar button.`);
+                    }
+                }
+            }
+        });
+        
+        // Store observer reference for cleanup
+        matchedBtn._staticTitleObserver = observer;
+        
+        // Start observing
+        observer.observe(matchedBtn, { characterData: true, childList: true, subtree: true });
+        
+        console.log(`[DockViewInterop] Set static title '${staticTitle}' for panel key '${panelKey}'.`);
+        return true;
+    } catch (error) {
+        console.error(`[DockViewInterop] Error setting static title for panel key '${panelKey}':`, error);
         return false;
     }
 }

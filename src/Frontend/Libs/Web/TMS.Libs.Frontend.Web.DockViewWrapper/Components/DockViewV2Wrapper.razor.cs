@@ -202,6 +202,61 @@ public partial class DockViewV2Wrapper : IAsyncDisposable
         return await DockViewInterop.SetDrawerWidthAsync(DockViewId, panelTitle, widthPx, cancellationToken);
     }
 
+    #region Key-based methods (preferred over title-based)
+
+    /// <summary>
+    /// Shows a drawer's tab button by panel key.
+    /// </summary>
+    /// <param name="panelKey">The unique key of the panel whose tab to show.</param>
+    /// <param name="widthPx">Optional width in pixels to set for the drawer.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the operation succeeded.</returns>
+    public async Task<bool> ShowDrawerTabByKeyAsync(string panelKey, int? widthPx, CancellationToken cancellationToken)
+    {
+        if (widthPx.HasValue)
+        {
+            return await DockViewInterop.ShowDrawerTabByKeyAsync(DockViewId, panelKey, widthPx.Value, cancellationToken);
+        }
+
+        return await DockViewInterop.ShowDrawerTabByKeyAsync(DockViewId, panelKey, cancellationToken);
+    }
+
+    /// <summary>
+    /// Hides a drawer's tab button by panel key.
+    /// </summary>
+    /// <param name="panelKey">The unique key of the panel whose tab to hide.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the operation succeeded.</returns>
+    public async Task<bool> HideDrawerTabByKeyAsync(string panelKey, CancellationToken cancellationToken)
+    {
+        return await DockViewInterop.HideDrawerTabByKeyAsync(DockViewId, panelKey, cancellationToken);
+    }
+
+    /// <summary>
+    /// Activates (focuses) a panel by key and expands its drawer if applicable.
+    /// </summary>
+    /// <param name="panelKey">The unique key of the panel to activate.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the operation succeeded.</returns>
+    public async Task<bool> ActivatePanelByKeyAsync(string panelKey, CancellationToken cancellationToken)
+    {
+        return await DockViewInterop.ActivatePanelByKeyAsync(DockViewId, panelKey, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sets the width of a drawer panel by key.
+    /// </summary>
+    /// <param name="panelKey">The unique key of the panel.</param>
+    /// <param name="widthPx">The width in pixels.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the operation succeeded.</returns>
+    public async Task<bool> SetDrawerWidthByKeyAsync(string panelKey, int widthPx, CancellationToken cancellationToken)
+    {
+        return await DockViewInterop.SetDrawerWidthByKeyAsync(DockViewId, panelKey, widthPx, cancellationToken);
+    }
+
+    #endregion
+
     /// <summary>
     /// Gets the underlying DockView interop service for advanced operations.
     /// </summary>
@@ -221,19 +276,26 @@ public partial class DockViewV2Wrapper : IAsyncDisposable
 
     private async Task HandleInitializedAsync()
     {
+        System.Console.WriteLine("============================================");
         System.Console.WriteLine("[DockViewV2Wrapper] HandleInitializedAsync called.");
+        System.Console.WriteLine($"[DockViewV2Wrapper] GroupConfigurations count: {GroupConfigurations.Count}");
 
         // Small delay to ensure the dockview is fully rendered
         await Task.Delay(InitialDelayMs);
 
-        // Process group configurations
-        foreach (var groupConfig in GroupConfigurations.OrderBy(g => g.GroupIndex))
+        // Process group configurations in REVERSE order by GroupIndex
+        // This is crucial because unpinning a group shifts the indexes of remaining grid groups.
+        // By processing highest index first, we avoid index shifting issues.
+        foreach (var groupConfig in GroupConfigurations.OrderByDescending(g => g.GroupIndex))
         {
+            System.Console.WriteLine($"[DockViewV2Wrapper] Processing group {groupConfig.GroupIndex}, PinState={groupConfig.PinState}");
             if (groupConfig.PinState == DockPanelPinState.Drawer)
             {
                 try
                 {
-                    await DockViewInterop.UnpinGroupAsync(DockViewId, groupConfig.GroupIndex, CancellationToken.None);
+                    System.Console.WriteLine($"[DockViewV2Wrapper] Unpinning group {groupConfig.GroupIndex}...");
+                    var result = await DockViewInterop.UnpinGroupAsync(DockViewId, groupConfig.GroupIndex, CancellationToken.None);
+                    System.Console.WriteLine($"[DockViewV2Wrapper] UnpinGroupAsync result: {result}");
                     await Task.Delay(DefaultDelayBetweenOperationsMs);
                 }
                 catch (Exception ex)
@@ -241,7 +303,16 @@ public partial class DockViewV2Wrapper : IAsyncDisposable
                     System.Console.WriteLine($"[DockViewV2Wrapper] Error unpinning group {groupConfig.GroupIndex}: {ex.Message}");
                 }
             }
+        }
 
+        System.Console.WriteLine("[DockViewV2Wrapper] All groups unpinned. Processing panels...");
+
+        // After all groups are unpinned, process panel configurations
+        // Use a longer delay to ensure drawers are fully created
+        await Task.Delay(100);
+
+        foreach (var groupConfig in GroupConfigurations.OrderBy(g => g.GroupIndex))
+        {
             // Process panel configurations within the group
             foreach (var panelConfig in groupConfig.Panels)
             {
@@ -250,17 +321,17 @@ public partial class DockViewV2Wrapper : IAsyncDisposable
                     // Hide drawer tab if configured
                     if (panelConfig.DrawerTabVisibility == DrawerTabVisibility.Hidden)
                     {
-                        await DockViewInterop.HideDrawerTabAsync(DockViewId, panelConfig.Title, CancellationToken.None);
+                        await DockViewInterop.HideDrawerTabByKeyAsync(DockViewId, panelConfig.Key, CancellationToken.None);
                         await Task.Delay(DefaultDelayBetweenOperationsMs);
                     }
 
                     // Set drawer width
                     var width = panelConfig.DrawerWidthPx ?? DefaultDrawerWidthPx;
-                    await DockViewInterop.SetDrawerWidthAsync(DockViewId, panelConfig.Title, width, CancellationToken.None);
+                    await DockViewInterop.SetDrawerWidthByKeyAsync(DockViewId, panelConfig.Key, width, CancellationToken.None);
                 }
                 catch (Exception ex)
                 {
-                    System.Console.WriteLine($"[DockViewV2Wrapper] Error configuring panel '{panelConfig.Title}': {ex.Message}");
+                    System.Console.WriteLine($"[DockViewV2Wrapper] Error configuring panel '{panelConfig.Key}': {ex.Message}");
                 }
             }
 
@@ -271,11 +342,11 @@ public partial class DockViewV2Wrapper : IAsyncDisposable
             {
                 try
                 {
-                    // Use the first panel's title to find the sidebar button
-                    var firstPanelTitle = groupConfig.Panels[0].Title;
-                    await DockViewInterop.SetGroupStaticTitleAsync(
+                    // Use the first panel's key to find the sidebar button
+                    var firstPanelKey = groupConfig.Panels[0].Key;
+                    await DockViewInterop.SetGroupStaticTitleByKeyAsync(
                         DockViewId,
-                        firstPanelTitle,
+                        firstPanelKey,
                         groupConfig.GroupTitle,
                         CancellationToken.None);
                     await Task.Delay(DefaultDelayBetweenOperationsMs);

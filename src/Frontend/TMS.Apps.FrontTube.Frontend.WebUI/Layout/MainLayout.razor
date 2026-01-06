@@ -79,33 +79,43 @@
                 <DockViewContent Type="DockViewContentType.Column"
                                  Width="30">
                     
-                    @* Group 1: Channel - starts hidden, shown via JS when user clicks channel *@
+                    @* Group 1: Channel Info and Videos - starts hidden, shown via JS when user clicks channel *@
                     <DockViewContent Type="DockViewContentType.Group"
                                      Height="25">
-                        <DockViewComponent Key="channel"
-                                           Title="Channel"
+                        <DockViewComponent Key="channel-about"
+                                           Title="About"
                                            ShowClose="true">
                             <TitleTemplate>
-                                <i class="fa-solid fa-user"></i>
-                                <span> Channel</span>
+                                <i class="fa-solid fa-info-circle"></i>
+                                <span> About</span>
                             </TitleTemplate>
                             <ChildContent>
                                 <div class="dock-panel-content">
-                                    @if (IsChannelPanelActive)
+                                    @if (IsChannelAboutPanelActive)
                                     {
-                                        <ChannelContainerComponent IsActive="@IsChannelPanelActive"
-                                                                   ChannelId="@ChannelId" />
+                                        <ChannelAboutComponent IsActive="@IsChannelAboutPanelActive"
+                                                               ChannelId="@ChannelId" />
                                     }
                                 </div>
                             </ChildContent>
                         </DockViewComponent>
-                         <DockViewComponent Key="about"
-                                           Title="About"
+                        
+                        <DockViewComponent Key="channel-videos"
+                                           Title="Videos"
                                            ShowClose="true">
                             <TitleTemplate>
-                                <i class="fa-solid fa-user"></i>
-                                <span> About</span>
+                                <i class="fa-solid fa-video"></i>
+                                <span> Videos</span>
                             </TitleTemplate>
+                            <ChildContent>
+                                <div class="dock-panel-content">
+                                    @if (IsChannelVideosPanelActive)
+                                    {
+                                        <ChannelVideosComponent IsActive="@IsChannelVideosPanelActive"
+                                                                ChannelId="@ChannelId" />
+                                    }
+                                </div>
+                            </ChildContent>
                         </DockViewComponent>
                     </DockViewContent>
 

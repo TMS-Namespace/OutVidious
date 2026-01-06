@@ -269,4 +269,70 @@ public interface IDockViewInterop : IAsyncDisposable
         string dockViewId,
         string panelTitle,
         CancellationToken cancellationToken);
+
+    #region Key-based methods (preferred over title-based)
+
+    /// <summary>
+    /// Hides a drawer's tab button in the sidebar by panel key.
+    /// </summary>
+    /// <param name="dockViewId">The DockViewV2 element ID.</param>
+    /// <param name="panelKey">The unique key of the panel whose tab to hide.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the operation succeeded.</returns>
+    Task<bool> HideDrawerTabByKeyAsync(string dockViewId, string panelKey, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Sets the width of a drawer panel by panel key.
+    /// </summary>
+    /// <param name="dockViewId">The DockViewV2 element ID.</param>
+    /// <param name="panelKey">The unique key of the panel.</param>
+    /// <param name="widthPx">The width in pixels.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the operation succeeded.</returns>
+    Task<bool> SetDrawerWidthByKeyAsync(string dockViewId, string panelKey, int widthPx, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Sets a static title for a group's sidebar button by panel key.
+    /// When set, the button text will not change when switching between panels in the group.
+    /// </summary>
+    /// <param name="dockViewId">The DockViewV2 element ID.</param>
+    /// <param name="panelKey">The unique key of any panel in the group.</param>
+    /// <param name="staticTitle">The static title to display on the sidebar button.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the operation succeeded.</returns>
+    Task<bool> SetGroupStaticTitleByKeyAsync(
+        string dockViewId,
+        string panelKey,
+        string staticTitle,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Shows a drawer's tab button by panel key.
+    /// </summary>
+    /// <param name="dockViewId">The DockViewV2 element ID.</param>
+    /// <param name="panelKey">The unique key of the panel whose tab to show.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the operation succeeded.</returns>
+    Task<bool> ShowDrawerTabByKeyAsync(string dockViewId, string panelKey, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Shows a drawer's tab button by panel key with a specific width.
+    /// </summary>
+    /// <param name="dockViewId">The DockViewV2 element ID.</param>
+    /// <param name="panelKey">The unique key of the panel whose tab to show.</param>
+    /// <param name="widthPx">The width in pixels to set for the drawer.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the operation succeeded.</returns>
+    Task<bool> ShowDrawerTabByKeyAsync(string dockViewId, string panelKey, int widthPx, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Activates (focuses) a panel by key and expands its drawer if applicable.
+    /// </summary>
+    /// <param name="dockViewId">The DockViewV2 element ID.</param>
+    /// <param name="panelKey">The unique key of the panel to activate.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the operation succeeded.</returns>
+    Task<bool> ActivatePanelByKeyAsync(string dockViewId, string panelKey, CancellationToken cancellationToken);
+
+    #endregion
 }

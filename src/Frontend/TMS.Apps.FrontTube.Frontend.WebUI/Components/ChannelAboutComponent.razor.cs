@@ -6,16 +6,12 @@ using TMS.Apps.FrontTube.Frontend.WebUI.Services;
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Components;
 
 /// <summary>
-/// Component for displaying a YouTube channel's content in a dock panel.
-/// Implements lazy loading - only loads when the panel is active/visible.
+/// Component for displaying channel info (banner, avatar, description).
+/// Loads only channel metadata without videos.
 /// </summary>
-public partial class ChannelContainerComponent : ComponentBase, IDisposable
+public partial class ChannelAboutComponent : ComponentBase, IDisposable
 {
-    private const string AboutTabId = "about";
-    private const string AboutTabLabel = "About";
-    private int _selectedTabIndex;
     private bool _isDisposed;
-    private bool _initialLoadComplete;
     private string? _loadedChannelId;
     private CancellationTokenSource? _cts;
     private bool _wasActive;
@@ -24,15 +20,10 @@ public partial class ChannelContainerComponent : ComponentBase, IDisposable
     private Orchestrator Orchestrator { get; set; } = null!;
 
     [Inject]
-    private ILogger<ChannelContainerComponent> Logger { get; set; } = null!;
-
-    [Inject]
-    private NavigationManager NavigationManager { get; set; } = null!;
+    private ILogger<ChannelAboutComponent> Logger { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets whether the dock panel is currently active/visible.
-    /// When true, the component will load and render content.
-    /// When false, the component renders nothing to save resources.
     /// </summary>
     [Parameter]
     public bool IsActive { get; set; }
@@ -44,7 +35,7 @@ public partial class ChannelContainerComponent : ComponentBase, IDisposable
     public string? ChannelId { get; set; }
 
     /// <summary>
-    /// Event callback when channel ID changes (e.g., user navigates to different channel).
+    /// Event callback when channel ID changes.
     /// </summary>
     [Parameter]
     public EventCallback<string?> ChannelIdChanged { get; set; }
@@ -55,55 +46,9 @@ public partial class ChannelContainerComponent : ComponentBase, IDisposable
 
     protected string? ErrorMessage { get; private set; }
 
-    protected int SelectedTabIndex
-    {
-        get => _selectedTabIndex;
-        set
-        {
-            if (_selectedTabIndex != value)
-            {
-                _selectedTabIndex = value;
-
-                if (_initialLoadComplete)
-                {
-                    _ = OnTabChangedAsync(value);
-                }
-            }
-        }
-    }
-
     protected string? AvatarUrl => GetBestAvatar();
 
     protected string? BannerUrl => GetBestBanner();
-
-    protected IReadOnlyList<string> Tabs
-    {
-        get
-        {
-            if (ViewModel is null)
-            {
-                return [];
-            }
-
-            var tabs = ViewModel.AvailableTabs.ToList();
-
-            if (!tabs.Any(t => string.Equals(t, AboutTabId, StringComparison.OrdinalIgnoreCase)))
-            {
-                tabs.Add(AboutTabId);
-            }
-
-            return tabs;
-        }
-    }
-
-    protected bool IsAboutTabSelected
-    {
-        get
-        {
-            var tabId = GetSelectedTabId();
-            return tabId != null && string.Equals(tabId, AboutTabId, StringComparison.OrdinalIgnoreCase);
-        }
-    }
 
     protected bool HasChannelDescription => !string.IsNullOrWhiteSpace(ViewModel?.DescriptionHtml)
         || !string.IsNullOrWhiteSpace(ViewModel?.Description);
@@ -143,10 +88,8 @@ public partial class ChannelContainerComponent : ComponentBase, IDisposable
 
     protected override async Task OnParametersSetAsync()
     {
-        // Handle activation state change
         if (IsActive && !_wasActive)
         {
-            // Panel just became active - load content if we have a channel ID
             _wasActive = true;
             if (!string.IsNullOrWhiteSpace(ChannelId) && _loadedChannelId != ChannelId)
             {
@@ -155,12 +98,10 @@ public partial class ChannelContainerComponent : ComponentBase, IDisposable
         }
         else if (!IsActive && _wasActive)
         {
-            // Panel just became inactive - we could optionally clean up here
             _wasActive = false;
         }
         else if (IsActive && !string.IsNullOrWhiteSpace(ChannelId) && _loadedChannelId != ChannelId)
         {
-            // Channel ID changed while panel is active
             await LoadChannelAsync(ChannelId);
         }
     }
@@ -190,7 +131,6 @@ public partial class ChannelContainerComponent : ComponentBase, IDisposable
         }
 
         IsInitialLoading = true;
-        _initialLoadComplete = false;
         ErrorMessage = null;
         StateHasChanged();
 
@@ -198,7 +138,6 @@ public partial class ChannelContainerComponent : ComponentBase, IDisposable
         {
             Logger.LogDebug("[{MethodName}] Loading channel '{ChannelId}'.", nameof(LoadChannelAsync), channelId);
 
-            // Dispose previous ViewModel if any
             if (ViewModel is not null)
             {
                 ViewModel.StateChanged -= OnViewModelStateChanged;
@@ -220,13 +159,9 @@ public partial class ChannelContainerComponent : ComponentBase, IDisposable
 
             Logger.LogDebug("[{MethodName}] Channel loaded: '{ChannelName}'.", nameof(LoadChannelAsync), ViewModel.Name);
 
-            _initialLoadComplete = true;
             _loadedChannelId = channelId;
             IsInitialLoading = false;
             StateHasChanged();
-
-            // Load initial videos in background
-            _ = ViewModel.LoadInitialVideosAsync(_cts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -239,43 +174,6 @@ public partial class ChannelContainerComponent : ComponentBase, IDisposable
             IsInitialLoading = false;
             StateHasChanged();
         }
-    }
-
-    protected async Task HandleVideoClick(Video video)
-    {
-        var watchUrl = video.RemoteIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
-        NavigationManager.NavigateTo(watchUrl);
-        await Task.CompletedTask;
-    }
-
-    protected async Task HandleLoadMore()
-    {
-        if (_cts is not null && ViewModel is not null)
-        {
-            await ViewModel.LoadMoreVideosAsync(_cts.Token);
-        }
-    }
-
-    private async Task OnTabChangedAsync(int tabIndex)
-    {
-        var tabs = Tabs;
-
-        if (ViewModel is null ||
-            tabIndex < 0 ||
-            tabIndex >= tabs.Count ||
-            _cts is null)
-        {
-            return;
-        }
-
-        var tabId = tabs[tabIndex];
-
-        if (string.Equals(tabId, AboutTabId, StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        await ViewModel.SelectTabAsync(tabId, _cts.Token);
     }
 
     private void OnViewModelStateChanged(object? sender, EventArgs e)
@@ -305,28 +203,6 @@ public partial class ChannelContainerComponent : ComponentBase, IDisposable
 
         var proxyUrl = bannerIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
         return string.IsNullOrWhiteSpace(proxyUrl) ? null : proxyUrl;
-    }
-
-    private string? GetSelectedTabId()
-    {
-        var tabs = Tabs;
-
-        if (_selectedTabIndex < 0 || _selectedTabIndex >= tabs.Count)
-        {
-            return null;
-        }
-
-        return tabs[_selectedTabIndex];
-    }
-
-    protected static string GetTabLabel(string tabId)
-    {
-        if (string.Equals(tabId, AboutTabId, StringComparison.OrdinalIgnoreCase))
-        {
-            return AboutTabLabel;
-        }
-
-        return tabId;
     }
 
     public void Dispose()

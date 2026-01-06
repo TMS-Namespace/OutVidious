@@ -276,6 +276,61 @@ internal sealed class DockViewInterop : IDockViewInterop
             panelTitle);
     }
 
+    #region Key-based methods (preferred over title-based)
+
+    /// <inheritdoc/>
+    public async Task<bool> HideDrawerTabByKeyAsync(string dockViewId, string panelKey, CancellationToken cancellationToken)
+    {
+        await EnsureInitializedAsync(cancellationToken);
+        return await _module!.InvokeAsync<bool>("hideDrawerTabByKey", cancellationToken, dockViewId, panelKey);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> SetDrawerWidthByKeyAsync(string dockViewId, string panelKey, int widthPx, CancellationToken cancellationToken)
+    {
+        await EnsureInitializedAsync(cancellationToken);
+        return await _module!.InvokeAsync<bool>("setDrawerWidthByKey", cancellationToken, dockViewId, panelKey, widthPx);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> SetGroupStaticTitleByKeyAsync(
+        string dockViewId,
+        string panelKey,
+        string staticTitle,
+        CancellationToken cancellationToken)
+    {
+        await EnsureInitializedAsync(cancellationToken);
+        return await _module!.InvokeAsync<bool>(
+            "setGroupStaticTitleByKey",
+            cancellationToken,
+            dockViewId,
+            panelKey,
+            staticTitle);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> ShowDrawerTabByKeyAsync(string dockViewId, string panelKey, CancellationToken cancellationToken)
+    {
+        await EnsureInitializedAsync(cancellationToken);
+        return await _module!.InvokeAsync<bool>("showDrawerTabByKey", cancellationToken, dockViewId, panelKey);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> ShowDrawerTabByKeyAsync(string dockViewId, string panelKey, int widthPx, CancellationToken cancellationToken)
+    {
+        await EnsureInitializedAsync(cancellationToken);
+        return await _module!.InvokeAsync<bool>("showDrawerTabByKey", cancellationToken, dockViewId, panelKey, widthPx);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> ActivatePanelByKeyAsync(string dockViewId, string panelKey, CancellationToken cancellationToken)
+    {
+        await EnsureInitializedAsync(cancellationToken);
+        return await _module!.InvokeAsync<bool>("activatePanelByKey", cancellationToken, dockViewId, panelKey);
+    }
+
+    #endregion
+
     private async Task EnsureInitializedAsync(CancellationToken cancellationToken)
     {
         if (_module is null)

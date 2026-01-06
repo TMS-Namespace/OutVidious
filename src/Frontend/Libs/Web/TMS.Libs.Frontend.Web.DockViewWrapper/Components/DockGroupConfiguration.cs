@@ -36,9 +36,11 @@ public sealed class DockGroupConfiguration
 public sealed class DockPanelInitConfig
 {
     /// <summary>
-    /// Gets or sets the title of the panel.
+    /// Gets or sets the unique key (identifier) of the panel.
+    /// This must match the Key property set on the DockViewComponent.
+    /// Using a stable key instead of title makes the configuration robust to title changes.
     /// </summary>
-    public required string Title { get; init; }
+    public required string Key { get; init; }
 
     /// <summary>
     /// Gets or sets the drawer tab visibility when the panel is a drawer.

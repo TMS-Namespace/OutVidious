@@ -85,48 +85,18 @@
                 </MudPaper>
             </MudStack>
 
-            <!-- Tab Navigation -->
-            @if (Tabs.Count > 0)
-            {
-                <MudTabs
-                    @bind-ActivePanelIndex="SelectedTabIndex"
-                    Elevation="0"
-                    ApplyEffectsToContainer="true"
-                    Class="channel-tabs">
-                    @foreach (var tabId in Tabs)
-                    {
-                        <MudTabPanel
-                            Text="@GetTabLabel(tabId)"
-                            ID="@tabId" />
-                    }
-                </MudTabs>
-            }
-
-            @if (IsAboutTabSelected)
+            <!-- Channel Description -->
+            @if (HasChannelDescription)
             {
                 <MudPaper
                     Elevation="0"
-                    Class="pa-4 channel-about">
-                    @if (HasChannelDescription)
-                    {
-                        <MudText
-                            Typo="Typo.body2"
-                            Class="channel-description">
-                            @ChannelDescriptionMarkup
-                        </MudText>
-                    }
+                    Class="pa-4 channel-about mt-4">
+                    <MudText
+                        Typo="Typo.body2"
+                        Class="channel-description">
+                        @ChannelDescriptionMarkup
+                    </MudText>
                 </MudPaper>
-            }
-            else
-            {
-                <VideosGridComponent
-                    Videos="@ViewModel.Videos"
-                    ShowChannelName="false"
-                    IsLoading="@ViewModel.IsLoading"
-                    IsLoadingMore="@ViewModel.IsLoadingMore"
-                    HasMore="@ViewModel.HasMore"
-                    OnVideoClick="HandleVideoClick"
-                    OnLoadMore="HandleLoadMore" />
             }
         }
         else
@@ -144,7 +114,7 @@
                     Typo="Typo.body1"
                     Color="Color.Secondary"
                     Class="mt-2">
-                    No channel loaded. Search for a channel or click on a channel link.
+                    No channel loaded.
                 </MudText>
             </MudStack>
         }

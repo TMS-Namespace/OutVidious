@@ -1,0 +1,64 @@
+@if (IsActive)
+{
+    <MudContainer
+        MaxWidth="MaxWidth.ExtraLarge"
+        Class="pa-4">
+        @if (IsInitialLoading)
+        {
+            <MudStack
+                AlignItems="AlignItems.Center"
+                Justify="Justify.Center"
+                Class="channel-loading">
+                <MudProgressCircular
+                    Indeterminate="true"
+                    Size="Size.Large"
+                    Color="Color.Primary" />
+
+                <MudText
+                    Typo="Typo.body1"
+                    Class="mt-2">
+                    Loading videos...
+                </MudText>
+            </MudStack>
+        }
+        else if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <MudAlert
+                Severity="Severity.Error"
+                Class="ma-4">
+                @ErrorMessage
+            </MudAlert>
+        }
+        else if (ViewModel is not null)
+        {
+            <!-- Videos Grid -->
+            <VideosGridComponent
+                Videos="@ViewModel.Videos"
+                ShowChannelName="false"
+                IsLoading="@ViewModel.IsLoading"
+                IsLoadingMore="@ViewModel.IsLoadingMore"
+                HasMore="@ViewModel.HasMore"
+                OnVideoClick="HandleVideoClick"
+                OnLoadMore="HandleLoadMore" />
+        }
+        else
+        {
+            <MudStack
+                AlignItems="AlignItems.Center"
+                Justify="Justify.Center"
+                Class="channel-empty">
+                <MudIcon
+                    Icon="@Icons.Material.Filled.VideoLibrary"
+                    Size="Size.Large"
+                    Color="Color.Secondary" />
+
+                <MudText
+                    Typo="Typo.body1"
+                    Color="Color.Secondary"
+                    Class="mt-2">
+                    No channel selected.
+                </MudText>
+            </MudStack>
+        }
+    </MudContainer>
+}

@@ -15,9 +15,24 @@ namespace TMS.Apps.FrontTube.Frontend.WebUI.Layout;
 public partial class MainLayout : IAsyncDisposable
 {
     /// <summary>
-    /// The title of the channel panel used in visibility callbacks.
+    /// The unique key of the channel about panel (used for programmatic access).
     /// </summary>
-    private const string ChannelPanelTitle = "Channel";
+    private const string ChannelAboutPanelKey = "channel-about";
+
+    /// <summary>
+    /// The unique key of the channel videos panel (used for programmatic access).
+    /// </summary>
+    private const string ChannelVideosPanelKey = "channel-videos";
+
+    /// <summary>
+    /// The display title of the channel about panel.
+    /// </summary>
+    private const string ChannelAboutPanelTitle = "About";
+
+    /// <summary>
+    /// The display title of the channel videos panel.
+    /// </summary>
+    private const string ChannelVideosPanelTitle = "Videos";
 
     /// <summary>
     /// The default width in pixels for the channel drawer when it expands.
@@ -35,7 +50,7 @@ public partial class MainLayout : IAsyncDisposable
     /// </summary>
     private readonly List<DockGroupConfiguration> _groupConfigurations =
     [
-        // Group 1: Channel - starts as drawer with hidden tab
+        // Group 1: Channel Info and Videos - starts as drawer with hidden tabs
         new DockGroupConfiguration
         {
             GroupIndex = 1,
@@ -45,13 +60,13 @@ public partial class MainLayout : IAsyncDisposable
             [
                 new DockPanelInitConfig
                 {
-                    Title = "Channel",
+                    Key = ChannelAboutPanelKey,
                     DrawerTabVisibility = DrawerTabVisibility.Hidden,
                     DrawerWidthPx = ChannelDrawerWidthPx
                 },
                 new DockPanelInitConfig
                 {
-                    Title = "About",
+                    Key = ChannelVideosPanelKey,
                     DrawerTabVisibility = DrawerTabVisibility.Hidden,
                     DrawerWidthPx = ChannelDrawerWidthPx
                 }
@@ -64,7 +79,7 @@ public partial class MainLayout : IAsyncDisposable
             PinState = DockPanelPinState.Drawer,
             Panels =
             [
-                new DockPanelInitConfig { Title = "Search" }
+                new DockPanelInitConfig { Key = "search" }
             ]
         },
         // Group 3: Queue/Playlists/Favorites/History
@@ -75,7 +90,7 @@ public partial class MainLayout : IAsyncDisposable
             GroupTitle= "Collections",
             Panels =
             [
-                new DockPanelInitConfig { Title = "Queue" }
+                new DockPanelInitConfig { Key = "queue" }
             ]
         },
         // Group 4: Trending/Popular
@@ -86,7 +101,7 @@ public partial class MainLayout : IAsyncDisposable
             PinState = DockPanelPinState.Drawer,
             Panels =
             [
-                new DockPanelInitConfig { Title = "Trending" }
+                new DockPanelInitConfig { Key = "trending" }
             ]
         },
         // Group 5: Description/Comments/Related
@@ -97,7 +112,7 @@ public partial class MainLayout : IAsyncDisposable
             PinState = DockPanelPinState.Drawer,
             Panels =
             [
-                new DockPanelInitConfig { Title = "Description" }
+                new DockPanelInitConfig { Key = "videoDescription" }
             ]
         }
     ];
@@ -119,22 +134,31 @@ public partial class MainLayout : IAsyncDisposable
     private DockViewTheme DockViewTheme => _isDarkMode ? DockViewTheme.VS : DockViewTheme.Light;
 
     /// <summary>
-    /// Gets or sets the channel ID for the channel dock panel.
+    /// Gets or sets the channel ID for the channel dock panels.
     /// </summary>
     private string? ChannelId { get; set; }
 
     /// <summary>
-    /// Gets or sets whether the channel dock panel is currently active.
+    /// Gets or sets whether the channel About panel is currently active.
     /// Used for lazy loading - content only renders when panel is visible.
     /// </summary>
-    private bool IsChannelPanelActive { get; set; }
+    private bool IsChannelAboutPanelActive { get; set; }
 
     /// <summary>
-    /// Gets or sets whether the channel dock panel is visible.
-    /// Controls the Visible attribute on the DockViewComponent.
-    /// Starts as false (hidden) and is set to true when a channel is requested.
+    /// Gets or sets whether the channel Videos panel is currently active.
+    /// Used for lazy loading - content only renders when panel is visible.
     /// </summary>
-    private bool IsChannelPanelVisible { get; set; }
+    private bool IsChannelVideosPanelActive { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the channel About panel is visible.
+    /// </summary>
+    private bool IsChannelAboutPanelVisible { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the channel Videos panel is visible.
+    /// </summary>
+    private bool IsChannelVideosPanelVisible { get; set; }
 
     /// <summary>
     /// Gets the CSS class for the DockViewV2 component.
@@ -185,10 +209,16 @@ public partial class MainLayout : IAsyncDisposable
     /// <param name="args">Tuple containing (title, isVisible).</param>
     private Task OnVisibleStateChangedAsync((string Title, bool IsVisible) args)
     {
-        if (args.Title == ChannelPanelTitle)
+        if (args.Title == ChannelAboutPanelTitle)
         {
-            IsChannelPanelActive = args.IsVisible;
-            IsChannelPanelVisible = args.IsVisible;
+            IsChannelAboutPanelActive = args.IsVisible;
+            IsChannelAboutPanelVisible = args.IsVisible;
+            StateHasChanged();
+        }
+        else if (args.Title == ChannelVideosPanelTitle)
+        {
+            IsChannelVideosPanelActive = args.IsVisible;
+            IsChannelVideosPanelVisible = args.IsVisible;
             StateHasChanged();
         }
 
@@ -197,8 +227,9 @@ public partial class MainLayout : IAsyncDisposable
 
     /// <summary>
     /// Handles channel open requests from the Orchestrator.
-    /// Shows the channel drawer tab (if hidden), and activates it to expand the drawer.
+    /// Shows the About panel in the channel drawer and activates it.
     /// Uses separate calls with delays between them for proper timing.
+    /// If the panel was previously closed via X button, it will be recreated.
     /// </summary>
     private async void OnChannelOpenRequested(object? sender, string channelId)
     {
@@ -208,8 +239,8 @@ public partial class MainLayout : IAsyncDisposable
         }
 
         ChannelId = channelId;
-        IsChannelPanelActive = true;
-        IsChannelPanelVisible = true;
+        IsChannelAboutPanelActive = true;
+        IsChannelAboutPanelVisible = true;
         await InvokeAsync(StateHasChanged);
 
         // Small delay to ensure the panel content is rendered by Blazor
@@ -218,18 +249,37 @@ public partial class MainLayout : IAsyncDisposable
         try
         {
             // Step 1: Show the drawer tab (make sidebar button visible) and set width
-            await _dockViewWrapper.ShowDrawerTabAsync(ChannelPanelTitle, ChannelDrawerWidthPx, CancellationToken.None);
+            var showResult = await _dockViewWrapper.ShowDrawerTabByKeyAsync(ChannelAboutPanelKey, ChannelDrawerWidthPx, CancellationToken.None);
+
+            // If showResult is false, the panel was orphaned and removed by JS
+            // Force a Blazor re-render to recreate it
+            if (!showResult)
+            {
+                System.Console.WriteLine($"[MainLayout] Panel was orphaned, triggering re-render...");
+
+                // Toggle the visibility to force Blazor to recreate the panel
+                IsChannelAboutPanelVisible = false;
+                await InvokeAsync(StateHasChanged);
+                await Task.Delay(50);
+
+                IsChannelAboutPanelVisible = true;
+                await InvokeAsync(StateHasChanged);
+                await Task.Delay(150);
+
+                // Retry showing the drawer tab
+                await _dockViewWrapper.ShowDrawerTabByKeyAsync(ChannelAboutPanelKey, ChannelDrawerWidthPx, CancellationToken.None);
+            }
 
             // Step 2: C# delay - this gives the browser event loop time to fully process the DOM changes
             // This is crucial - the delay must happen in C# (not JS) to allow proper interleaving
             await Task.Delay(100);
 
             // Step 3: Activate the panel to expand the drawer
-            await _dockViewWrapper.ActivatePanelAsync(ChannelPanelTitle, CancellationToken.None);
+            await _dockViewWrapper.ActivatePanelByKeyAsync(ChannelAboutPanelKey, CancellationToken.None);
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"[MainLayout] Error showing channel panel: {ex.Message}");
+            System.Console.WriteLine($"[MainLayout] Error showing channel about panel: {ex.Message}");
         }
     }
 

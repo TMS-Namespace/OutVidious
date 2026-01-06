@@ -14,7 +14,7 @@
  */
 
 // Core utilities
-export { getDockview, findPanelByTitle, findGroupByPanelTitle, getGroupByIndex, loadDataModule } from './dockview-interop-core.js';
+export { getDockview, findPanelByTitle, findPanelByKey, findGroupByPanelTitle, findGroupByPanelKey, getGroupByIndex, loadDataModule } from './dockview-interop-core.js';
 
 // Pin/unpin operations
 export { unpinGroup, unpinPanel, pinPanel, unpinGroupByPanelTitle } from './dockview-interop-pin.js';
@@ -22,15 +22,15 @@ export { unpinGroup, unpinPanel, pinPanel, unpinGroupByPanelTitle } from './dock
 // Float/dock operations
 export { floatPanel, dockPanel } from './dockview-interop-float.js';
 
-// Panel management
-export { collapsePanel, expandPanel, activatePanel, getPanelState, panelExists, addPanelToNewGroup, removePanel } from './dockview-interop-panel.js';
+// Panel management (title-based and key-based)
+export { collapsePanel, expandPanel, activatePanel, activatePanelByKey, getPanelState, panelExists, addPanelToNewGroup, removePanel } from './dockview-interop-panel.js';
 
-// Drawer operations
-export { showDrawer, hideDrawer, hideDrawerTab, showDrawerTab, showAndExpandDrawer, setDrawerWidth } from './dockview-interop-drawer.js';
+// Drawer operations (title-based and key-based)
+export { showDrawer, hideDrawer, hideDrawerTab, showDrawerTab, showAndExpandDrawer, setDrawerWidth, hideDrawerTabByKey, showDrawerTabByKey, setDrawerWidthByKey } from './dockview-interop-drawer.js';
 
 // Group visibility
 export { showGroup, hideGroup, isGroupVisible } from './dockview-interop-group.js';
 
-// Static titles
-export { setGroupStaticTitle, clearGroupStaticTitle } from './dockview-interop-static-titles.js';
+// Static titles (title-based and key-based)
+export { setGroupStaticTitle, clearGroupStaticTitle, setGroupStaticTitleByKey } from './dockview-interop-static-titles.js';
 
