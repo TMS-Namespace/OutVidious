@@ -1,3 +1,4 @@
+using TMS.Libs.Frontend.Web.DockPanels.Components;
 using TMS.Libs.Frontend.Web.DockPanels.Enums;
 
 namespace TMS.Libs.Frontend.Web.DockPanels.Models;
@@ -9,9 +10,14 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Models;
 public sealed record DockPanelConfiguration
 {
     /// <summary>
-    /// Gets the title of the panel this configuration applies to.
+    /// Gets the panel this configuration applies to.
     /// </summary>
-    public required string Title { get; init; }
+    public required DockPanelComponent Panel { get; init; }
+
+    /// <summary>
+    /// Gets the internal GUID of the panel.
+    /// </summary>
+    public Guid PanelId => Panel.PanelId;
 
     /// <summary>
     /// Gets the initial pin state of the panel.
@@ -30,9 +36,4 @@ public sealed record DockPanelConfiguration
     /// </summary>
     public int? DrawerWidthPx { get; init; }
 
-    /// <summary>
-    /// Gets the 0-based group index for unpinning order.
-    /// When multiple panels are in the same group, this is the group index to use.
-    /// </summary>
-    public int? GroupIndex { get; init; }
 }

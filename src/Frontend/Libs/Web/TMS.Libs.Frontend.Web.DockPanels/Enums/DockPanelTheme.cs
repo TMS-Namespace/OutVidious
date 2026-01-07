@@ -10,37 +10,37 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Enums;
 public enum DockPanelTheme
 {
     /// <summary>
-    /// dockview-theme-light 主题
+    /// dockview-theme-light theme.
     /// </summary>
     [Description("dockview-theme-light")]
     Light,
 
     /// <summary>
-    /// dockview-theme-dark 主题
+    /// dockview-theme-dark theme.
     /// </summary>
     [Description("dockview-theme-dark")]
     Dark,
 
     /// <summary>
-    /// dockview-theme-vs 主题
+    /// dockview-theme-vs theme.
     /// </summary>
     [Description("dockview-theme-vs")]
     VS,
 
     /// <summary>
-    /// dockview-theme-abyss 主题
+    /// dockview-theme-abyss theme.
     /// </summary>
     [Description("dockview-theme-abyss")]
     Abyss,
 
     /// <summary>
-    /// dockview-theme-dracula 主题
+    /// dockview-theme-dracula theme.
     /// </summary>
     [Description("dockview-theme-dracula")]
     Dracula,
 
     /// <summary>
-    /// dockview-theme-replit 主题
+    /// dockview-theme-replit theme.
     /// </summary>
     [Description("dockview-theme-replit")]
     Replit

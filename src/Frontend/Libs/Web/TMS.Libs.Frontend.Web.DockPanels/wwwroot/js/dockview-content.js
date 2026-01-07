@@ -5,13 +5,12 @@
 
     init(parameter) {
         const { params, api: { panel, accessor: { params: { template } } } } = parameter;
-        const { titleClass, titleWidth, class: panelClass, key, title } = params;
+        const { titleClass, titleWidth, class: panelClass, id: panelId } = params;
         const { tab, content } = panel.view
 
         if (template) {
-            this._element = key
-                ? template.querySelector(`[data-bb-key="${key}"]`)
-                : (template.querySelector(`#${this.option.id}`) ?? template.querySelector(`[data-bb-title="${title}"]`))
+            const resolvedId = panelId ?? this.option.id;
+            this._element = template.querySelector(`[data-bb-id="${resolvedId}"]`);
         }
 
         if (titleClass) {

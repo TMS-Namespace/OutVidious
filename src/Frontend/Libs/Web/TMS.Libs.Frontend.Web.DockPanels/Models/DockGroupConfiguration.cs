@@ -1,3 +1,4 @@
+using TMS.Libs.Frontend.Web.DockPanels.Components;
 using TMS.Libs.Frontend.Web.DockPanels.Enums;
 
 namespace TMS.Libs.Frontend.Web.DockPanels.Models;
@@ -8,9 +9,14 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Models;
 public sealed class DockGroupConfiguration
 {
     /// <summary>
-    /// Gets or sets the 0-based index of the group.
+    /// Gets or sets the anchor panel used to resolve the target group.
     /// </summary>
-    public required int GroupIndex { get; init; }
+    public required DockPanelComponent GroupPanel { get; init; }
+
+    /// <summary>
+    /// Gets the internal GUID of the anchor panel.
+    /// </summary>
+    public Guid GroupPanelId => GroupPanel.PanelId;
 
     /// <summary>
     /// Gets or sets the initial pin state of the group.

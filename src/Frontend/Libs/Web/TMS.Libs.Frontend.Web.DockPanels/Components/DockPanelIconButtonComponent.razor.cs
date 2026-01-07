@@ -5,14 +5,14 @@ using BootstrapBlazor.Components;
 namespace TMS.Libs.Frontend.Web.DockPanels.Components;
 
 /// <summary>
-/// Dock panel dropdown icon component.
+/// Dock panel icon button component.
 /// </summary>
-public partial class DockPanelDropdownIconComponent
+public partial class DockPanelIconButtonComponent
 {
     /// <summary>
     /// Gets the CSS class string.
     /// </summary>
-    private string? ClassString => CssBuilder.Default("dropdown dropdown-center bb-dockview-control-icon")
+    private string? ClassString => CssBuilder.Default("bb-dockview-control-icon bb-dockview-control-icon-button")
         .AddClass($"bb-dockview-control-icon-{IconName}")
         .Build();
 }

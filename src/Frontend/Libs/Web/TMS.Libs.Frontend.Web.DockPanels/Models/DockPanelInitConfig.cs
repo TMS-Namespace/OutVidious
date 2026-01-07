@@ -1,3 +1,4 @@
+using TMS.Libs.Frontend.Web.DockPanels.Components;
 using TMS.Libs.Frontend.Web.DockPanels.Enums;
 
 namespace TMS.Libs.Frontend.Web.DockPanels.Models;
@@ -8,11 +9,14 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Models;
 public sealed class DockPanelInitConfig
 {
     /// <summary>
-    /// Gets or sets the unique key (identifier) of the panel.
-    /// This must match the Key property set on the DockPanelComponent.
-    /// Using a stable key instead of title makes the configuration robust to title changes.
+    /// Gets or sets the panel instance this configuration applies to.
     /// </summary>
-    public required string Key { get; init; }
+    public required DockPanelComponent Panel { get; init; }
+
+    /// <summary>
+    /// Gets the internal GUID of the panel.
+    /// </summary>
+    public Guid PanelId => Panel.PanelId;
 
     /// <summary>
     /// Gets or sets the drawer tab visibility when the panel is a drawer.

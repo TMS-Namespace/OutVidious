@@ -39,8 +39,7 @@ export async function init(id, invoke, options) {
                 }
             }
 
-            const panelKey = activePanel.params?.key || activePanel.params?.Key || activePanel.id || activePanel.title;
-            dockview._panelActiveChanged.fire({ title: activePanel.title, key: panelKey, isActive: true });
+            dockview._panelActiveChanged.fire({ panelId: activePanel.id, isActive: true });
         });
     };
 
@@ -50,14 +49,20 @@ export async function init(id, invoke, options) {
         notifyActivePanels();
         setTimeout(notifyActivePanels, 100);
     });
-    dockview.on('lockChanged', ({ title, isLock }) => {
-        invoke.invokeMethodAsync(options.lockChangedCallback, title, isLock);
+    dockview.on('lockChanged', ({ panelIds, isLock }) => {
+        invoke.invokeMethodAsync(options.lockChangedCallback, panelIds, isLock);
     });
-    dockview.on('panelVisibleChanged', ({ title, status }) => {
-        invoke.invokeMethodAsync(options.panelVisibleChangedCallback, title, status);
+    dockview.on('panelVisibleChanged', ({ panelId, status }) => {
+        invoke.invokeMethodAsync(options.panelVisibleChangedCallback, panelId, status);
     });
-    dockview.on('panelActiveChanged', ({ title, key, isActive }) => {
-        invoke.invokeMethodAsync(options.panelActiveChangedCallback, title, key, isActive);
+    dockview.on('panelActiveChanged', ({ panelId, isActive }) => {
+        invoke.invokeMethodAsync(options.panelActiveChangedCallback, panelId, isActive);
+    });
+    dockview.on('panelAdded', ({ panelId }) => {
+        invoke.invokeMethodAsync(options.panelAddedCallback, panelId);
+    });
+    dockview.on('drawerReady', ({ panelId, groupId }) => {
+        invoke.invokeMethodAsync(options.drawerReadyCallback, panelId, groupId);
     });
     dockview.on('groupSizeChanged', () => {
         invoke.invokeMethodAsync(options.splitterCallback);

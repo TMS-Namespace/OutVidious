@@ -10,7 +10,15 @@
     --bb-dockview-control-dropdown-padding-y: .25rem;
     --bb-dockview-control-dropdown-item-padding-x: 0;
     --bb-dockview-control-dropdown-item-padding-y: 3px;
-    --bb-dockview-aside-width: calc(1.5em + .25rem);
+    --bb-dockview-actions-gap: .4rem;
+    --bb-dockview-aside-icon-size: 1.1rem;
+    --bb-dockview-aside-content-width: max(var(--bb-dockview-aside-icon-size), 1.25em);
+    --bb-dockview-aside-button-padding-inline: .35rem;
+    --bb-dockview-aside-button-padding-inline-end-extra: calc(.2rem + 3px);
+    --bb-dockview-aside-right-width-extra: var(--bb-dockview-aside-button-padding-inline-end-extra, 0px);
+    --bb-dockview-aside-button-padding-block: .3rem;
+    --bb-dockview-aside-button-gap: .3rem;
+    --bb-dockview-aside-width: calc(var(--bb-dockview-aside-content-width) + (var(--bb-dockview-aside-button-padding-inline) * 2));
     --dv-tabs-and-actions-container-font-size: 13px;
     --dv-tabs-and-actions-container-height: 35px;
     --dv-active-sash-color: #bcbcbc;
@@ -65,7 +73,8 @@
             line-height: var(--bb-dockview-tab-line-height);
         }
 
-        .bb-dockview .dv-tab .dv-default-tab .bb-dockview-control-icon {
+        .bb-dockview .dv-tab .dv-default-tab .bb-dockview-control-icon,
+        .bb-dockview .dv-tab .dv-default-tab .bb-dockview-icon {
             display: flex;
         }
 
@@ -116,6 +125,7 @@
         display: flex;
         align-items: center;
         margin-right: .5rem;
+        gap: var(--bb-dockview-actions-gap);
     }
 
         .bb-dockview .dv-right-actions-container > div {
@@ -165,14 +175,32 @@
             stroke: var(--bb-dockview-control-icon-lock-color);
         }
 
-    .bb-dockview .bb-dockview-control-icon > svg {
+    .bb-dockview .bb-dockview-control-icon > svg,
+    .bb-dockview .bb-dockview-icon > svg {
         width: var(--bb-dockview-control-icon-width);
         height: var(--bb-dockview-control-icon-width);
     }
 
-        .bb-dockview .bb-dockview-control-icon > svg > * {
+        .bb-dockview .bb-dockview-control-icon > svg > *,
+        .bb-dockview .bb-dockview-icon > svg > * {
             stroke: var(--bb-dockview-control-icon-color);
         }
+
+    .bb-dockview .bb-dockview-control-icon-button {
+        background: transparent;
+        border: 0;
+        padding: 0;
+        cursor: pointer;
+        line-height: 0;
+    }
+
+    .bb-dockview .bb-dockview-control-icon {
+        cursor: pointer;
+    }
+
+    .bb-dockview .bb-dockview-icon {
+        pointer-events: none;
+    }
 
     .bb-dockview .bb-up .bb-dockview-control-icon-down > svg {
         transform: rotate(180deg);
@@ -209,7 +237,7 @@
 }
 
 .bb-dockview > div:has(> .bb-dockview-aside-right > div) {
-    padding-right: var(--bb-dockview-aside-width);
+    padding-right: calc(var(--bb-dockview-aside-width) + var(--bb-dockview-aside-right-width-extra));
 }
 
 .bb-dockview .bb-dockview-aside {
@@ -235,19 +263,59 @@
 .bb-dockview .bb-dockview-aside-right {
     right: 0;
     border-left: 1px solid var(--bs-border-color);
+    width: calc(var(--bb-dockview-aside-width) + var(--bb-dockview-aside-right-width-extra));
 }
 
 .bb-dockview .bb-dockview-aside > .bb-dockview-aside-button {
     position: relative;
     margin: .25rem 2px;
-    padding-inline: .5rem;
+    padding-inline-start: var(--bb-dockview-aside-button-padding-inline);
+    padding-inline-end: var(--bb-dockview-aside-button-padding-inline);
+    padding-block: var(--bb-dockview-aside-button-padding-block);
+    width: 100%;
+    box-sizing: border-box;
     cursor: pointer;
     user-select: none;
-    writing-mode: vertical-lr;
-    text-orientation: sideways;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--bb-dockview-aside-button-gap);
     color: var(--dv-inactivegroup-visiblepanel-tab-color);
     border-radius: 5px;
 }
+
+    .bb-dockview .bb-dockview-aside-right > .bb-dockview-aside-button {
+        padding-inline-end: calc(var(--bb-dockview-aside-button-padding-inline) + var(--bb-dockview-aside-button-padding-inline-end-extra));
+    }
+
+    .bb-dockview .bb-dockview-aside > .bb-dockview-aside-button .bb-dockview-aside-button-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--bb-dockview-aside-icon-size);
+        min-inline-size: var(--bb-dockview-aside-content-width);
+        margin-inline: auto;
+        line-height: 1;
+    }
+
+    .bb-dockview .bb-dockview-aside > .bb-dockview-aside-button .bb-dockview-aside-button-icon i {
+        display: block;
+        width: 1.25em;
+        text-align: center;
+        line-height: 1;
+    }
+
+    .bb-dockview .bb-dockview-aside > .bb-dockview-aside-button .bb-dockview-aside-button-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-inline-size: var(--bb-dockview-aside-content-width);
+        margin-inline: auto;
+        writing-mode: vertical-lr;
+        text-orientation: sideways;
+        text-align: center;
+        line-height: 1;
+    }
 
     .bb-dockview .bb-dockview-aside > .bb-dockview-aside-button:hover,
     .bb-dockview .bb-dockview-aside > .bb-dockview-aside-button.active {

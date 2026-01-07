@@ -6,12 +6,12 @@ const onAddPanel = panel => {
     updateCloseButton(panel);
     updateTitle(panel);
     observePanelActiveChange(panel)
+    panel.accessor?._panelAdded?.fire({ panelId: panel.id });
 }
 const observePanelActiveChange = panel => {
     panel.api.onDidActiveChange(({ isActive }) => {
         if (panel.accessor?._fronttubeActiveTrackingReady) {
-            const panelKey = panel.params?.key || panel.params?.Key || panel.id || panel.title;
-            panel.accessor._panelActiveChanged?.fire({ title: panel.title, key: panelKey, isActive });
+            panel.accessor._panelActiveChanged?.fire({ panelId: panel.id, isActive });
         }
         if (isActive && !panel.group.api.isMaximized()) {
             saveConfig(panel.accessor)
@@ -153,7 +153,7 @@ const getPanels = (contentItem, options, parent = {}, panels = []) => {
 }
 
 const findContentFromPanels = (panels, content) => {
-    return panels.find((p => p.params.key && p.params.key === content.params.key) || p.id === content.id || p.title === content.title);
+    return panels.find(p => p.id === content.id);
 }
 
 const savePanel = (dockview, panel) => {

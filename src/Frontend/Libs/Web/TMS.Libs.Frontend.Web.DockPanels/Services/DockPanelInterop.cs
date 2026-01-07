@@ -53,62 +53,56 @@ internal sealed class DockPanelInterop : IDockPanelInterop
     }
 
     /// <inheritdoc/>
-    public Task<bool> UnpinGroupAsync(string dockViewId, int groupIndex, CancellationToken cancellationToken)
+    public Task<bool> UnpinGroupAsync(string dockViewId, Guid groupId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("unpinGroup", nameof(UnpinGroupAsync), cancellationToken, dockViewId, groupIndex);
+        return InvokeInteropAsync<bool>("unpinGroup", nameof(UnpinGroupAsync), cancellationToken, dockViewId, groupId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> UnpinPanelAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> UnpinPanelAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("unpinPanel", nameof(UnpinPanelAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("unpinPanel", nameof(UnpinPanelAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> UnpinGroupByPanelTitleAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> PinPanelAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("unpinGroupByPanelTitle", nameof(UnpinGroupByPanelTitleAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("pinPanel", nameof(PinPanelAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> PinPanelAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> FloatPanelAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("pinPanel", nameof(PinPanelAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("floatPanel", nameof(FloatPanelAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> FloatPanelAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> DockPanelAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("floatPanel", nameof(FloatPanelAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("dockPanel", nameof(DockPanelAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> DockPanelAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> CollapsePanelAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("dockPanel", nameof(DockPanelAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("collapsePanel", nameof(CollapsePanelAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> CollapsePanelAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> ExpandPanelAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("collapsePanel", nameof(CollapsePanelAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("expandPanel", nameof(ExpandPanelAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> ExpandPanelAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
-    {
-        return InvokeInteropAsync<bool>("expandPanel", nameof(ExpandPanelAsync), cancellationToken, dockViewId, panelTitle);
-    }
-
-    /// <inheritdoc/>
-    public async Task<DockPanelState?> GetPanelStateAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public async Task<DockPanelState?> GetPanelStateAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
         var jsState = await InvokeInteropAsync<JsonElement?>(
             "getPanelState",
             nameof(GetPanelStateAsync),
             cancellationToken,
             dockViewId,
-            panelTitle);
+            panelId);
 
         if (jsState is null || jsState.Value.ValueKind == JsonValueKind.Null)
         {
@@ -138,114 +132,108 @@ internal sealed class DockPanelInterop : IDockPanelInterop
     }
 
     /// <inheritdoc/>
-    public Task<bool> ShowDrawerAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> ShowDrawerAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("showDrawer", nameof(ShowDrawerAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("showDrawer", nameof(ShowDrawerAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> HideDrawerAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> HideDrawerAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("hideDrawer", nameof(HideDrawerAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("hideDrawer", nameof(HideDrawerAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> ActivatePanelAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> ActivatePanelAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("activatePanel", nameof(ActivatePanelAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("activatePanel", nameof(ActivatePanelAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> SetActivePanelAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> SetActivePanelAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("setActivePanel", nameof(SetActivePanelAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("setActivePanel", nameof(SetActivePanelAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> PanelExistsAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> PanelExistsAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("panelExists", nameof(PanelExistsAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("panelExists", nameof(PanelExistsAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> PanelExistsByKeyAsync(string dockViewId, string panelKey, CancellationToken cancellationToken)
+    public Task<bool> HideDrawerTabAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("panelExistsByKey", nameof(PanelExistsByKeyAsync), cancellationToken, dockViewId, panelKey);
+        return InvokeInteropAsync<bool>("hideDrawerTab", nameof(HideDrawerTabAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> HideDrawerTabAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> ShowDrawerTabAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("hideDrawerTab", nameof(HideDrawerTabAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("showDrawerTab", nameof(ShowDrawerTabAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> ShowDrawerTabAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> ShowDrawerTabAsync(string dockViewId, Guid panelId, int widthPx, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("showDrawerTab", nameof(ShowDrawerTabAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("showDrawerTab", nameof(ShowDrawerTabAsync), cancellationToken, dockViewId, panelId, widthPx);
     }
 
     /// <inheritdoc/>
-    public Task<bool> ShowDrawerTabAsync(string dockViewId, string panelTitle, int widthPx, CancellationToken cancellationToken)
+    public Task<bool> ShowAndExpandDrawerAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("showDrawerTab", nameof(ShowDrawerTabAsync), cancellationToken, dockViewId, panelTitle, widthPx);
+        return InvokeInteropAsync<bool>("showAndExpandDrawer", nameof(ShowAndExpandDrawerAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> ShowAndExpandDrawerAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> ShowAndExpandDrawerAsync(string dockViewId, Guid panelId, int widthPx, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("showAndExpandDrawer", nameof(ShowAndExpandDrawerAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("showAndExpandDrawer", nameof(ShowAndExpandDrawerAsync), cancellationToken, dockViewId, panelId, widthPx);
     }
 
     /// <inheritdoc/>
-    public Task<bool> ShowAndExpandDrawerAsync(string dockViewId, string panelTitle, int widthPx, CancellationToken cancellationToken)
+    public Task<bool> SetDrawerWidthAsync(string dockViewId, Guid panelId, int widthPx, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("showAndExpandDrawer", nameof(ShowAndExpandDrawerAsync), cancellationToken, dockViewId, panelTitle, widthPx);
+        return InvokeInteropAsync<bool>("setDrawerWidth", nameof(SetDrawerWidthAsync), cancellationToken, dockViewId, panelId, widthPx);
     }
 
     /// <inheritdoc/>
-    public Task<bool> SetDrawerWidthAsync(string dockViewId, string panelTitle, int widthPx, CancellationToken cancellationToken)
+    public Task<bool> IsDrawerReadyAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("setDrawerWidth", nameof(SetDrawerWidthAsync), cancellationToken, dockViewId, panelTitle, widthPx);
+        return InvokeInteropAsync<bool>("isDrawerReady", nameof(IsDrawerReadyAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> IsDrawerReadyAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> ShowGroupAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("isDrawerReady", nameof(IsDrawerReadyAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("showGroup", nameof(ShowGroupAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> ShowGroupAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> HideGroupAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("showGroup", nameof(ShowGroupAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("hideGroup", nameof(HideGroupAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> HideGroupAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> IsGroupVisibleAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("hideGroup", nameof(HideGroupAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("isGroupVisible", nameof(IsGroupVisibleAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
-    public Task<bool> IsGroupVisibleAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> RemovePanelAsync(string dockViewId, Guid panelId, CancellationToken cancellationToken)
     {
-        return InvokeInteropAsync<bool>("isGroupVisible", nameof(IsGroupVisibleAsync), cancellationToken, dockViewId, panelTitle);
-    }
-
-    /// <inheritdoc/>
-    public Task<bool> RemovePanelAsync(string dockViewId, string panelTitle, CancellationToken cancellationToken)
-    {
-        return InvokeInteropAsync<bool>("removePanel", nameof(RemovePanelAsync), cancellationToken, dockViewId, panelTitle);
+        return InvokeInteropAsync<bool>("removePanel", nameof(RemovePanelAsync), cancellationToken, dockViewId, panelId);
     }
 
     /// <inheritdoc/>
     public Task<bool> AddPanelToNewGroupAsync(
         string dockViewId,
-        string panelId,
+        Guid panelId,
         string panelTitle,
         string position,
-        int? referenceGroupIndex,
+        Guid? referenceGroupId,
         CancellationToken cancellationToken)
     {
         return InvokeInteropAsync<bool>(
@@ -256,13 +244,13 @@ internal sealed class DockPanelInterop : IDockPanelInterop
             panelId,
             panelTitle,
             position,
-            referenceGroupIndex);
+            referenceGroupId);
     }
 
     /// <inheritdoc/>
     public Task<bool> SetGroupStaticTitleAsync(
         string dockViewId,
-        string panelTitle,
+        Guid panelId,
         string staticTitle,
         CancellationToken cancellationToken)
     {
@@ -271,14 +259,14 @@ internal sealed class DockPanelInterop : IDockPanelInterop
             nameof(SetGroupStaticTitleAsync),
             cancellationToken,
             dockViewId,
-            panelTitle,
+            panelId,
             staticTitle);
     }
 
     /// <inheritdoc/>
     public Task<bool> ClearGroupStaticTitleAsync(
         string dockViewId,
-        string panelTitle,
+        Guid panelId,
         CancellationToken cancellationToken)
     {
         return InvokeInteropAsync<bool>(
@@ -286,70 +274,8 @@ internal sealed class DockPanelInterop : IDockPanelInterop
             nameof(ClearGroupStaticTitleAsync),
             cancellationToken,
             dockViewId,
-            panelTitle);
+            panelId);
     }
-
-    #region Key-based methods (preferred over title-based)
-
-    /// <inheritdoc/>
-    public Task<bool> UnpinGroupByPanelKeyAsync(string dockViewId, string panelKey, CancellationToken cancellationToken)
-    {
-        return InvokeInteropAsync<bool>("unpinGroupByPanelKey", nameof(UnpinGroupByPanelKeyAsync), cancellationToken, dockViewId, panelKey);
-    }
-
-    /// <inheritdoc/>
-    public Task<bool> HideDrawerTabByKeyAsync(string dockViewId, string panelKey, CancellationToken cancellationToken)
-    {
-        return InvokeInteropAsync<bool>("hideDrawerTabByKey", nameof(HideDrawerTabByKeyAsync), cancellationToken, dockViewId, panelKey);
-    }
-
-    /// <inheritdoc/>
-    public Task<bool> SetDrawerWidthByKeyAsync(string dockViewId, string panelKey, int widthPx, CancellationToken cancellationToken)
-    {
-        return InvokeInteropAsync<bool>("setDrawerWidthByKey", nameof(SetDrawerWidthByKeyAsync), cancellationToken, dockViewId, panelKey, widthPx);
-    }
-
-    /// <inheritdoc/>
-    public Task<bool> SetDockCollectionTitleByKeyAsync(
-        string dockViewId,
-        string panelKey,
-        string staticTitle,
-        CancellationToken cancellationToken)
-    {
-        return InvokeInteropAsync<bool>(
-            "setGroupStaticTitleByKey",
-            nameof(SetDockCollectionTitleByKeyAsync),
-            cancellationToken,
-            dockViewId,
-            panelKey,
-            staticTitle);
-    }
-
-    /// <inheritdoc/>
-    public Task<bool> ShowDrawerTabByKeyAsync(string dockViewId, string panelKey, CancellationToken cancellationToken)
-    {
-        return InvokeInteropAsync<bool>("showDrawerTabByKey", nameof(ShowDrawerTabByKeyAsync), cancellationToken, dockViewId, panelKey);
-    }
-
-    /// <inheritdoc/>
-    public Task<bool> ShowDrawerTabByKeyAsync(string dockViewId, string panelKey, int widthPx, CancellationToken cancellationToken)
-    {
-        return InvokeInteropAsync<bool>("showDrawerTabByKey", nameof(ShowDrawerTabByKeyAsync), cancellationToken, dockViewId, panelKey, widthPx);
-    }
-
-    /// <inheritdoc/>
-    public Task<bool> ActivatePanelByKeyAsync(string dockViewId, string panelKey, CancellationToken cancellationToken)
-    {
-        return InvokeInteropAsync<bool>("activatePanelByKey", nameof(ActivatePanelByKeyAsync), cancellationToken, dockViewId, panelKey);
-    }
-
-    /// <inheritdoc/>
-    public Task<bool> SetActivePanelByKeyAsync(string dockViewId, string panelKey, CancellationToken cancellationToken)
-    {
-        return InvokeInteropAsync<bool>("setActivePanelByKey", nameof(SetActivePanelByKeyAsync), cancellationToken, dockViewId, panelKey);
-    }
-
-    #endregion
 
     private async Task<T> InvokeInteropAsync<T>(
         string identifier,

@@ -30,7 +30,8 @@ public sealed class Configurations
     /// </summary>
     public ProviderConfig Provider { get; set; } = new ProviderConfig() with 
     { 
-        BaseUri = new Uri("https://youtube.srv1.tms.com"),
+        //BaseUri = new Uri("https://youtube.srv1.tms.com"),
+        BaseUri = new Uri("https://inv.perditum.com/"),
         BypassSslValidation = true,
     };
 }

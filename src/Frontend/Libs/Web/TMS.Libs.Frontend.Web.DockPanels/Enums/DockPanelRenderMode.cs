@@ -11,12 +11,12 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Enums;
 public enum DockPanelRenderMode
 {
     /// <summary>
-    /// 可见时渲染
+    /// Render only when visible.
     /// </summary>
     OnlyWhenVisible,
 
     /// <summary>
-    /// 始终渲染
+    /// Always render.
     /// </summary>
     Always
 }

@@ -3,30 +3,30 @@
  * Handles pinning and unpinning of panels and groups.
  */
 
-import { getDockview, findGroupByPanelTitle, getGroupByIndex } from './dockview-interop-core.js';
+import { getDockview, findGroupByPanelId, getGroupById } from './dockview-interop-core.js';
 
 /**
- * Unpins a group by its index (converts it to a drawer that slides in/out).
+ * Unpins a group by its ID (converts it to a drawer that slides in/out).
  * Triggers the autoHide functionality for grid groups.
  * @param {string} dockViewId - The DockViewV2 element ID.
- * @param {number} groupIndex - The 0-based index of the group to unpin.
+ * @param {string} groupId - The ID of the group to unpin.
  * @returns {Promise<boolean>} True if the operation succeeded.
  */
-export async function unpinGroup(dockViewId, groupIndex) {
+export async function unpinGroup(dockViewId, groupId) {
     try {
         const dockview = await getDockview(dockViewId);
         if (!dockview) return false;
         
-        const group = getGroupByIndex(dockview, groupIndex);
+        const group = getGroupById(dockview, groupId);
         if (!group) {
-            console.warn(`[DockViewInterop] Group at index ${groupIndex} not found.`);
+            console.warn(`[DockViewInterop] Group '${groupId}' not found.`);
             return false;
         }
         
         const locationType = group.model?.location?.type;
         if (locationType !== 'grid') {
-            console.warn(`[DockViewInterop] Group at index ${groupIndex} is not in grid mode (current: ${locationType}).`);
-            return false;
+            console.debug(`[DockViewInterop] Group '${groupId}' is not in grid mode (current: ${locationType}).`);
+            return true;
         }
         
         // Simulate clicking the pin button to trigger autoHide
@@ -34,15 +34,15 @@ export async function unpinGroup(dockViewId, groupIndex) {
         const pinBtn = actionContainer?.querySelector('.bb-dockview-control-icon-pin, .bb-dockview-control-icon-pushpin');
         
         if (pinBtn) {
-            console.log(`[DockViewInterop] Unpinning group at index ${groupIndex} (panels: ${group.panels.map(p => p.title).join(', ')})`);
+            console.log(`[DockViewInterop] Unpinning group '${groupId}' (panels: ${group.panels.map(p => p.title).join(', ')})`);
             pinBtn.click();
             return true;
         }
         
-        console.warn(`[DockViewInterop] Pin button not found for group at index ${groupIndex}.`);
+        console.warn(`[DockViewInterop] Pin button not found for group '${groupId}'.`);
         return false;
     } catch (error) {
-        console.error(`[DockViewInterop] Error unpinning group at index ${groupIndex}:`, error);
+        console.error(`[DockViewInterop] Error unpinning group '${groupId}':`, error);
         return false;
     }
 }
@@ -51,24 +51,24 @@ export async function unpinGroup(dockViewId, groupIndex) {
  * Unpins a panel (converts it to a drawer that slides in/out).
  * Triggers the autoHide functionality for grid panels.
  * @param {string} dockViewId - The DockViewV2 element ID.
- * @param {string} panelTitle - The title of the panel to unpin.
+ * @param {string} panelId - The panel ID to unpin.
  * @returns {Promise<boolean>} True if the operation succeeded.
  */
-export async function unpinPanel(dockViewId, panelTitle) {
+export async function unpinPanel(dockViewId, panelId) {
     try {
         const dockview = await getDockview(dockViewId);
         if (!dockview) return false;
         
-        const group = findGroupByPanelTitle(dockview, panelTitle);
+        const group = findGroupByPanelId(dockview, panelId);
         if (!group) {
-            console.warn(`[DockViewInterop] Panel '${panelTitle}' not found.`);
+            console.warn(`[DockViewInterop] Panel '${panelId}' not found.`);
             return false;
         }
         
         const locationType = group.model?.location?.type;
         if (locationType !== 'grid') {
-            console.warn(`[DockViewInterop] Panel '${panelTitle}' is not in grid mode (current: ${locationType}).`);
-            return false;
+            console.debug(`[DockViewInterop] Panel '${panelId}' is not in grid mode (current: ${locationType}).`);
+            return true;
         }
         
         // Simulate clicking the pin button to trigger autoHide
@@ -80,10 +80,10 @@ export async function unpinPanel(dockViewId, panelTitle) {
             return true;
         }
         
-        console.warn(`[DockViewInterop] Pin button not found for panel '${panelTitle}'.`);
+        console.warn(`[DockViewInterop] Pin button not found for panel '${panelId}'.`);
         return false;
     } catch (error) {
-        console.error(`[DockViewInterop] Error unpinning panel '${panelTitle}':`, error);
+        console.error(`[DockViewInterop] Error unpinning panel '${panelId}':`, error);
         return false;
     }
 }
@@ -91,17 +91,17 @@ export async function unpinPanel(dockViewId, panelTitle) {
 /**
  * Pins a panel (docks a drawer back to the grid).
  * @param {string} dockViewId - The DockViewV2 element ID.
- * @param {string} panelTitle - The title of the panel to pin.
+ * @param {string} panelId - The panel ID to pin.
  * @returns {Promise<boolean>} True if the operation succeeded.
  */
-export async function pinPanel(dockViewId, panelTitle) {
+export async function pinPanel(dockViewId, panelId) {
     try {
         const dockview = await getDockview(dockViewId);
         if (!dockview) return false;
         
-        const group = findGroupByPanelTitle(dockview, panelTitle);
+        const group = findGroupByPanelId(dockview, panelId);
         if (!group) {
-            console.warn(`[DockViewInterop] Panel '${panelTitle}' not found.`);
+            console.warn(`[DockViewInterop] Panel '${panelId}' not found.`);
             return false;
         }
         
@@ -109,7 +109,7 @@ export async function pinPanel(dockViewId, panelTitle) {
         const floatType = group.getParams?.()?.floatType;
         
         if (locationType !== 'floating' || floatType !== 'drawer') {
-            console.warn(`[DockViewInterop] Panel '${panelTitle}' is not a drawer.`);
+            console.warn(`[DockViewInterop] Panel '${panelId}' is not a drawer.`);
             return false;
         }
         
@@ -122,87 +122,10 @@ export async function pinPanel(dockViewId, panelTitle) {
             return true;
         }
         
-        console.warn(`[DockViewInterop] Pushpin button not found for panel '${panelTitle}'.`);
+        console.warn(`[DockViewInterop] Pushpin button not found for panel '${panelId}'.`);
         return false;
     } catch (error) {
-        console.error(`[DockViewInterop] Error pinning panel '${panelTitle}':`, error);
+        console.error(`[DockViewInterop] Error pinning panel '${panelId}':`, error);
         return false;
     }
-}
-
-/**
- * Unpins a panel's group by the panel title (converts it to a drawer).
- * @param {string} dockViewId - The DockViewV2 element ID.
- * @param {string} panelTitle - The title of a panel in the group to unpin.
- * @returns {Promise<boolean>} True if the operation succeeded.
- */
-export async function unpinGroupByPanelTitle(dockViewId, panelTitle) {
-    try {
-        const dockview = await getDockview(dockViewId);
-        if (!dockview) return false;
-        
-        const group = findGroupByPanelTitle(dockview, panelTitle);
-        if (!group) {
-            console.warn(`[DockViewInterop] Panel '${panelTitle}' not found.`);
-            return false;
-        }
-        
-        return executeUnpinGroup(group);
-    } catch (error) {
-        console.error(`[DockViewInterop] Error unpinning group for panel '${panelTitle}':`, error);
-        return false;
-    }
-}
-
-/**
- * Unpins a group containing a panel with the given key.
- * @param {string} dockViewId - The DockViewV2 element ID.
- * @param {string} panelKey - The key of a panel in the group.
- * @returns {Promise<boolean>} True if the operation succeeded.
- */
-export async function unpinGroupByPanelKey(dockViewId, panelKey) {
-    try {
-        const dockview = await getDockview(dockViewId);
-        if (!dockview) return false;
-        
-        // Dynamic import to avoid circular dependencies if we imported from core at top
-        const core = await import('./dockview-interop-core.js');
-        const group = core.findGroupByPanelKey(dockview, panelKey);
-        
-        if (!group) {
-            console.warn(`[DockViewInterop] Group for panel '${panelKey}' not found.`);
-            return false;
-        }
-        
-        return executeUnpinGroup(group);
-    } catch (error) {
-        console.error(`[DockViewInterop] Error unpinning group for pane key '${panelKey}':`, error);
-        return false;
-    }
-}
-
-/**
- * Helper to execute unpin logic on a group.
- * @param {object} group - The group object to unpin.
- * @returns {boolean} True if autoHide button was found and clicked.
- */
-function executeUnpinGroup(group) {
-    const locationType = group.model?.location?.type;
-    if (locationType !== 'grid') {
-        // console.log(`[DockViewInterop] Group is not in grid mode (current: ${locationType}). Already unpinned.`);
-        return true; 
-    }
-    
-    // Simulate clicking the pin button to trigger autoHide
-    const actionContainer = group.header?.element?.querySelector('.dv-right-actions-container');
-    const pinBtn = actionContainer?.querySelector('.bb-dockview-control-icon-pin, .bb-dockview-control-icon-pushpin');
-    
-    if (pinBtn) {
-        // console.log(`[DockViewInterop] Unpinning group via button click`);
-        pinBtn.click();
-        return true;
-    }
-    
-    console.warn(`[DockViewInterop] Pin button not found for group.`);
-    return false;
 }

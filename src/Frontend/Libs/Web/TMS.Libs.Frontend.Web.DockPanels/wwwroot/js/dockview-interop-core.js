@@ -59,91 +59,40 @@ export async function getDockview(dockViewId) {
 }
 
 /**
- * Finds a panel by its title.
+ * Finds a panel by its internal ID.
  * @param {object} dockview - The dockview instance.
- * @param {string} panelTitle - The title of the panel to find.
+ * @param {string} panelId - The internal panel ID.
  * @returns {object|null} The panel or null if not found.
  */
-export function findPanelByTitle(dockview, panelTitle) {
+export function findPanelById(dockview, panelId) {
     if (!dockview || !dockview.panels) {
         return null;
     }
     
-    return dockview.panels.find(p => p.title === panelTitle) || null;
+    return dockview.panels.find(p => p.id === panelId) || null;
 }
 
 /**
- * Finds a group containing a panel with the given title.
+ * Finds a group containing a panel with the given ID.
  * @param {object} dockview - The dockview instance.
- * @param {string} panelTitle - The title of the panel.
+ * @param {string} panelId - The panel ID.
  * @returns {object|null} The group or null if not found.
  */
-export function findGroupByPanelTitle(dockview, panelTitle) {
-    const panel = findPanelByTitle(dockview, panelTitle);
+export function findGroupByPanelId(dockview, panelId) {
+    const panel = findPanelById(dockview, panelId);
     return panel?.group || null;
 }
 
 /**
- * Finds a panel by its key (unique identifier).
- * The key is set via the Key property on DockViewComponent.
- * If no Key is specified, the Title is used as the key.
+ * Gets a group by its internal ID.
  * @param {object} dockview - The dockview instance.
- * @param {string} panelKey - The key/id of the panel to find.
- * @returns {object|null} The panel or null if not found.
- */
-export function findPanelByKey(dockview, panelKey) {
-    if (!dockview || !dockview.panels) {
-        return null;
-    }
-    
-    // Try multiple locations where the key might be stored:
-    // 1. panel.id - the internal dockview id (BootstrapBlazor uses Key as id)
-    // 2. panel.params?.key or panel.params?.Key - the Key property from DockViewComponent
-    // 3. panel.title - fall back to title match
-    const found = dockview.panels.find(p => 
-        p.id === panelKey || 
-        p.params?.key === panelKey ||
-        p.params?.Key === panelKey ||
-        p.title === panelKey
-    );
-    
-    if (!found) {
-        console.log(`[DockViewInterop] findPanelByKey: Panel with key '${panelKey}' not found. Available panels:`, 
-            dockview.panels.map(p => ({ id: p.id, title: p.title, paramsKey: p.params?.key || p.params?.Key })));
-    }
-    
-    return found || null;
-}
-
-/**
- * Finds a group containing a panel with the given key.
- * @param {object} dockview - The dockview instance.
- * @param {string} panelKey - The key of the panel.
+ * @param {string} groupId - The group ID.
  * @returns {object|null} The group or null if not found.
  */
-export function findGroupByPanelKey(dockview, panelKey) {
-    const panel = findPanelByKey(dockview, panelKey);
-    return panel?.group || null;
-}
-
-/**
- * Gets a group by its index.
- * @param {object} dockview - The dockview instance.
- * @param {number} groupIndex - The 0-based index of the group.
- * @returns {object|null} The group or null if not found.
- */
-export function getGroupByIndex(dockview, groupIndex) {
+export function getGroupById(dockview, groupId) {
     if (!dockview || !dockview.groups) {
         return null;
     }
     
-    // Filter to only grid groups (not floating)
-    const gridGroups = dockview.groups.filter(g => g.model?.location?.type === 'grid');
-    
-    if (groupIndex < 0 || groupIndex >= gridGroups.length) {
-        console.warn(`[DockViewInterop] Group index ${groupIndex} out of range (0-${gridGroups.length - 1}).`);
-        return null;
-    }
-    
-    return gridGroups[groupIndex];
+    return dockview.api?.getGroup?.(groupId) ?? dockview.groups.find(g => g.id === groupId) ?? null;
 }

@@ -16,19 +16,14 @@ namespace TMS.Apps.FrontTube.Frontend.WebUI.Layout;
 public partial class MainLayout : IAsyncDisposable
 {
     /// <summary>
-    /// The unique key of the channel about panel (used for programmatic access).
-    /// </summary>
-    private const string ChannelAboutPanelKey = "channel-about";
-
-    /// <summary>
-    /// The unique key of the channel videos panel (used for programmatic access).
-    /// </summary>
-    private const string ChannelVideosPanelKey = "channel-videos";
-
-    /// <summary>
     /// The display title of the channel about panel.
     /// </summary>
     private const string ChannelAboutPanelTitle = "About";
+
+    /// <summary>
+    /// The icon class for the channel about panel.
+    /// </summary>
+    private const string ChannelAboutPanelIcon = "fa-solid fa-info-circle";
 
     /// <summary>
     /// The display title of the channel videos panel.
@@ -36,9 +31,19 @@ public partial class MainLayout : IAsyncDisposable
     private const string ChannelVideosPanelTitle = "Videos";
 
     /// <summary>
+    /// The icon class for the channel videos panel.
+    /// </summary>
+    private const string ChannelVideosPanelIcon = "fa-solid fa-video";
+
+    /// <summary>
     /// The static drawer title for the channel group.
     /// </summary>
     private const string ChannelGroupTitle = "Channel Info";
+
+    /// <summary>
+    /// The icon class for the channel group.
+    /// </summary>
+    private const string ChannelGroupIcon = "fa-solid fa-users";
 
     /// <summary>
     /// The default width in pixels for the channel drawer when it expands.
@@ -46,9 +51,99 @@ public partial class MainLayout : IAsyncDisposable
     private const int ChannelDrawerWidthPx = 800;
 
     /// <summary>
-    /// The shared group ID for channel drawer panels.
+    /// The default width in pixels for sidebar drawers.
     /// </summary>
-    private const string ChannelDrawerGroupId = "channel-info";
+    private const int SidebarDrawerWidthPx = 500;
+
+    /// <summary>
+    /// The static drawer title for the collections group.
+    /// </summary>
+    private const string CollectionsGroupTitle = "Collections";
+
+    /// <summary>
+    /// The icon class for the collections group.
+    /// </summary>
+    private const string CollectionsGroupIcon = "fa-solid fa-folder-open";
+
+    /// <summary>
+    /// The static drawer title for the discovery group.
+    /// </summary>
+    private const string DiscoverGroupTitle = "Discover";
+
+    /// <summary>
+    /// The icon class for the discovery group.
+    /// </summary>
+    private const string DiscoverGroupIcon = "fa-solid fa-compass";
+
+    /// <summary>
+    /// The static drawer title for the video info group.
+    /// </summary>
+    private const string VideoInfoGroupTitle = "Video Info";
+
+    /// <summary>
+    /// The icon class for the video info group.
+    /// </summary>
+    private const string VideoInfoGroupIcon = "fa-solid fa-info-circle";
+
+    /// <summary>
+    /// The icon class for the main video player panel.
+    /// </summary>
+    private const string VideoPlayerPanelIcon = "fa-solid fa-play";
+
+    /// <summary>
+    /// The icon class for the search panel.
+    /// </summary>
+    private const string SearchPanelIcon = "fa-solid fa-magnifying-glass";
+
+    /// <summary>
+    /// The icon class for the search group.
+    /// </summary>
+    private const string SearchGroupIcon = "fa-solid fa-magnifying-glass";
+
+    /// <summary>
+    /// The icon class for the queue panel.
+    /// </summary>
+    private const string QueuePanelIcon = "fa-solid fa-list-ol";
+
+    /// <summary>
+    /// The icon class for the local playlists panel.
+    /// </summary>
+    private const string LocalPlaylistsPanelIcon = "fa-solid fa-folder";
+
+    /// <summary>
+    /// The icon class for the favorites panel.
+    /// </summary>
+    private const string FavoritesPanelIcon = "fa-solid fa-heart";
+
+    /// <summary>
+    /// The icon class for the history panel.
+    /// </summary>
+    private const string HistoryPanelIcon = "fa-solid fa-clock-rotate-left";
+
+    /// <summary>
+    /// The icon class for the trending panel.
+    /// </summary>
+    private const string TrendingPanelIcon = "fa-solid fa-fire";
+
+    /// <summary>
+    /// The icon class for the popular panel.
+    /// </summary>
+    private const string PopularPanelIcon = "fa-solid fa-chart-line";
+
+    /// <summary>
+    /// The icon class for the video description panel.
+    /// </summary>
+    private const string VideoDescriptionPanelIcon = "fa-solid fa-file-lines";
+
+    /// <summary>
+    /// The icon class for the video comments panel.
+    /// </summary>
+    private const string VideoCommentsPanelIcon = "fa-solid fa-comments";
+
+    /// <summary>
+    /// The icon class for the related videos panel.
+    /// </summary>
+    private const string RelatedVideosPanelIcon = "fa-solid fa-video";
 
     private static readonly DockPanelDrawerOptions ChannelDrawerOptions = new()
     {
@@ -56,73 +151,41 @@ public partial class MainLayout : IAsyncDisposable
         Visible = false
     };
 
+    private static readonly DockPanelDrawerOptions SidebarDrawerOptions = new()
+    {
+        Width = SidebarDrawerWidthPx,
+        Visible = false
+    };
+
+    private static readonly TimeSpan ChannelDockOperationTimeout = TimeSpan.FromSeconds(2);
+
     private bool _isDarkMode = true;
     private bool _isDisposed;
     private bool _isDockPanelsReady;
     private DocksHostComponent? _dockPanelsComponent;
     private ILogger<MainLayout>? _logger;
-    private int _channelAboutRenderVersion;
     private bool _deferChannelAboutActivation;
+    private TaskCompletionSource<bool>? _channelPanelsReadyTcs;
+
+    private DockPanelComponent? _videoPlayerPanel;
+    private DockPanelComponent? _channelAboutPanel;
+    private DockPanelComponent? _channelVideosPanel;
+    private DockPanelComponent? _searchPanel;
+    private DockPanelComponent? _queuePanel;
+    private DockPanelComponent? _localPlaylistsPanel;
+    private DockPanelComponent? _favoritesPanel;
+    private DockPanelComponent? _historyPanel;
+    private DockPanelComponent? _trendingPanel;
+    private DockPanelComponent? _popularPanel;
+    private DockPanelComponent? _videoDescriptionPanel;
+    private DockPanelComponent? _videoCommentsPanel;
+    private DockPanelComponent? _relatedVideosPanel;
 
     /// <summary>
-    /// Configuration for dock groups specifying which should be unpinned as drawers
-    /// and individual panel settings.
-    /// Note: Channel group (Group 1) is dynamically rendered and not included here.
-    /// The indices here are 1-based but shifted because Group 1 is missing at startup.
-    /// We start from 1 (Search) to match the DOM order at startup (VideoPlayer is 0).
-    /// </summary>
-    private readonly List<DockGroupConfiguration> _groupConfigurations =
-    [
-        // Group 2: Search -> Becomes Index 1 at startup
-        new DockGroupConfiguration
-        {
-            GroupIndex = 1,
-            PinState = DocksCollectionPinState.Drawer,
-            Panels =
-            [
-                new DockPanelInitConfig { Key = "search" }
-            ]
-        },
-        // Group 3: Queue/Playlists/Favorites/History -> Becomes Index 2 at startup
-        new DockGroupConfiguration
-        {
-            GroupIndex = 2,
-            PinState = DocksCollectionPinState.Drawer,
-            GroupTitle = "Collections",
-            Panels =
-            [
-                new DockPanelInitConfig { Key = "queue" }
-            ]
-        },
-        // Group 4: Trending/Popular -> Becomes Index 3 at startup
-        new DockGroupConfiguration
-        {
-            GroupIndex = 3,
-            GroupTitle = "Discover",
-            PinState = DocksCollectionPinState.Drawer,
-            Panels =
-            [
-                new DockPanelInitConfig { Key = "trending" }
-            ]
-        },
-        // Group 5: Description/Comments/Related -> Becomes Index 4 at startup
-        new DockGroupConfiguration
-        {
-            GroupIndex = 4,
-            GroupTitle = "Video Info",
-            PinState = DocksCollectionPinState.Drawer,
-            Panels =
-            [
-                new DockPanelInitConfig { Key = "videoDescription" }
-            ]
-        }
-    ];
-
-    /// <summary>
-    /// Dictionary to track the visibility state of all panels by Title.
+    /// Dictionary to track the visibility state of all panels by ID.
     /// This prevents Blazor from recreating closed panels when re-rendering.
     /// </summary>
-    private readonly Dictionary<string, bool> _panelVisibility = [];
+    private readonly Dictionary<Guid, bool> _panelVisibility = [];
 
     [Inject]
     private Orchestrator Orchestrator { get; set; } = null!;
@@ -161,24 +224,6 @@ public partial class MainLayout : IAsyncDisposable
     private bool IsChannelVideosPanelActive { get; set; }
 
     /// <summary>
-    /// Gets or sets whether the channel About panel is visible.
-    /// </summary>
-    private bool IsChannelAboutPanelVisible
-    {
-        get => ShouldRenderChannelGroup;
-        set => _panelVisibility[ChannelAboutPanelTitle] = value;
-    }
-
-    /// <summary>
-    /// Gets or sets whether the channel Videos panel is visible.
-    /// </summary>
-    private bool IsChannelVideosPanelVisible
-    {
-        get => ShouldRenderChannelGroup;
-        set => _panelVisibility[ChannelVideosPanelTitle] = value;
-    }
-
-    /// <summary>
     /// Gets or sets whether the channel group should be rendered in the DOM.
     /// Once a channel is opened, this remains true to keep the group in the DOM
     /// (but hidden via DockView's visibility system) to prevent recreation issues.
@@ -186,10 +231,29 @@ public partial class MainLayout : IAsyncDisposable
     private bool ShouldRenderChannelGroup { get; set; }
 
     /// <summary>
-    /// Helper to get panel visibility, defaulting to true for non-channel panels.
+    /// Helper to get panel visibility, defaulting to true for panels without state.
     /// </summary>
-    private bool IsPanelVisible(string title, bool defaultState = true) => 
-        _panelVisibility.TryGetValue(title, out var v) ? v : defaultState;
+    private bool IsPanelVisible(DockPanelComponent? panel, bool defaultState = true)
+    {
+        if (panel is null)
+        {
+            return defaultState;
+        }
+
+        return _panelVisibility.TryGetValue(panel.PanelId, out var visible)
+            ? visible
+            : defaultState;
+    }
+
+    private void SetPanelVisibility(DockPanelComponent? panel, bool isVisible)
+    {
+        if (panel is null)
+        {
+            return;
+        }
+
+        _panelVisibility[panel.PanelId] = isVisible;
+    }
 
     /// <summary>
     /// Gets the CSS class for the dock panels component.
@@ -228,6 +292,45 @@ public partial class MainLayout : IAsyncDisposable
             // Initialize browser console capture to forward JS console to Serilog
             await BrowserConsoleCapture.InitializeAsync(CancellationToken.None);
         }
+
+        TrySetChannelPanelsReady();
+    }
+
+    private void TrySetChannelPanelsReady()
+    {
+        if (_channelPanelsReadyTcs is null)
+        {
+            return;
+        }
+
+        if (_channelAboutPanel is null || _channelVideosPanel is null)
+        {
+            return;
+        }
+
+        _channelPanelsReadyTcs.TrySetResult(true);
+        _channelPanelsReadyTcs = null;
+    }
+
+    private async Task<bool> WaitForChannelPanelsReadyAsync(CancellationToken cancellationToken)
+    {
+        if (_channelAboutPanel is not null && _channelVideosPanel is not null)
+        {
+            return true;
+        }
+
+        _channelPanelsReadyTcs ??= new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        try
+        {
+            await _channelPanelsReadyTcs.Task.WaitAsync(cancellationToken);
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            _channelPanelsReadyTcs = null;
+            return false;
+        }
     }
 
     private void ToggleDarkMode()
@@ -241,22 +344,24 @@ public partial class MainLayout : IAsyncDisposable
     /// We update our internal state to track visibility, but we must NOT call StateHasChanged()
     /// when panels close via UI, as that triggers re-renders that recreate panels.
     /// </summary>
-    /// <param name="args">Tuple containing (title, isVisible).</param>
-    private Task OnVisibleStateChangedAsync((string Title, bool IsVisible) args)
+    /// <param name="args">Tuple containing (panel, isVisible).</param>
+    private Task OnVisibleStateChangedAsync((DockPanelComponent Panel, bool IsVisible) args)
     {
         _logger?.LogDebug(
-            "[{MethodName}] Visibility change: Title='{Title}', IsVisible={IsVisible}.",
+            "[{MethodName}] Visibility change: PanelId='{PanelId}', Title='{Title}', IsVisible={IsVisible}.",
             nameof(OnVisibleStateChangedAsync),
-            args.Title,
+            args.Panel.PanelId,
+            args.Panel.Title,
             args.IsVisible);
 
         // Update dictionary for all panels (Search, Queue, History, etc.)
-        _panelVisibility[args.Title] = args.IsVisible;
+        SetPanelVisibility(args.Panel, args.IsVisible);
 
         // Track visibility state for both open and close events, but only trigger re-render on open
         var shouldUpdate = false;
 
-        if (args.Title == ChannelAboutPanelTitle || args.Title == ChannelVideosPanelTitle)
+        if (_channelAboutPanel?.PanelId == args.Panel.PanelId
+            || _channelVideosPanel?.PanelId == args.Panel.PanelId)
         {
             // Once opened, always render the group (even when closed) to prevent recreation
             if (args.IsVisible)
@@ -282,18 +387,19 @@ public partial class MainLayout : IAsyncDisposable
     /// Handles active state changes for dock panels.
     /// This drives lazy loading of panel content.
     /// </summary>
-    /// <param name="args">Tuple containing (title, key, isActive).</param>
-    private Task OnActiveStateChangedAsync((string Title, string? Key, bool IsActive) args)
+    /// <param name="args">Tuple containing (panel, isActive).</param>
+    private Task OnActiveStateChangedAsync((DockPanelComponent Panel, bool IsActive) args)
     {
         _logger?.LogDebug(
-            "[{MethodName}] Active change: Title='{Title}', IsActive={IsActive}.",
+            "[{MethodName}] Active change: PanelId='{PanelId}', Title='{Title}', IsActive={IsActive}.",
             nameof(OnActiveStateChangedAsync),
-            args.Title,
+            args.Panel.PanelId,
+            args.Panel.Title,
             args.IsActive);
 
         var shouldUpdate = false;
 
-        if (args.Title == ChannelAboutPanelTitle)
+        if (_channelAboutPanel?.PanelId == args.Panel.PanelId)
         {
             if (_deferChannelAboutActivation && args.IsActive)
             {
@@ -303,7 +409,7 @@ public partial class MainLayout : IAsyncDisposable
             IsChannelAboutPanelActive = args.IsActive;
             shouldUpdate = true;
         }
-        else if (args.Title == ChannelVideosPanelTitle)
+        else if (_channelVideosPanel?.PanelId == args.Panel.PanelId)
         {
             IsChannelVideosPanelActive = args.IsActive;
             shouldUpdate = true;
@@ -316,8 +422,6 @@ public partial class MainLayout : IAsyncDisposable
     /// Handles channel open requests from the Orchestrator.
     /// Shows the About panel in the channel drawer and activates it.
     /// If this is the first time opening a channel, also unpins the group to make it a drawer.
-    /// Uses separate calls with delays between them for proper timing.
-    /// If the panel was previously closed via X button, it will be recreated.
     /// </summary>
     private async void OnChannelOpenRequested(object? sender, string channelId)
     {
@@ -330,13 +434,10 @@ public partial class MainLayout : IAsyncDisposable
         _deferChannelAboutActivation = true;
         IsChannelAboutPanelActive = false;
         IsChannelVideosPanelActive = false;
-        IsChannelAboutPanelVisible = true;
-        IsChannelVideosPanelVisible = true;
         ShouldRenderChannelGroup = true;
         await InvokeAsync(StateHasChanged);
 
-        // Small delay to ensure the panel content is rendered by Blazor
-        await Task.Delay(100, CancellationToken.None);
+        using var cancellationTokenSource = new CancellationTokenSource(ChannelDockOperationTimeout);
 
         try
         {
@@ -345,75 +446,52 @@ public partial class MainLayout : IAsyncDisposable
                 nameof(OnChannelOpenRequested),
                 channelId);
 
-            // Wait for the panel to appear in DockView before attempting to modify it.
-            // This prevents race conditions where Blazor logic runs before the JS update cycle completes.
-            if (!await WaitForPanelByTitleAsync(ChannelAboutPanelTitle, CancellationToken.None))
+            if (!await WaitForChannelPanelsReadyAsync(cancellationTokenSource.Token))
             {
                 _logger?.LogError(
-                     "[{MethodName}] Timeout waiting for panel '{PanelTitle}' to appear in DockView.",
+                     "[{MethodName}] Timeout waiting for channel panels to render for channel '{ChannelId}'.",
                      nameof(OnChannelOpenRequested),
-                     ChannelAboutPanelTitle);
-                // Even if it times out, we might try to proceed, but likely Unpin will fail.
-                // We'll proceed to attempt repair.
+                     channelId);
+                return;
             }
 
-            var drawerReady = await EnsureDrawerForPanelAsync(ChannelAboutPanelTitle, ChannelAboutPanelKey, CancellationToken.None);
+            SetPanelVisibility(_channelAboutPanel, true);
+            SetPanelVisibility(_channelVideosPanel, true);
+            await InvokeAsync(StateHasChanged);
 
-            if (!drawerReady)
+            if (_channelAboutPanel is null)
             {
                 _logger?.LogError(
-                    "[{MethodName}] Failed to unpin panel '{PanelTitle}' as drawer.",
+                    "[{MethodName}] Channel about panel reference missing for channel '{ChannelId}'.",
                     nameof(OnChannelOpenRequested),
-                    ChannelAboutPanelTitle);
+                    channelId);
+                return;
             }
 
-            if (drawerReady)
-            {
-                await _dockPanelsComponent.SetActivePanelByKeyAsync(ChannelAboutPanelKey, CancellationToken.None);
-            }
+            var opened = await _dockPanelsComponent.OpenDrawerPanelAsync(
+                _channelAboutPanel,
+                ChannelDrawerWidthPx,
+                ChannelGroupTitle,
+                cancellationTokenSource.Token);
 
-            // Step 1: Show the drawer tab (make sidebar button visible), set width
-            var showResult = drawerReady
-                && await _dockPanelsComponent.ShowDrawerTabAsync(ChannelAboutPanelTitle, ChannelDrawerWidthPx, CancellationToken.None);
-
-            if (drawerReady)
+            if (!opened)
             {
-                await _dockPanelsComponent.SetDockCollectionTitleByKeyAsync(ChannelAboutPanelKey, ChannelGroupTitle, CancellationToken.None);
-            }
-
-            // If showResult is false, the panel was orphaned and removed by JS
-            // Force a Blazor re-render to recreate it
-            if (drawerReady && !showResult)
-            {
-                _logger?.LogDebug(
-                    "[{MethodName}] Panel '{PanelTitle}' was orphaned; triggering re-render.",
+                _logger?.LogError(
+                    "[{MethodName}] Failed to open channel drawer for channel '{ChannelId}'.",
                     nameof(OnChannelOpenRequested),
-                    ChannelAboutPanelTitle);
-
-                _channelAboutRenderVersion++;
-                await InvokeAsync(StateHasChanged);
-                await Task.Delay(150, CancellationToken.None);
-
-                // Retry showing the drawer tab
-                await WaitForPanelByTitleAsync(ChannelAboutPanelTitle, CancellationToken.None);
-                await _dockPanelsComponent.ShowDrawerTabAsync(ChannelAboutPanelTitle, ChannelDrawerWidthPx, CancellationToken.None);
-                await _dockPanelsComponent.SetActivePanelByKeyAsync(ChannelAboutPanelKey, CancellationToken.None);
-                await _dockPanelsComponent.SetDockCollectionTitleByKeyAsync(ChannelAboutPanelKey, ChannelGroupTitle, CancellationToken.None);
+                    channelId);
+                return;
             }
 
-            // Step 2: C# delay - this gives the browser event loop time to fully process the DOM changes
-            // This is crucial - the delay must happen in C# (not JS) to allow proper interleaving
-            await Task.Delay(100, CancellationToken.None);
-
-            // Step 3: Expand the drawer without toggling via click
-            if (drawerReady)
-            {
-                await _dockPanelsComponent.ShowDrawerAsync(ChannelAboutPanelTitle, CancellationToken.None);
-            }
-
-            _deferChannelAboutActivation = false;
             IsChannelAboutPanelActive = true;
             await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger?.LogWarning(
+                "[{MethodName}] Timeout while opening channel panel for channel '{ChannelId}'.",
+                nameof(OnChannelOpenRequested),
+                channelId);
         }
         catch (Exception ex)
         {
@@ -424,56 +502,10 @@ public partial class MainLayout : IAsyncDisposable
                 channelId);
             // Intentional: avoid breaking the UI flow while surfacing the error via logs.
         }
-    }
-
-    private async Task<bool> WaitForPanelByTitleAsync(string panelTitle, CancellationToken cancellationToken)
-    {
-        if (_dockPanelsComponent == null) return false;
-
-        // Poll for the panel existence
-        for (int i = 0; i < 20; i++) // 20 attempts * 50ms = 1 second max wait
+        finally
         {
-            if (await _dockPanelsComponent.PanelExistsAsync(panelTitle, cancellationToken))
-            {
-                return true;
-            }
-            await Task.Delay(50, cancellationToken);
+            _deferChannelAboutActivation = false;
         }
-
-        return false;
-    }
-
-    private async Task<bool> EnsureDrawerForPanelAsync(string panelTitle, string panelKey, CancellationToken cancellationToken)
-    {
-        if (_dockPanelsComponent == null)
-        {
-            return false;
-        }
-
-        for (var attempt = 0; attempt < 20; attempt++)
-        {
-            var state = await _dockPanelsComponent.GetPanelStateAsync(panelTitle, cancellationToken);
-            if (state is { IsDrawer: true })
-            {
-                if (await _dockPanelsComponent.IsDrawerReadyAsync(panelTitle, cancellationToken))
-                {
-                    return true;
-                }
-            }
-
-            if (state == null || state.LocationType == DockPanelLocationType.Grid)
-            {
-                await _dockPanelsComponent.UnpinGroupByPanelTitleAsync(panelTitle, cancellationToken);
-            }
-            else if (attempt == 2)
-            {
-                await _dockPanelsComponent.UnpinGroupByPanelKeyAsync(panelKey, cancellationToken);
-            }
-
-            await Task.Delay(100, cancellationToken);
-        }
-
-        return false;
     }
 
     public async ValueTask DisposeAsync()
@@ -484,6 +516,9 @@ public partial class MainLayout : IAsyncDisposable
         }
 
         Orchestrator.ChannelOpenRequested -= OnChannelOpenRequested;
+
+        _channelPanelsReadyTcs?.TrySetCanceled();
+        _channelPanelsReadyTcs = null;
 
         await BrowserConsoleCapture.DisposeAsync();
 

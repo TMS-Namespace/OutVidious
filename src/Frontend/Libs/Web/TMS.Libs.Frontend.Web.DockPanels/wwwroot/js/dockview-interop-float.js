@@ -3,28 +3,28 @@
  * Handles floating panels and docking them back to the grid.
  */
 
-import { getDockview, findGroupByPanelTitle } from './dockview-interop-core.js';
+import { getDockview, findGroupByPanelId } from './dockview-interop-core.js';
 
 /**
  * Floats a panel (converts a grid panel to a floating window).
  * @param {string} dockViewId - The DockViewV2 element ID.
- * @param {string} panelTitle - The title of the panel to float.
+ * @param {string} panelId - The panel ID to float.
  * @returns {Promise<boolean>} True if the operation succeeded.
  */
-export async function floatPanel(dockViewId, panelTitle) {
+export async function floatPanel(dockViewId, panelId) {
     try {
         const dockview = await getDockview(dockViewId);
         if (!dockview) return false;
         
-        const group = findGroupByPanelTitle(dockview, panelTitle);
+        const group = findGroupByPanelId(dockview, panelId);
         if (!group) {
-            console.warn(`[DockViewInterop] Panel '${panelTitle}' not found.`);
+            console.warn(`[DockViewInterop] Panel '${panelId}' not found.`);
             return false;
         }
         
         const locationType = group.model?.location?.type;
         if (locationType !== 'grid') {
-            console.warn(`[DockViewInterop] Panel '${panelTitle}' is not in grid mode.`);
+            console.warn(`[DockViewInterop] Panel '${panelId}' is not in grid mode.`);
             return false;
         }
         
@@ -37,10 +37,10 @@ export async function floatPanel(dockViewId, panelTitle) {
             return true;
         }
         
-        console.warn(`[DockViewInterop] Float button not found for panel '${panelTitle}'.`);
+        console.warn(`[DockViewInterop] Float button not found for panel '${panelId}'.`);
         return false;
     } catch (error) {
-        console.error(`[DockViewInterop] Error floating panel '${panelTitle}':`, error);
+        console.error(`[DockViewInterop] Error floating panel '${panelId}':`, error);
         return false;
     }
 }
@@ -48,23 +48,23 @@ export async function floatPanel(dockViewId, panelTitle) {
 /**
  * Docks a floating panel back to the grid.
  * @param {string} dockViewId - The DockViewV2 element ID.
- * @param {string} panelTitle - The title of the panel to dock.
+ * @param {string} panelId - The panel ID to dock.
  * @returns {Promise<boolean>} True if the operation succeeded.
  */
-export async function dockPanel(dockViewId, panelTitle) {
+export async function dockPanel(dockViewId, panelId) {
     try {
         const dockview = await getDockview(dockViewId);
         if (!dockview) return false;
         
-        const group = findGroupByPanelTitle(dockview, panelTitle);
+        const group = findGroupByPanelId(dockview, panelId);
         if (!group) {
-            console.warn(`[DockViewInterop] Panel '${panelTitle}' not found.`);
+            console.warn(`[DockViewInterop] Panel '${panelId}' not found.`);
             return false;
         }
         
         const locationType = group.model?.location?.type;
         if (locationType !== 'floating') {
-            console.warn(`[DockViewInterop] Panel '${panelTitle}' is not floating.`);
+            console.warn(`[DockViewInterop] Panel '${panelId}' is not floating.`);
             return false;
         }
         
@@ -77,10 +77,10 @@ export async function dockPanel(dockViewId, panelTitle) {
             return true;
         }
         
-        console.warn(`[DockViewInterop] Dock button not found for panel '${panelTitle}'.`);
+        console.warn(`[DockViewInterop] Dock button not found for panel '${panelId}'.`);
         return false;
     } catch (error) {
-        console.error(`[DockViewInterop] Error docking panel '${panelTitle}':`, error);
+        console.error(`[DockViewInterop] Error docking panel '${panelId}':`, error);
         return false;
     }
 }

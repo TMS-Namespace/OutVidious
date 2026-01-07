@@ -10,19 +10,19 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Components;
 public partial class DockPanelTitleBarComponent
 {
     /// <summary>
-    /// 获得/设置 标题前置图标点击回调方法 默认 null
+    /// Gets or sets the title bar click callback.
     /// </summary>
     [Parameter]
     public Func<Task>? OnClickBarCallback { get; set; }
 
     /// <summary>
-    /// 获得/设置 标题前置图标 默认 null 未设置使用默认图标
+    /// Gets or sets the title bar icon name.
     /// </summary>
     [Parameter]
     public string? BarIcon { get; set; }
 
     /// <summary>
-    /// 获得/设置 标题前置图标 Url 默认 null 未设置使用默认图标
+    /// Gets or sets the title bar icon URL.
     /// </summary>
     [Parameter]
     public string? BarIconUrl { get; set; }

@@ -1,0 +1,13 @@
+@inherits DockPanelIconComponent
+
+<button
+    type="button"
+    @attributes="@AdditionalAttributes"
+    class="@ClassString"
+    title="@Localizer[IconName]">
+    <svg
+        xmlns="http://www.w3.org/2000/svg">
+        <use
+            href="@Href" />
+    </svg>
+</button>

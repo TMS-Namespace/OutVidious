@@ -14,44 +14,44 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Components;
 public partial class DockPanelComponent
 {
     /// <summary>
-    /// 获得/设置 组件是否显示 Header 默认 true 显示
+    /// Gets or sets whether the panel header is visible.
     /// </summary>
     [Parameter]
     public bool ShowHeader { get; set; } = true;
 
     /// <summary>
-    /// 获得/设置 组件 Title
+    /// Gets or sets the panel title.
     /// </summary>
     [Parameter]
     public string? Title { get; set; }
 
     /// <summary>
-    /// 获得/设置 组件 Title 宽度 默认 null 未设置
+    /// Gets or sets the title width in pixels.
     /// </summary>
     [Parameter]
     public int? TitleWidth { get; set; }
 
     /// <summary>
-    /// 获得/设置 组件 Title 样式 默认 null 未设置
+    /// Gets or sets the title CSS class.
     /// </summary>
     [Parameter]
     public string? TitleClass { get; set; }
 
     /// <summary>
-    /// 获得/设置 Title 模板 默认 null 未设置
+    /// Gets or sets the title template.
     /// </summary>
     [Parameter]
     [JsonIgnore]
     public RenderFragment? TitleTemplate { get; set; }
 
     /// <summary>
-    /// 获得/设置 组件 Class 默认 null 未设置
+    /// Gets or sets the panel CSS class.
     /// </summary>
     [Parameter]
     public string? Class { get; set; }
 
     /// <summary>
-    /// 获得/设置 组件是否可见 默认 true 可见
+    /// Gets or sets whether the panel is visible.
     /// </summary>
     [Parameter]
     public bool Visible { get; set; } = true;
@@ -72,22 +72,24 @@ public partial class DockPanelComponent
     public bool IsActive { get; set; }
 
     /// <summary>
-    /// 获得/设置 组件是否允许关闭 默认 null 使用 DockView 的配置
+    /// Gets or sets whether the panel can be closed.
     /// </summary>
     [Parameter]
     public bool? ShowClose { get; set; }
 
     /// <summary>
-    /// 获得/设置 组件唯一标识值 默认 null 未设置时取 Title 作为唯一标识
+    /// Gets the internal GUID for this panel.
+    /// This value is generated internally and cannot be set by consumers.
     /// </summary>
-    [Parameter]
-    public string? Key { get; set; }
+    [JsonIgnore]
+    public Guid PanelId => ComponentId;
 
     /// <summary>
-    /// Gets or sets the group ID used to keep related panels together.
+    /// Gets the internal group GUID for this panel when it belongs to a group.
     /// </summary>
-    [Parameter]
-    public string? GroupId { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("groupId")]
+    public Guid? GroupId { get; private set; }
 
     /// <summary>
     /// Gets or sets the float type for the panel.
@@ -113,32 +115,31 @@ public partial class DockPanelComponent
     public DockPanelDrawerOptions? Drawer { get; set; }
 
     /// <summary>
-    /// 获得/设置 是否锁定 默认 null 未设置时取 DockView 的配置
+    /// Gets or sets whether the panel is locked.
     /// </summary>
-    /// <remarks>锁定后无法拖动</remarks>
     [Parameter]
     public bool? IsLock { get; set; }
 
     /// <summary>
-    /// 获得/设置 是否显示锁定按钮 默认 null 未设置时取 DockView 的配置
+    /// Gets or sets whether the lock button is visible.
     /// </summary>
     [Parameter]
     public bool? ShowLock { get; set; }
 
     /// <summary>
-    /// 获得/设置 是否悬浮 默认 null 未设置时取 DockView 的配置
+    /// Gets or sets whether the panel is floating.
     /// </summary>
     [Parameter]
     public bool? IsFloating { get; set; }
 
     /// <summary>
-    /// 获得/设置 是否显示可悬浮按钮 默认 null 未设置时取 DockView 的配置
+    /// Gets or sets whether the float button is visible.
     /// </summary>
     [Parameter]
     public bool? ShowFloat { get; set; }
 
     /// <summary>
-    /// 获得/设置 是否显示最大化按钮 默认 null 未设置时取 DockView 的配置
+    /// Gets or sets whether the maximize button is visible.
     /// </summary>
     [Parameter]
     public bool? ShowMaximize { get; set; }
@@ -159,39 +160,53 @@ public partial class DockPanelComponent
     public string? StaticGroupTitle { get; set; }
 
     /// <summary>
-    /// 获得/设置 是否一直显示 默认 null 未设置时取 DockView 的配置
+    /// Gets or sets a static group icon for drawer sidebar buttons.
+    /// </summary>
+    [Parameter]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("staticGroupIcon")]
+    public string? StaticGroupIcon { get; set; }
+
+    /// <summary>
+    /// Gets or sets the renderer name.
     /// </summary>
     [Parameter]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Renderer { get; set; }
 
     /// <summary>
-    /// 获得/设置 是否显示标题前置图标 默认 false 不显示
+    /// Gets or sets whether the title bar is visible.
     /// </summary>
     [Parameter]
     [JsonIgnore]
     public bool ShowTitleBar { get; set; }
 
     /// <summary>
-    /// 获得/设置 标题前置图标 默认 null 未设置使用默认图标
+    /// Gets or sets the title bar icon name.
     /// </summary>
     [Parameter]
     [JsonIgnore]
     public string? TitleBarIcon { get; set; }
 
     /// <summary>
-    /// 获得/设置 标题前置图标 Url 默认 null 未设置使用默认图标
+    /// Gets or sets the title bar icon URL.
     /// </summary>
     [Parameter]
     [JsonIgnore]
     public string? TitleBarIconUrl { get; set; }
 
     /// <summary>
-    /// 获得/设置 标题前置图标点击回调方法 默认 null
+    /// Gets or sets the title bar click callback.
     /// </summary>
     [Parameter]
     [JsonIgnore]
     public Func<Task>? OnClickTitleBarCallback { get; set; }
+
+    [CascadingParameter]
+    private Guid? ParentGroupId { get; set; }
+
+    [CascadingParameter(Name = "DockGroupIcon")]
+    private string? ParentGroupIcon { get; set; }
 
     /// <summary>
     /// <inheritdoc/>
@@ -203,6 +218,20 @@ public partial class DockPanelComponent
         Type = DockCollectionType.Component;
         _isActive = IsActive;
         _hasActivated = IsActive;
+    }
+
+    /// <summary>
+    /// <inheritdoc/>
+    /// </summary>
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        GroupId = ParentGroupId;
+        if (string.IsNullOrWhiteSpace(StaticGroupIcon))
+        {
+            StaticGroupIcon = ParentGroupIcon;
+        }
     }
 
     internal Task SetActiveStateAsync(bool isActive)
@@ -225,7 +254,7 @@ public partial class DockPanelComponent
     }
 
     /// <summary>
-    /// 设置 Visible 参数方法
+    /// Sets the <see cref="Visible"/> property.
     /// </summary>
     /// <param name="visible"></param>
     public void SetVisible(bool visible)

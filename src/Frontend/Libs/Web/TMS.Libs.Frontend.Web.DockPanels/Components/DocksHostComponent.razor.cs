@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
+using System.Linq;
 using TMS.Libs.Frontend.Web.DockPanels.Enums;
 using TMS.Libs.Frontend.Web.DockPanels.Models;
 using TMS.Libs.Frontend.Web.DockPanels.Services;
@@ -94,13 +95,25 @@ public partial class DocksHostComponent : IDisposable
     /// Gets or sets the callback for lock state changes.
     /// </summary>
     [Parameter]
-    public Func<string[], bool, Task>? OnLockChangedCallbackAsync { get; set; }
+    public Func<IReadOnlyList<DockPanelComponent>, bool, Task>? OnLockChangedCallbackAsync { get; set; }
 
     /// <summary>
-    /// Gets or sets the callback when panel visibility changes (legacy signature).
+    /// Gets or sets the callback when panel visibility changes.
     /// </summary>
     [Parameter]
-    public Func<string, bool, Task>? OnPanelVisibleChangedAsync { get; set; }
+    public Func<DockPanelComponent, bool, Task>? OnPanelVisibleChangedAsync { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when a panel is registered.
+    /// </summary>
+    [Parameter]
+    public EventCallback<DockPanelComponent> OnPanelAddedAsync { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when a drawer group is ready.
+    /// </summary>
+    [Parameter]
+    public EventCallback<(DockPanelComponent Panel, Guid GroupId)> OnDrawerReadyAsync { get; set; }
 
     /// <summary>
     /// Gets or sets the callback when the splitter finishes resizing.
@@ -157,6 +170,42 @@ public partial class DocksHostComponent : IDisposable
     public int DefaultDrawerWidthPx { get; set; } = 500;
 
     /// <summary>
+    /// Gets or sets the sidebar width in pixels.
+    /// </summary>
+    [Parameter]
+    public int? AsideWidthPx { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sidebar button inline padding in pixels.
+    /// </summary>
+    [Parameter]
+    public int? AsideButtonPaddingInlinePx { get; set; }
+
+    /// <summary>
+    /// Gets or sets the extra right-side inline padding for sidebar buttons in pixels.
+    /// </summary>
+    [Parameter]
+    public int? AsideButtonPaddingInlineEndExtraPx { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sidebar button block padding in pixels.
+    /// </summary>
+    [Parameter]
+    public int? AsideButtonPaddingBlockPx { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sidebar button gap between icon and title in pixels.
+    /// </summary>
+    [Parameter]
+    public int? AsideButtonGapPx { get; set; }
+
+    /// <summary>
+    /// Gets or sets the gap between dock action buttons in pixels.
+    /// </summary>
+    [Parameter]
+    public int? ActionButtonsGapPx { get; set; }
+
+    /// <summary>
     /// Gets or sets the CSS class applied while initialization is in progress.
     /// </summary>
     [Parameter]
@@ -184,13 +233,13 @@ public partial class DocksHostComponent : IDisposable
     /// Event raised when a panel's visible state changes.
     /// </summary>
     [Parameter]
-    public EventCallback<(string Title, bool IsVisible)> OnVisibleStateChangedAsync { get; set; }
+    public EventCallback<(DockPanelComponent Panel, bool IsVisible)> OnVisibleStateChangedAsync { get; set; }
 
     /// <summary>
     /// Event raised when a panel's active state changes.
     /// </summary>
     [Parameter]
-    public EventCallback<(string Title, string? Key, bool IsActive)> OnActiveStateChangedAsync { get; set; }
+    public EventCallback<(DockPanelComponent Panel, bool IsActive)> OnActiveStateChangedAsync { get; set; }
 
     [CascadingParameter]
     private DocksHostComponent? DockPanelsParent { get; set; }
@@ -290,9 +339,17 @@ public partial class DocksHostComponent : IDisposable
         Renderer = Renderer,
         LayoutConfig = LayoutConfig,
         Theme = Theme.ToDescriptionString(),
+        AsideWidthPx = AsideWidthPx > 0 ? AsideWidthPx : null,
+        AsideButtonPaddingInlinePx = AsideButtonPaddingInlinePx > 0 ? AsideButtonPaddingInlinePx : null,
+        AsideButtonPaddingInlineEndExtraPx = AsideButtonPaddingInlineEndExtraPx > 0 ? AsideButtonPaddingInlineEndExtraPx : null,
+        AsideButtonPaddingBlockPx = AsideButtonPaddingBlockPx > 0 ? AsideButtonPaddingBlockPx : null,
+        AsideButtonGapPx = AsideButtonGapPx > 0 ? AsideButtonGapPx : null,
+        ActionButtonsGapPx = ActionButtonsGapPx > 0 ? ActionButtonsGapPx : null,
         InitializedCallback = nameof(InitializedCallbackAsync),
         PanelVisibleChangedCallback = nameof(PanelVisibleChangedCallbackAsync),
         PanelActiveChangedCallback = nameof(PanelActiveChangedCallbackAsync),
+        PanelAddedCallback = nameof(PanelAddedCallbackAsync),
+        DrawerReadyCallback = nameof(DrawerReadyCallbackAsync),
         LockChangedCallback = nameof(LockChangedCallbackAsync),
         SplitterCallback = nameof(SplitterCallbackAsync),
         Contents = _components
@@ -380,16 +437,26 @@ public partial class DocksHostComponent : IDisposable
     /// JS-invokable visibility callback.
     /// </summary>
     [JSInvokable]
-    public async Task PanelVisibleChangedCallbackAsync(string title, bool status)
+    public async Task PanelVisibleChangedCallbackAsync(Guid panelId, bool status)
     {
+        var panelComponent = FindPanelComponent(panelId);
+        if (panelComponent is null)
+        {
+            _logger?.LogDebug(
+                "[{MethodName}] Panel '{PanelId}' not found for visibility change.",
+                nameof(PanelVisibleChangedCallbackAsync),
+                panelId);
+            return;
+        }
+
         if (OnPanelVisibleChangedAsync != null)
         {
-            await OnPanelVisibleChangedAsync(title, status);
+            await OnPanelVisibleChangedAsync(panelComponent, status);
         }
 
         if (OnVisibleStateChangedAsync.HasDelegate)
         {
-            await OnVisibleStateChangedAsync.InvokeAsync((title, status));
+            await OnVisibleStateChangedAsync.InvokeAsync((panelComponent, status));
         }
     }
 
@@ -397,48 +464,49 @@ public partial class DocksHostComponent : IDisposable
     /// JS-invokable active state callback.
     /// </summary>
     [JSInvokable]
-    public async Task PanelActiveChangedCallbackAsync(string title, string? key, bool isActive)
+    public async Task PanelActiveChangedCallbackAsync(Guid panelId, bool isActive)
     {
-        var panelComponent = FindPanelComponent(title, key);
+        var panelComponent = FindPanelComponent(panelId);
         if (panelComponent != null)
         {
             await panelComponent.SetActiveStateAsync(isActive);
         }
+        else
+        {
+            _logger?.LogDebug(
+                "[{MethodName}] Panel '{PanelId}' not found for active change.",
+                nameof(PanelActiveChangedCallbackAsync),
+                panelId);
+            return;
+        }
 
         if (OnActiveStateChangedAsync.HasDelegate)
         {
-            await OnActiveStateChangedAsync.InvokeAsync((title, key, isActive));
+            await OnActiveStateChangedAsync.InvokeAsync((panelComponent, isActive));
         }
     }
 
-    private DockPanelComponent? FindPanelComponent(string title, string? key)
+    private DockPanelComponent? FindPanelComponent(Guid panelId)
     {
-        return FindPanelComponent(_components, title, key);
+        return FindPanelComponent(_components, panelId);
     }
 
     private static DockPanelComponent? FindPanelComponent(
         IEnumerable<DockPanelComponentBase> components,
-        string title,
-        string? key)
+        Guid panelId)
     {
         foreach (var component in components)
         {
             if (component is DockPanelComponent panel)
             {
-                if (!string.IsNullOrWhiteSpace(key)
-                    && string.Equals(panel.Key, key, StringComparison.Ordinal))
-                {
-                    return panel;
-                }
-
-                if (string.Equals(panel.Title, title, StringComparison.Ordinal))
+                if (panel.PanelId == panelId)
                 {
                     return panel;
                 }
             }
             else if (component is DocksCollectionComponent content)
             {
-                var found = FindPanelComponent(content.Items, title, key);
+                var found = FindPanelComponent(content.Items, panelId);
                 if (found != null)
                 {
                     return found;
@@ -453,11 +521,17 @@ public partial class DocksHostComponent : IDisposable
     /// JS-invokable lock callback.
     /// </summary>
     [JSInvokable]
-    public async Task LockChangedCallbackAsync(string[] panels, bool state)
+    public async Task LockChangedCallbackAsync(Guid[] panels, bool state)
     {
         if (OnLockChangedCallbackAsync != null)
         {
-            await OnLockChangedCallbackAsync(panels, state);
+            var resolvedPanels = panels
+                .Select(panelId => FindPanelComponent(panelId))
+                .Where(panel => panel is not null)
+                .Cast<DockPanelComponent>()
+                .ToArray();
+
+            await OnLockChangedCallbackAsync(resolvedPanels, state);
         }
     }
 
@@ -482,6 +556,8 @@ public partial class DocksHostComponent : IDisposable
 
         _initializationCts.Cancel();
         _initializationCts.Dispose();
+
+        CancelPendingWaiters();
 
         ThemeProviderService.ThemeChangedAsync -= OnThemeChangedAsync;
 

@@ -1,9 +1,31 @@
 ﻿import { DockviewComponent } from "./dockview-core.esm.js"
 import { DockviewPanelContent } from "./dockview-content.js"
-import { onAddGroup, addGroupWithPanel, toggleLock, observeFloatingGroupLocationChange, observeOverlayChange, createDrawerHandle } from "./dockview-group.js"
+import { onAddGroup, addGroupWithPanel, toggleLock, observeFloatingGroupLocationChange, observeOverlayChange, createDrawerHandle, autoHide } from "./dockview-group.js"
 import { onAddPanel, onRemovePanel, getPanelsFromOptions, findContentFromPanels } from "./dockview-panel.js"
 import { getConfig, reloadFromConfig, loadPanelsFromLocalstorage, saveConfig } from './dockview-config.js'
 import './dockview-extensions.js'
+
+const applyDockviewStyleOverrides = (dockview, options) => {
+    const target = dockview.element;
+    if (!target) {
+        return;
+    }
+
+    const setCssValue = (name, value) => {
+        if (Number.isFinite(value) && value > 0) {
+            target.style.setProperty(name, `${value}px`);
+        } else {
+            target.style.removeProperty(name);
+        }
+    };
+
+    setCssValue('--bb-dockview-aside-width', options.asideWidthPx);
+    setCssValue('--bb-dockview-aside-button-padding-inline', options.asideButtonPaddingInlinePx);
+    setCssValue('--bb-dockview-aside-button-padding-inline-end-extra', options.asideButtonPaddingInlineEndExtraPx);
+    setCssValue('--bb-dockview-aside-button-padding-block', options.asideButtonPaddingBlockPx);
+    setCssValue('--bb-dockview-aside-button-gap', options.asideButtonGapPx);
+    setCssValue('--bb-dockview-actions-gap', options.actionButtonsGapPx);
+}
 
 const cerateDockview = (el, options) => {
     const theme = options.theme || "dockview-theme-light";
@@ -19,6 +41,7 @@ const cerateDockview = (el, options) => {
         disableTabsOverflowList: true,
         createComponent: option => new DockviewPanelContent(option)
     });
+    applyDockviewStyleOverrides(dockview, options);
     initDockview(dockview, options, template);
 
     dockview.init();
@@ -53,6 +76,21 @@ const initDockview = (dockview, options, template) => {
             dockview.options.theme.className = options.theme;
             dockview.updateTheme();
         }
+        const styleOptions = [
+            'asideWidthPx',
+            'asideButtonPaddingInlinePx',
+            'asideButtonPaddingInlineEndExtraPx',
+            'asideButtonPaddingBlockPx',
+            'asideButtonGapPx',
+            'actionButtonsGapPx'
+        ];
+        const styleChanged = styleOptions.some(key => dockview.params.options[key] !== options[key]);
+        if (styleChanged) {
+            styleOptions.forEach(key => {
+                dockview.params.options[key] = options[key];
+            });
+            applyDockviewStyleOverrides(dockview, options);
+        }
         if (options.layoutConfig) {
             reloadFromConfig(dockview, options);
         }
@@ -63,6 +101,7 @@ const initDockview = (dockview, options, template) => {
     }
 
     dockview.reset = options => {
+        applyDockviewStyleOverrides(dockview, options);
         reloadFromConfig(dockview, options)
     }
 
@@ -96,10 +135,10 @@ const initDockview = (dockview, options, template) => {
                 if (!visible) {
                     dockview.removePanel(panel)
                 }
-                dockview._panelVisibleChanged?.fire({ title: panel.title, status: visible });
+                dockview._panelVisibleChanged?.fire({ panelId: panel.id, status: visible });
             })
             delPanels.forEach(panel => {
-                dockview._panelVisibleChanged?.fire({ title: panel.title, status: false });
+                dockview._panelVisibleChanged?.fire({ panelId: panel.id, status: false });
             })
             const { floatingGroups } = dockview.params
             dockview.floatingGroups.forEach(fg => {
@@ -128,6 +167,7 @@ const initDockview = (dockview, options, template) => {
             dockview.groups.forEach(group => {
                 observeGroup(group)
             })
+            autoHideInitialDrawerGroups(dockview)
             dockview.element.querySelector('&>.dv-dockview>.dv-branch-node').addEventListener('click', function (e) {
                 this.parentElement.querySelectorAll('&>.dv-resize-container-drawer, &>.dv-render-overlay-float-drawer').forEach(item => {
                     item.classList.remove('active')
@@ -150,6 +190,14 @@ const initDockview = (dockview, options, template) => {
         saveConfig(dockview)
     })
 
+}
+
+const autoHideInitialDrawerGroups = dockview => {
+    dockview.groups
+        .filter(group => group.model?.location?.type === 'grid')
+        .filter(group => group.panels?.length > 0)
+        .filter(group => group.getParams?.()?.floatType === 'drawer')
+        .forEach(group => autoHide(group));
 }
 
 export const observeGroup = (group) => {
@@ -230,7 +278,7 @@ const toggleComponent = (dockview, options) => {
             // to ensure the panel respects the declarative layout (e.g. parentId grouping)
             // rather than adhering to a potentially stale 'groupId' from previous state.
             const groupPanels = panels.filter(p1 => p1.params.parentId == p.params.parentId)
-            let indexOfOptions = groupPanels.findIndex(p => p.params.key == pan?.params.key)
+            let indexOfOptions = groupPanels.findIndex(p => p.id === pan?.id)
             indexOfOptions = indexOfOptions == -1 ? 0 : indexOfOptions
             const index = p.params.index // Use index from new config if available
             addGroupWithPanel(dockview, p, panels, index ?? indexOfOptions);
@@ -241,7 +289,7 @@ const toggleComponent = (dockview, options) => {
         let pan = findContentFromPanels(panels, item);
         if (pan === void 0) {
             // console.log('[DockView] Local panel not found in options, removing:', item.title);
-            item.group.delPanelIndex = item.group.panels.findIndex(p => p.params.key == item.params.key)
+            item.group.delPanelIndex = item.group.panels.findIndex(p => p.id === item.id)
             dockview.removePanel(item)
         }
     })

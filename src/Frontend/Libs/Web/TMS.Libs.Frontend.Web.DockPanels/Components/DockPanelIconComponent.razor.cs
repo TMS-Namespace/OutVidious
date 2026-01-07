@@ -15,27 +15,27 @@ public partial class DockPanelIconComponent
     private const string IconSpritePath = "./_content/TMS.Libs.Frontend.Web.DockPanels/icon/dockview.svg";
 
     /// <summary>
-    /// 获得/设置 资源文件接口实例
+    /// Gets or sets the localizer instance.
     /// </summary>
     [Inject, NotNull]
     protected IStringLocalizer<DockPanelIconComponent>? Localizer { get; set; }
 
     /// <summary>
-    /// 获得/设置 图标名称
+    /// Gets or sets the icon name.
     /// </summary>
     [Parameter, NotNull]
     [EditorRequired]
     public string? IconName { get; set; }
 
     /// <summary>
-    /// 获得 样式字符串
+    /// Gets the CSS class string.
     /// </summary>
-    private string? ClassString => CssBuilder.Default("bb-dockview-control-icon")
-        .AddClass($"bb-dockview-control-icon-{IconName}")
+    private string? ClassString => CssBuilder.Default("bb-dockview-icon")
+        .AddClass($"bb-dockview-icon-{IconName}")
         .Build();
 
     /// <summary>
-    /// 获得 图标地址
+    /// Gets the icon href.
     /// </summary>
     protected string Href => $"{IconSpritePath}#{IconName}";
 

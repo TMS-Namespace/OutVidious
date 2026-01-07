@@ -1,6 +1,14 @@
 ﻿import { fixObject } from "./dockview-fix.js"
 import { getPanelsFromOptions, findContentFromPanels } from "./dockview-panel.js"
 
+const createGuid = () => (crypto?.randomUUID
+    ? crypto.randomUUID()
+    : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    }));
+
 const loadPanelsFromLocalstorage = dockview => {
     const { options } = dockview.params;
     if (options.enableLocalStorage) {
@@ -51,7 +59,7 @@ const renewConfigFromOptions = (config, options) => {
     const optionPanels = getPanelsFromOptions(options)
     const localPanels = Object.values(config.panels)
     optionPanels.forEach(optionPanel => {
-        const panel = localPanels.find(localPanel => localPanel.params.key == optionPanel.params.key)
+        const panel = localPanels.find(localPanel => localPanel.id === optionPanel.id)
         if (panel) {
             optionPanel.params = {
                 ...panel.params,
@@ -62,7 +70,7 @@ const renewConfigFromOptions = (config, options) => {
         }
         else {
             const delPanels = JSON.parse(localStorage.getItem(options.localStorageKey + '-panels'))
-            if (delPanels?.find(delPanel => delPanel.params.key == optionPanel.params.key)) return
+            if (delPanels?.find(delPanel => delPanel.id === optionPanel.id)) return
             let index = optionPanels.findIndex(item => item.id == optionPanel.id)
             let brotherPanel, brotherType
             if (index == 0) {
@@ -74,13 +82,13 @@ const renewConfigFromOptions = (config, options) => {
                 brotherType = 'front'
             }
             config.panels[optionPanel.id] = optionPanel
-            const brotherId = Object.keys(config.panels).find(key => config.panels[key].params.key == brotherPanel.params.key)
+            const brotherId = Object.keys(config.panels).find(key => config.panels[key].id == brotherPanel.id)
             const originFloatingGroupId = config.floatingGroups?.find(fg => fg.data.views.includes(brotherId))?.data.id.split('_')[0]
             addPanel(config.grid.root, optionPanel, brotherPanel, brotherId, originFloatingGroupId)
         }
     })
     localPanels.forEach(localPanel => {
-        const panel = optionPanels.find(optionPanel => optionPanel.params.key == localPanel.params.key)
+        const panel = optionPanels.find(optionPanel => optionPanel.id === localPanel.id)
         if (panel) {
 
         }
@@ -146,7 +154,7 @@ const addPanel = (branch, panel, brotherPanel, brotherId, originFloatingGroupId)
             branch.data.push({
                 data: {
                     activeView: panel.id,
-                    id: Date.now() + Math.floor(Math.random() * 100) + '',
+                    id: createGuid(),
                     views: [panel.id]
                 },
                 // size: branch.data.reduce((pre, cur) => pre + cur.size, 0)/branch.data.length,
@@ -160,7 +168,7 @@ const addPanel = (branch, panel, brotherPanel, brotherId, originFloatingGroupId)
                         branch.data.push({
                             data: {
                                 activeView: panel.id,
-                                id: Date.now() + Math.floor(Math.random() * 100) + '',
+                                id: createGuid(),
                                 views: [panel.id]
                             },
                             size: branch.data.reduce((pre, cur) => pre + cur.size, 0) / branch.data.length,
@@ -202,16 +210,16 @@ const getConfigFromContent = options => {
     const panels = {}, rootType = options.content[0].type
     const orientation = rootType === 'column' ? 'VERTICAL' : 'HORIZONTAL';
     const root = getTree(options.content[0], { width, height, orientation }, options, panels, getGroupId, options)
+    const activeGroup = getFirstGroupId(root);
     return fixObject({
-        activeGroup: '1',
+        activeGroup,
         grid: { width, height, orientation, root },
         panels
     });
 }
 
 const getGroupIdFunc = () => {
-    let currentId = 0;
-    return () => `${currentId++}`;
+    return () => createGuid();
 }
 const filterEmptyContent = function(data) {
     if (!data || typeof data !== 'object') return data;
@@ -255,6 +263,18 @@ const getTree = (contentItem, { width, height, orientation }, parent, panels, ge
     return obj
 }
 
+const getFirstGroupId = node => {
+    if (!node) return '';
+    if (node.type === 'leaf') return node.data?.id ?? '';
+    if (node.type === 'branch' && Array.isArray(node.data)) {
+        for (const child of node.data) {
+            const id = getFirstGroupId(child);
+            if (id) return id;
+        }
+    }
+    return '';
+}
+
 const getSize = (size, rate) => {
     return rate ? size * (rate / 100) : false
 }
@@ -269,7 +289,7 @@ const getGroupNode = (contentItem, size, boxSize, parent, panels, getGroupId, op
         size: getSize(boxSize, contentItem.width || contentItem.height) || size,
         visible: contentItem.content.length > 0 || contentItem.content.some(item => item.visible !== false),
         data: {
-            id: getGroupId(),
+            id: contentItem.id || getGroupId(),
             activeView: contentItem.content[0]?.id || '',
             hideHeader: contentItem.content.length === 1 && contentItem.content[0].showHeader === false,
             views: contentItem.content.filter(item => item.visible !== false).map(item => {

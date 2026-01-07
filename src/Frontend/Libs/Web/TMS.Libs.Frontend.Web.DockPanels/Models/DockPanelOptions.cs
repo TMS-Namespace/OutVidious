@@ -8,17 +8,17 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Models;
 internal sealed class DockPanelOptions
 {
     /// <summary>
-    /// 获得/设置 组件本地化版本信息
+    /// Gets or sets the layout version string.
     /// </summary>
     public string? Version { get; set; }
 
     /// <summary>
-    /// 获得/设置 是否开启本地存储 默认 null 未设置
+    /// Gets or sets whether local storage is enabled.
     /// </summary>
     public bool? EnableLocalStorage { get; set; }
 
     /// <summary>
-    /// 获得/设置 本地存储前缀 默认 bb-dock
+    /// Gets or sets the local storage prefix.
     /// </summary>
     public string? LocalStoragePrefix { get; set; }
 }

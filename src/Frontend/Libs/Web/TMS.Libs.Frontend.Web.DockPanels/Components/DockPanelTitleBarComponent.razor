@@ -1,20 +1,46 @@
-<div
-    class="dv-default-tab-action bb-dockview-item-title-icon"
-    @onclick="@OnClickBar">
-    @if (!string.IsNullOrEmpty(BarIconUrl))
-    {
-        <img
-            alt="bar-icon"
-            src="@BarIconUrl" />
-    }
-    else if (!string.IsNullOrEmpty(BarIcon))
-    {
-        <i
-            class="@BarIcon"></i>
-    }
-    else
-    {
-        <DockPanelIconComponent
-            IconName="bar" />
-    }
-</div>
+@if (OnClickBarCallback is null)
+{
+    <div
+        class="dv-default-tab-action bb-dockview-item-title-icon">
+        @if (!string.IsNullOrEmpty(BarIconUrl))
+        {
+            <img
+                alt="bar-icon"
+                src="@BarIconUrl" />
+        }
+        else if (!string.IsNullOrEmpty(BarIcon))
+        {
+            <i
+                class="@BarIcon"></i>
+        }
+        else
+        {
+            <DockPanelIconComponent
+                IconName="bar" />
+        }
+    </div>
+}
+else
+{
+    <button
+        type="button"
+        class="dv-default-tab-action bb-dockview-item-title-icon"
+        @onclick="@OnClickBar">
+        @if (!string.IsNullOrEmpty(BarIconUrl))
+        {
+            <img
+                alt="bar-icon"
+                src="@BarIconUrl" />
+        }
+        else if (!string.IsNullOrEmpty(BarIcon))
+        {
+            <i
+                class="@BarIcon"></i>
+        }
+        else
+        {
+            <DockPanelIconComponent
+                IconName="bar" />
+        }
+    </button>
+}

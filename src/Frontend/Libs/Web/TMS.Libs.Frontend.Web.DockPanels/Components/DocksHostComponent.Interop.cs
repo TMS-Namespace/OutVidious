@@ -1,3 +1,4 @@
+using System;
 using TMS.Libs.Frontend.Web.DockPanels.Models;
 using TMS.Libs.Frontend.Web.DockPanels.Services;
 
@@ -11,234 +12,401 @@ public partial class DocksHostComponent
     public IDockPanelInterop GetInterop() => DockPanelInterop;
 
     /// <summary>
-    /// Shows a drawer tab by title.
+    /// Shows a drawer tab by panel instance.
     /// </summary>
-    /// <param name="panelTitle">The panel title.</param>
-    /// <param name="widthPx">Optional drawer width.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> ShowDrawerTabAsync(string panelTitle, int? widthPx, CancellationToken cancellationToken)
+    public Task<bool> ShowDrawerTabAsync(DockPanelComponent panel, int? widthPx, CancellationToken cancellationToken)
+    {
+        return ShowDrawerTabAsync(panel.PanelId, widthPx, cancellationToken);
+    }
+
+    /// <summary>
+    /// Shows a drawer tab by panel ID.
+    /// </summary>
+    public Task<bool> ShowDrawerTabAsync(Guid panelId, int? widthPx, CancellationToken cancellationToken)
     {
         if (widthPx.HasValue)
         {
-            return DockPanelInterop.ShowDrawerTabAsync(DockPanelId, panelTitle, widthPx.Value, cancellationToken);
+            return DockPanelInterop.ShowDrawerTabAsync(DockPanelId, panelId, widthPx.Value, cancellationToken);
         }
 
-        return DockPanelInterop.ShowDrawerTabAsync(DockPanelId, panelTitle, cancellationToken);
+        return DockPanelInterop.ShowDrawerTabAsync(DockPanelId, panelId, cancellationToken);
     }
 
     /// <summary>
-    /// Shows a drawer panel by title.
+    /// Shows a drawer panel by panel instance.
     /// </summary>
-    /// <param name="panelTitle">The panel title.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> ShowDrawerAsync(string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> ShowDrawerAsync(DockPanelComponent panel, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.ShowDrawerAsync(DockPanelId, panelTitle, cancellationToken);
+        return DockPanelInterop.ShowDrawerAsync(DockPanelId, panel.PanelId, cancellationToken);
     }
 
     /// <summary>
-    /// Hides a drawer tab by title.
+    /// Shows a drawer panel by panel ID.
     /// </summary>
-    /// <param name="panelTitle">The panel title.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> HideDrawerTabAsync(string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> ShowDrawerAsync(Guid panelId, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.HideDrawerTabAsync(DockPanelId, panelTitle, cancellationToken);
+        return DockPanelInterop.ShowDrawerAsync(DockPanelId, panelId, cancellationToken);
     }
 
     /// <summary>
-    /// Activates a panel by title.
+    /// Hides a drawer panel by instance.
     /// </summary>
-    /// <param name="panelTitle">The panel title.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> ActivatePanelAsync(string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> HideDrawerAsync(DockPanelComponent panel, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.ActivatePanelAsync(DockPanelId, panelTitle, cancellationToken);
+        return DockPanelInterop.HideDrawerAsync(DockPanelId, panel.PanelId, cancellationToken);
     }
 
     /// <summary>
-    /// Sets the active panel by title without toggling drawer visibility.
+    /// Hides a drawer panel by ID.
     /// </summary>
-    /// <param name="panelTitle">The panel title.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> SetActivePanelAsync(string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> HideDrawerAsync(Guid panelId, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.SetActivePanelAsync(DockPanelId, panelTitle, cancellationToken);
+        return DockPanelInterop.HideDrawerAsync(DockPanelId, panelId, cancellationToken);
     }
 
     /// <summary>
-    /// Checks if a panel with the given title exists.
+    /// Hides a drawer tab by panel instance.
     /// </summary>
-    /// <param name="panelTitle">The panel title.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> PanelExistsAsync(string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> HideDrawerTabAsync(DockPanelComponent panel, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.PanelExistsAsync(DockPanelId, panelTitle, cancellationToken);
+        return DockPanelInterop.HideDrawerTabAsync(DockPanelId, panel.PanelId, cancellationToken);
     }
 
     /// <summary>
-    /// Gets the current state of a panel by title.
+    /// Hides a drawer tab by panel ID.
     /// </summary>
-    /// <param name="panelTitle">The panel title.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<DockPanelState?> GetPanelStateAsync(string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> HideDrawerTabAsync(Guid panelId, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.GetPanelStateAsync(DockPanelId, panelTitle, cancellationToken);
+        return DockPanelInterop.HideDrawerTabAsync(DockPanelId, panelId, cancellationToken);
     }
 
     /// <summary>
-    /// Checks if a panel with the given key exists.
+    /// Activates a panel by instance.
     /// </summary>
-    /// <param name="panelKey">The panel key.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> PanelExistsByKeyAsync(string panelKey, CancellationToken cancellationToken)
+    public Task<bool> ActivatePanelAsync(DockPanelComponent panel, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.PanelExistsByKeyAsync(DockPanelId, panelKey, cancellationToken);
+        return DockPanelInterop.ActivatePanelAsync(DockPanelId, panel.PanelId, cancellationToken);
     }
 
     /// <summary>
-    /// Shows and expands a drawer by title.
+    /// Activates a panel by ID.
     /// </summary>
-    /// <param name="panelTitle">The panel title.</param>
-    /// <param name="widthPx">Optional drawer width.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> ShowAndExpandDrawerAsync(string panelTitle, int? widthPx, CancellationToken cancellationToken)
+    public Task<bool> ActivatePanelAsync(Guid panelId, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.ActivatePanelAsync(DockPanelId, panelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sets the active panel by instance without toggling drawer visibility.
+    /// </summary>
+    public Task<bool> SetActivePanelAsync(DockPanelComponent panel, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.SetActivePanelAsync(DockPanelId, panel.PanelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sets the active panel by ID without toggling drawer visibility.
+    /// </summary>
+    public Task<bool> SetActivePanelAsync(Guid panelId, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.SetActivePanelAsync(DockPanelId, panelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Checks if a panel exists by instance.
+    /// </summary>
+    public Task<bool> PanelExistsAsync(DockPanelComponent panel, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.PanelExistsAsync(DockPanelId, panel.PanelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Checks if a panel exists by ID.
+    /// </summary>
+    public Task<bool> PanelExistsAsync(Guid panelId, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.PanelExistsAsync(DockPanelId, panelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets the current state of a panel by instance.
+    /// </summary>
+    public Task<DockPanelState?> GetPanelStateAsync(DockPanelComponent panel, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.GetPanelStateAsync(DockPanelId, panel.PanelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets the current state of a panel by ID.
+    /// </summary>
+    public Task<DockPanelState?> GetPanelStateAsync(Guid panelId, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.GetPanelStateAsync(DockPanelId, panelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Shows and expands a drawer by panel instance.
+    /// </summary>
+    public Task<bool> ShowAndExpandDrawerAsync(DockPanelComponent panel, int? widthPx, CancellationToken cancellationToken)
+    {
+        return ShowAndExpandDrawerAsync(panel.PanelId, widthPx, cancellationToken);
+    }
+
+    /// <summary>
+    /// Shows and expands a drawer by panel ID.
+    /// </summary>
+    public Task<bool> ShowAndExpandDrawerAsync(Guid panelId, int? widthPx, CancellationToken cancellationToken)
     {
         if (widthPx.HasValue)
         {
-            return DockPanelInterop.ShowAndExpandDrawerAsync(DockPanelId, panelTitle, widthPx.Value, cancellationToken);
+            return DockPanelInterop.ShowAndExpandDrawerAsync(DockPanelId, panelId, widthPx.Value, cancellationToken);
         }
 
-        return DockPanelInterop.ShowAndExpandDrawerAsync(DockPanelId, panelTitle, cancellationToken);
+        return DockPanelInterop.ShowAndExpandDrawerAsync(DockPanelId, panelId, cancellationToken);
     }
 
     /// <summary>
-    /// Sets the drawer width by title.
+    /// Sets the drawer width by panel instance.
     /// </summary>
-    /// <param name="panelTitle">The panel title.</param>
-    /// <param name="widthPx">The drawer width.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> SetDrawerWidthAsync(string panelTitle, int widthPx, CancellationToken cancellationToken)
+    public Task<bool> SetDrawerWidthAsync(DockPanelComponent panel, int widthPx, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.SetDrawerWidthAsync(DockPanelId, panelTitle, widthPx, cancellationToken);
+        return DockPanelInterop.SetDrawerWidthAsync(DockPanelId, panel.PanelId, widthPx, cancellationToken);
     }
 
     /// <summary>
-    /// Checks whether a drawer is fully ready in the DOM (button + container).
+    /// Sets the drawer width by panel ID.
     /// </summary>
-    /// <param name="panelTitle">The panel title.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> IsDrawerReadyAsync(string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> SetDrawerWidthAsync(Guid panelId, int widthPx, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.IsDrawerReadyAsync(DockPanelId, panelTitle, cancellationToken);
+        return DockPanelInterop.SetDrawerWidthAsync(DockPanelId, panelId, widthPx, cancellationToken);
     }
 
     /// <summary>
-    /// Shows a drawer tab by panel key.
+    /// Checks whether a drawer is fully ready in the DOM.
     /// </summary>
-    /// <param name="panelKey">The panel key.</param>
-    /// <param name="widthPx">Optional drawer width.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> ShowDrawerTabByKeyAsync(string panelKey, int? widthPx, CancellationToken cancellationToken)
+    public Task<bool> IsDrawerReadyAsync(DockPanelComponent panel, CancellationToken cancellationToken)
     {
-        if (widthPx.HasValue)
+        return DockPanelInterop.IsDrawerReadyAsync(DockPanelId, panel.PanelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Checks whether a drawer is fully ready in the DOM by panel ID.
+    /// </summary>
+    public Task<bool> IsDrawerReadyAsync(Guid panelId, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.IsDrawerReadyAsync(DockPanelId, panelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Unpins a group by group component.
+    /// </summary>
+    public Task<bool> UnpinGroupAsync(DocksCollectionComponent group, CancellationToken cancellationToken)
+    {
+        if (group.GroupId is null)
         {
-            return DockPanelInterop.ShowDrawerTabByKeyAsync(DockPanelId, panelKey, widthPx.Value, cancellationToken);
+            return Task.FromResult(false);
         }
 
-        return DockPanelInterop.ShowDrawerTabByKeyAsync(DockPanelId, panelKey, cancellationToken);
+        return DockPanelInterop.UnpinGroupAsync(DockPanelId, group.GroupId.Value, cancellationToken);
     }
 
     /// <summary>
-    /// Hides a drawer tab by panel key.
+    /// Unpins a group by group ID.
     /// </summary>
-    /// <param name="panelKey">The panel key.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> HideDrawerTabByKeyAsync(string panelKey, CancellationToken cancellationToken)
+    public Task<bool> UnpinGroupAsync(Guid groupId, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.HideDrawerTabByKeyAsync(DockPanelId, panelKey, cancellationToken);
+        return DockPanelInterop.UnpinGroupAsync(DockPanelId, groupId, cancellationToken);
     }
 
     /// <summary>
-    /// Activates a panel by key.
+    /// Unpins a group using a panel instance.
     /// </summary>
-    /// <param name="panelKey">The panel key.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> ActivatePanelByKeyAsync(string panelKey, CancellationToken cancellationToken)
+    public Task<bool> UnpinGroupAsync(DockPanelComponent panel, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.ActivatePanelByKeyAsync(DockPanelId, panelKey, cancellationToken);
+        return DockPanelInterop.UnpinPanelAsync(DockPanelId, panel.PanelId, cancellationToken);
     }
 
     /// <summary>
-    /// Sets the active panel by key without toggling drawer visibility.
+    /// Pins a panel by instance.
     /// </summary>
-    /// <param name="panelKey">The panel key.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> SetActivePanelByKeyAsync(string panelKey, CancellationToken cancellationToken)
+    public Task<bool> PinPanelAsync(DockPanelComponent panel, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.SetActivePanelByKeyAsync(DockPanelId, panelKey, cancellationToken);
+        return DockPanelInterop.PinPanelAsync(DockPanelId, panel.PanelId, cancellationToken);
     }
 
     /// <summary>
-    /// Sets the drawer width by panel key.
+    /// Pins a panel by ID.
     /// </summary>
-    /// <param name="panelKey">The panel key.</param>
-    /// <param name="widthPx">The drawer width.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> SetDrawerWidthByKeyAsync(string panelKey, int widthPx, CancellationToken cancellationToken)
+    public Task<bool> PinPanelAsync(Guid panelId, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.SetDrawerWidthByKeyAsync(DockPanelId, panelKey, widthPx, cancellationToken);
+        return DockPanelInterop.PinPanelAsync(DockPanelId, panelId, cancellationToken);
     }
 
     /// <summary>
-    /// Unpins a group by index to make it a drawer.
+    /// Floats a panel by instance.
     /// </summary>
-    /// <param name="groupIndex">The group index.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> UnpinGroupAsync(int groupIndex, CancellationToken cancellationToken)
+    public Task<bool> FloatPanelAsync(DockPanelComponent panel, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.UnpinGroupAsync(DockPanelId, groupIndex, cancellationToken);
+        return DockPanelInterop.FloatPanelAsync(DockPanelId, panel.PanelId, cancellationToken);
     }
 
     /// <summary>
-    /// Unpins a panel's group by the panel title.
+    /// Floats a panel by ID.
     /// </summary>
-    /// <param name="panelTitle">The panel title.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> UnpinGroupByPanelTitleAsync(string panelTitle, CancellationToken cancellationToken)
+    public Task<bool> FloatPanelAsync(Guid panelId, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.UnpinGroupByPanelTitleAsync(DockPanelId, panelTitle, cancellationToken);
+        return DockPanelInterop.FloatPanelAsync(DockPanelId, panelId, cancellationToken);
     }
 
     /// <summary>
-    /// Sets a static title for a group by panel key.
+    /// Docks a panel by instance.
     /// </summary>
-    /// <param name="panelKey">The panel key.</param>
-    /// <param name="staticTitle">The static title to set.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> SetDockCollectionTitleByKeyAsync(string panelKey, string staticTitle, CancellationToken cancellationToken)
+    public Task<bool> DockPanelAsync(DockPanelComponent panel, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.SetDockCollectionTitleByKeyAsync(DockPanelId, panelKey, staticTitle, cancellationToken);
+        return DockPanelInterop.DockPanelAsync(DockPanelId, panel.PanelId, cancellationToken);
     }
 
     /// <summary>
-    /// Sets a static title for a group by panel title.
+    /// Docks a panel by ID.
     /// </summary>
-    /// <param name="panelTitle">The panel title.</param>
-    /// <param name="staticTitle">The static title to set.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> SetGroupStaticTitleAsync(string panelTitle, string staticTitle, CancellationToken cancellationToken)
+    public Task<bool> DockPanelAsync(Guid panelId, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.SetGroupStaticTitleAsync(DockPanelId, panelTitle, staticTitle, cancellationToken);
+        return DockPanelInterop.DockPanelAsync(DockPanelId, panelId, cancellationToken);
     }
 
     /// <summary>
-    /// Unpins a panel's group by the panel key.
+    /// Collapses a panel by instance.
     /// </summary>
-    /// <param name="panelKey">The unique key of a panel in the group to unpin.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public Task<bool> UnpinGroupByPanelKeyAsync(string panelKey, CancellationToken cancellationToken)
+    public Task<bool> CollapsePanelAsync(DockPanelComponent panel, CancellationToken cancellationToken)
     {
-        return DockPanelInterop.UnpinGroupByPanelKeyAsync(DockPanelId, panelKey, cancellationToken);
+        return DockPanelInterop.CollapsePanelAsync(DockPanelId, panel.PanelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Collapses a panel by ID.
+    /// </summary>
+    public Task<bool> CollapsePanelAsync(Guid panelId, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.CollapsePanelAsync(DockPanelId, panelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Expands a panel by instance.
+    /// </summary>
+    public Task<bool> ExpandPanelAsync(DockPanelComponent panel, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.ExpandPanelAsync(DockPanelId, panel.PanelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Expands a panel by ID.
+    /// </summary>
+    public Task<bool> ExpandPanelAsync(Guid panelId, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.ExpandPanelAsync(DockPanelId, panelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Shows a panel group by instance.
+    /// </summary>
+    public Task<bool> ShowGroupAsync(DockPanelComponent panel, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.ShowGroupAsync(DockPanelId, panel.PanelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Shows a panel group by ID.
+    /// </summary>
+    public Task<bool> ShowGroupAsync(Guid panelId, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.ShowGroupAsync(DockPanelId, panelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Hides a panel group by instance.
+    /// </summary>
+    public Task<bool> HideGroupAsync(DockPanelComponent panel, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.HideGroupAsync(DockPanelId, panel.PanelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Hides a panel group by ID.
+    /// </summary>
+    public Task<bool> HideGroupAsync(Guid panelId, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.HideGroupAsync(DockPanelId, panelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Checks group visibility by instance.
+    /// </summary>
+    public Task<bool> IsGroupVisibleAsync(DockPanelComponent panel, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.IsGroupVisibleAsync(DockPanelId, panel.PanelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Checks group visibility by ID.
+    /// </summary>
+    public Task<bool> IsGroupVisibleAsync(Guid panelId, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.IsGroupVisibleAsync(DockPanelId, panelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Removes a panel by instance.
+    /// </summary>
+    public Task<bool> RemovePanelAsync(DockPanelComponent panel, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.RemovePanelAsync(DockPanelId, panel.PanelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Removes a panel by ID.
+    /// </summary>
+    public Task<bool> RemovePanelAsync(Guid panelId, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.RemovePanelAsync(DockPanelId, panelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Adds a new panel to a new group at the specified position.
+    /// </summary>
+    public Task<bool> AddPanelToNewGroupAsync(Guid panelId, string panelTitle, string position, Guid? referenceGroupId, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.AddPanelToNewGroupAsync(DockPanelId, panelId, panelTitle, position, referenceGroupId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sets a static title for a group's sidebar button by panel instance.
+    /// </summary>
+    public Task<bool> SetGroupStaticTitleAsync(DockPanelComponent panel, string staticTitle, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.SetGroupStaticTitleAsync(DockPanelId, panel.PanelId, staticTitle, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sets a static title for a group's sidebar button by panel ID.
+    /// </summary>
+    public Task<bool> SetGroupStaticTitleAsync(Guid panelId, string staticTitle, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.SetGroupStaticTitleAsync(DockPanelId, panelId, staticTitle, cancellationToken);
+    }
+
+    /// <summary>
+    /// Clears the static title for a group by panel instance.
+    /// </summary>
+    public Task<bool> ClearGroupStaticTitleAsync(DockPanelComponent panel, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.ClearGroupStaticTitleAsync(DockPanelId, panel.PanelId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Clears the static title for a group by panel ID.
+    /// </summary>
+    public Task<bool> ClearGroupStaticTitleAsync(Guid panelId, CancellationToken cancellationToken)
+    {
+        return DockPanelInterop.ClearGroupStaticTitleAsync(DockPanelId, panelId, cancellationToken);
     }
 }

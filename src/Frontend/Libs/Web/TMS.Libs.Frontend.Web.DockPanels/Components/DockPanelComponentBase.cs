@@ -13,35 +13,47 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Components;
 public abstract class DockPanelComponentBase : IdComponentBase, IDisposable
 {
     /// <summary>
-    /// 获得/设置 渲染类型 默认 Component
+    /// Gets the internal GUID for this component instance.
+    /// This value is generated internally and cannot be set by consumers.
+    /// </summary>
+    [JsonIgnore]
+    public Guid ComponentId { get; } = Guid.NewGuid();
+
+    /// <summary>
+    /// Gets or sets the render type. Default is <see cref="DockCollectionType.Component"/>.
     /// </summary>
     [Parameter]
     public DockCollectionType Type { get; set; }
 
     /// <summary>
-    /// 获得/设置 组件宽度百分比 默认 null 未设置
+    /// Gets or sets the component width percentage.
     /// </summary>
     [Parameter]
     public int? Width { get; set; }
 
     /// <summary>
-    /// 获得/设置 组件高度百分比 默认 null 未设置
+    /// Gets or sets the component height percentage.
     /// </summary>
     [Parameter]
     public int? Height { get; set; }
 
     /// <summary>
-    /// 获得/设置 子组件
+    /// Gets or sets the child content.
     /// </summary>
     [Parameter]
     [JsonIgnore]
     public RenderFragment? ChildContent { get; set; }
 
     /// <summary>
-    /// 获得/设置 DockContent 实例
+    /// Gets or sets the collection of dock items from the parent container.
     /// </summary>
     [CascadingParameter]
     private List<DockPanelComponentBase>? Parent { get; set; }
+
+    /// <summary>
+    /// Gets the string representation used for the DockView internal ID.
+    /// </summary>
+    internal string ComponentIdString => ComponentId.ToString("D");
 
     /// <summary>
     /// <inheritdoc/>
@@ -50,11 +62,22 @@ public abstract class DockPanelComponentBase : IdComponentBase, IDisposable
     {
         base.OnInitialized();
 
+        Id = ComponentIdString;
         Parent?.Add(this);
     }
 
     /// <summary>
-    /// 资源销毁方法
+    /// <inheritdoc/>
+    /// </summary>
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        Id = ComponentIdString;
+    }
+
+    /// <summary>
+    /// Disposes managed resources.
     /// </summary>
     /// <param name="disposing"></param>
     protected virtual void Dispose(bool disposing)
@@ -66,7 +89,7 @@ public abstract class DockPanelComponentBase : IdComponentBase, IDisposable
     }
 
     /// <summary>
-    /// 资源销毁方法
+    /// Disposes the component.
     /// </summary>
     public void Dispose()
     {

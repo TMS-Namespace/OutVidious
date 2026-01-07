@@ -57,7 +57,7 @@ public sealed class Super : IDisposable
             loggerFactory,
             httpClientFactory);
 
-        var providerBaseUri = Configurations.Provider.BaseUri ?? new Uri("https://youtube.srv1.tms.com");
+        var providerBaseUri = Configurations.Provider.BaseUri!;
 
         Action<HttpClientHandler>? proxyHandlerConfigurator = Configurations.Provider.BypassSslValidation
             ? handler => handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator

@@ -11,22 +11,22 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Enums;
 public enum DockCollectionType
 {
     /// <summary>
-    /// 行排列 水平排列
+    /// Row layout (horizontal).
     /// </summary>
     Row,
 
     /// <summary>
-    /// 列排列 垂直排列
+    /// Column layout (vertical).
     /// </summary>
     Column,
 
     /// <summary>
-    /// 标签排列
+    /// Group (tabbed) layout.
     /// </summary>
     Group,
 
     /// <summary>
-    /// 组件
+    /// Component (leaf) item.
     /// </summary>
     Component,
 }

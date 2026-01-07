@@ -82,7 +82,7 @@ DockviewComponent.prototype.removePanel = function (...args) {
 
         removePanel.apply(this, args)
         if (!this.isClearing) {
-            this._panelVisibleChanged?.fire({ title: panel.title, status: false });
+            this._panelVisibleChanged?.fire({ panelId: panel.id, status: false });
         }
     }
 }

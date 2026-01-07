@@ -72,7 +72,6 @@
             HiddenClass="fronttube-dockview-hidden"
             EnableLocalStorage="false"
             Theme="@CurrentDockPanelTheme"
-            GroupConfigurations="@_groupConfigurations"
             DefaultDrawerWidthPx="500"
             @bind-IsReady="_isDockPanelsReady"
             OnVisibleStateChangedAsync="@OnVisibleStateChangedAsync"
@@ -83,16 +82,12 @@
                 @* Main content area - Video Player - pinned and not closable *@
                 
                 <DockPanelComponent
-                    Key="videoPlayer"
+                    @ref="_videoPlayerPanel"
                     Title="Video Player"
                     ShowClose="false"
+                    ShowTitleBar="true"
+                    TitleBarIcon="@VideoPlayerPanelIcon"
                     Width="70">
-                    <TitleTemplate>
-                        <i
-                            class="fa-solid fa-play"></i>
-                        <span>Video Player</span>
-                    </TitleTemplate>
-
                     <ChildContent>
                         <div
                             class="main-content-wrapper">
@@ -111,26 +106,21 @@
                     {
                         <DocksCollectionComponent
                             Type="DockCollectionType.Group"
+                            StaticGroupIcon="@ChannelGroupIcon"
                             Height="25">
                             <DockPanelComponent
-                                @key="_channelAboutRenderVersion"
-                                GroupId="@ChannelDrawerGroupId"
-                                Key="@ChannelAboutPanelKey"
+                                @ref="_channelAboutPanel"
                                 Title="@ChannelAboutPanelTitle"
-                                Visible="@IsChannelAboutPanelVisible"
+                                Visible="@IsPanelVisible(_channelAboutPanel, ShouldRenderChannelGroup)"
                                 IsActive="true"
                                 StaticGroupTitle="@ChannelGroupTitle"
+                                ShowTitleBar="true"
+                                TitleBarIcon="@ChannelAboutPanelIcon"
                                 ShowClose="true"
                                 CloseMode="DockPanelCloseMode.HideDrawerTab"
                                 FloatType="DockPanelFloatType.Drawer"
                                 Direction="DockPanelDrawerDirection.Right"
                                 Drawer="@ChannelDrawerOptions">
-                                <TitleTemplate>
-                                    <i
-                                        class="fa-solid fa-info-circle"></i>
-                                    <span> About</span>
-                                </TitleTemplate>
-
                                 <ChildContent>
                                     <div
                                         class="dock-panel-content">
@@ -145,22 +135,17 @@
                             </DockPanelComponent>
 
                             <DockPanelComponent
-                                GroupId="@ChannelDrawerGroupId"
-                                Key="@ChannelVideosPanelKey"
+                                @ref="_channelVideosPanel"
                                 Title="@ChannelVideosPanelTitle"
-                                Visible="@IsChannelVideosPanelVisible"
+                                Visible="@IsPanelVisible(_channelVideosPanel, ShouldRenderChannelGroup)"
                                 StaticGroupTitle="@ChannelGroupTitle"
+                                ShowTitleBar="true"
+                                TitleBarIcon="@ChannelVideosPanelIcon"
                                 ShowClose="true"
                                 CloseMode="DockPanelCloseMode.HideDrawerTab"
                                 FloatType="DockPanelFloatType.Drawer"
                                 Direction="DockPanelDrawerDirection.Right"
                                 Drawer="@ChannelDrawerOptions">
-                                <TitleTemplate>
-                                    <i
-                                        class="fa-solid fa-video"></i>
-                                    <span> Videos</span>
-                                </TitleTemplate>
-
                                 <ChildContent>
                                     <div
                                         class="dock-panel-content">
@@ -179,18 +164,17 @@
                     @* Group 2: Search - separate group *@
                     <DocksCollectionComponent
                         Type="DockCollectionType.Group"
+                        StaticGroupIcon="@SearchGroupIcon"
                         Height="15">
                         <DockPanelComponent
-                            Key="search"
+                            @ref="_searchPanel"
                             Title="Search"
-                            Visible="@IsPanelVisible("Search")"
+                            Visible="@IsPanelVisible(_searchPanel)"
+                            Drawer="@SidebarDrawerOptions"
+                            FloatType="DockPanelFloatType.Drawer"
+                            ShowTitleBar="true"
+                            TitleBarIcon="@SearchPanelIcon"
                             ShowClose="true">
-                            <TitleTemplate>
-                                <i
-                                    class="fa-solid fa-magnifying-glass"></i>
-                                <span>Search</span>
-                            </TitleTemplate>
-
                             <ChildContent>
                                 <div
                                     class="dock-panel-content">
@@ -208,18 +192,18 @@
                     @* Group 3: Queue + Local Playlists + Favorites + History *@
                     <DocksCollectionComponent
                         Type="DockCollectionType.Group"
+                        StaticGroupIcon="@CollectionsGroupIcon"
                         Height="20">
                         <DockPanelComponent
-                            Key="queue"
+                            @ref="_queuePanel"
                             Title="Queue"
-                            Visible="@IsPanelVisible("Queue")"
+                            Visible="@IsPanelVisible(_queuePanel)"
+                            Drawer="@SidebarDrawerOptions"
+                            FloatType="DockPanelFloatType.Drawer"
+                            StaticGroupTitle="@CollectionsGroupTitle"
+                            ShowTitleBar="true"
+                            TitleBarIcon="@QueuePanelIcon"
                             ShowClose="true">
-                            <TitleTemplate>
-                                <i
-                                    class="fa-solid fa-list-ol"></i>
-                                <span>Queue</span>
-                            </TitleTemplate>
-
                             <ChildContent>
                                 <div
                                     class="dock-panel-content">
@@ -232,16 +216,15 @@
                         </DockPanelComponent>
 
                         <DockPanelComponent
-                            Key="localPlaylists"
+                            @ref="_localPlaylistsPanel"
                             Title="Local Playlists"
-                            Visible="@IsPanelVisible("Local Playlists")"
+                            Visible="@IsPanelVisible(_localPlaylistsPanel)"
+                            Drawer="@SidebarDrawerOptions"
+                            FloatType="DockPanelFloatType.Drawer"
+                            StaticGroupTitle="@CollectionsGroupTitle"
+                            ShowTitleBar="true"
+                            TitleBarIcon="@LocalPlaylistsPanelIcon"
                             ShowClose="true">
-                            <TitleTemplate>
-                                <i
-                                    class="fa-solid fa-folder"></i>
-                                <span>Local Playlists</span>
-                            </TitleTemplate>
-
                             <ChildContent>
                                 <div
                                     class="dock-panel-content">
@@ -254,16 +237,15 @@
                         </DockPanelComponent>
 
                         <DockPanelComponent
-                            Key="favorites"
+                            @ref="_favoritesPanel"
                             Title="Favorites"
-                            Visible="@IsPanelVisible("Favorites")"
+                            Visible="@IsPanelVisible(_favoritesPanel)"
+                            Drawer="@SidebarDrawerOptions"
+                            FloatType="DockPanelFloatType.Drawer"
+                            StaticGroupTitle="@CollectionsGroupTitle"
+                            ShowTitleBar="true"
+                            TitleBarIcon="@FavoritesPanelIcon"
                             ShowClose="true">
-                            <TitleTemplate>
-                                <i
-                                    class="fa-solid fa-heart"></i>
-                                <span>Favorites</span>
-                            </TitleTemplate>
-
                             <ChildContent>
                                 <div
                                     class="dock-panel-content">
@@ -276,16 +258,15 @@
                         </DockPanelComponent>
 
                         <DockPanelComponent
-                            Key="history"
+                            @ref="_historyPanel"
                             Title="History"
-                            Visible="@IsPanelVisible("History")"
+                            Visible="@IsPanelVisible(_historyPanel)"
+                            Drawer="@SidebarDrawerOptions"
+                            FloatType="DockPanelFloatType.Drawer"
+                            StaticGroupTitle="@CollectionsGroupTitle"
+                            ShowTitleBar="true"
+                            TitleBarIcon="@HistoryPanelIcon"
                             ShowClose="true">
-                            <TitleTemplate>
-                                <i
-                                    class="fa-solid fa-clock-rotate-left"></i>
-                                <span>History</span>
-                            </TitleTemplate>
-
                             <ChildContent>
                                 <div
                                     class="dock-panel-content">
@@ -301,18 +282,18 @@
                     @* Group 4: Trending + Popular *@
                     <DocksCollectionComponent
                         Type="DockCollectionType.Group"
+                        StaticGroupIcon="@DiscoverGroupIcon"
                         Height="20">
                         <DockPanelComponent
-                            Key="trending"
+                            @ref="_trendingPanel"
                             Title="Trending"
-                            Visible="@IsPanelVisible("Trending")"
+                            Visible="@IsPanelVisible(_trendingPanel)"
+                            Drawer="@SidebarDrawerOptions"
+                            FloatType="DockPanelFloatType.Drawer"
+                            StaticGroupTitle="@DiscoverGroupTitle"
+                            ShowTitleBar="true"
+                            TitleBarIcon="@TrendingPanelIcon"
                             ShowClose="true">
-                            <TitleTemplate>
-                                <i
-                                    class="fa-solid fa-fire"></i>
-                                <span>Trending</span>
-                            </TitleTemplate>
-
                             <ChildContent>
                                 <div
                                     class="dock-panel-content">
@@ -325,16 +306,15 @@
                         </DockPanelComponent>
 
                         <DockPanelComponent
-                            Key="popular"
+                            @ref="_popularPanel"
                             Title="Popular"
-                            Visible="@IsPanelVisible("Popular")"
+                            Visible="@IsPanelVisible(_popularPanel)"
+                            Drawer="@SidebarDrawerOptions"
+                            FloatType="DockPanelFloatType.Drawer"
+                            StaticGroupTitle="@DiscoverGroupTitle"
+                            ShowTitleBar="true"
+                            TitleBarIcon="@PopularPanelIcon"
                             ShowClose="true">
-                            <TitleTemplate>
-                                <i
-                                    class="fa-solid fa-chart-line"></i>
-                                <span>Popular</span>
-                            </TitleTemplate>
-
                             <ChildContent>
                                 <div
                                     class="dock-panel-content">
@@ -350,18 +330,18 @@
                     @* Group 5: Video Description + Video Comments + Related Videos *@
                     <DocksCollectionComponent
                         Type="DockCollectionType.Group"
+                        StaticGroupIcon="@VideoInfoGroupIcon"
                         Height="20">
                         <DockPanelComponent
-                            Key="videoDescription"
+                            @ref="_videoDescriptionPanel"
                             Title="Description"
-                            Visible="@IsPanelVisible("Description")"
+                            Visible="@IsPanelVisible(_videoDescriptionPanel)"
+                            Drawer="@SidebarDrawerOptions"
+                            FloatType="DockPanelFloatType.Drawer"
+                            StaticGroupTitle="@VideoInfoGroupTitle"
+                            ShowTitleBar="true"
+                            TitleBarIcon="@VideoDescriptionPanelIcon"
                             ShowClose="true">
-                            <TitleTemplate>
-                                <i
-                                    class="fa-solid fa-file-lines"></i>
-                                <span>Description</span>
-                            </TitleTemplate>
-
                             <ChildContent>
                                 <div
                                     class="dock-panel-content">
@@ -374,16 +354,15 @@
                         </DockPanelComponent>
 
                         <DockPanelComponent
-                            Key="videoComments"
+                            @ref="_videoCommentsPanel"
                             Title="Comments"
-                            Visible="@IsPanelVisible("Comments")"
+                            Visible="@IsPanelVisible(_videoCommentsPanel)"
+                            Drawer="@SidebarDrawerOptions"
+                            FloatType="DockPanelFloatType.Drawer"
+                            StaticGroupTitle="@VideoInfoGroupTitle"
+                            ShowTitleBar="true"
+                            TitleBarIcon="@VideoCommentsPanelIcon"
                             ShowClose="true">
-                            <TitleTemplate>
-                                <i
-                                    class="fa-solid fa-comments"></i>
-                                <span>Comments</span>
-                            </TitleTemplate>
-
                             <ChildContent>
                                 <div
                                     class="dock-panel-content">
@@ -396,16 +375,15 @@
                         </DockPanelComponent>
 
                         <DockPanelComponent
-                            Key="relatedVideos"
+                            @ref="_relatedVideosPanel"
                             Title="Related Videos"
-                            Visible="@IsPanelVisible("Related Videos")"
+                            Visible="@IsPanelVisible(_relatedVideosPanel)"
+                            Drawer="@SidebarDrawerOptions"
+                            FloatType="DockPanelFloatType.Drawer"
+                            StaticGroupTitle="@VideoInfoGroupTitle"
+                            ShowTitleBar="true"
+                            TitleBarIcon="@RelatedVideosPanelIcon"
                             ShowClose="true">
-                            <TitleTemplate>
-                                <i
-                                    class="fa-solid fa-video"></i>
-                                <span>Related Videos</span>
-                            </TitleTemplate>
-
                             <ChildContent>
                                 <div
                                     class="dock-panel-content">

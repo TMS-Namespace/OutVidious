@@ -10,56 +10,56 @@ namespace TMS.Libs.Frontend.Web.DockPanels.Models;
 internal sealed class DockPanelConfig
 {
     /// <summary>
-    /// 获得/设置 是否启用本地布局保持 默认 true
+    /// Gets or sets whether local layout persistence is enabled. Default is true.
     /// </summary>
     public bool EnableLocalStorage { get; set; } = true;
 
     /// <summary>
-    /// 获得/设置 是否锁定 默认 false
+    /// Gets or sets whether panels are locked. Default is false.
     /// </summary>
-    /// <remarks>锁定后无法拖动</remarks>
+    /// <remarks>Locked panels cannot be dragged.</remarks>
     [JsonPropertyName("lock")]
     public bool IsLock { get; set; }
 
     /// <summary>
-    /// 获得/设置 是否显示锁定按钮 默认 true 显示
+    /// Gets or sets whether to show the lock button. Default is true.
     /// </summary>
     public bool ShowLock { get; set; }
 
     /// <summary>
-    /// 获得/设置 是否悬浮 默认 false
+    /// Gets or sets whether panels are floating. Default is false.
     /// </summary>
-    /// <remarks>锁定后无法拖动</remarks>
+    /// <remarks>Locked panels cannot be dragged.</remarks>
     public bool IsFloating { get; set; }
 
     /// <summary>
-    /// 获得/设置 是否显示可悬浮按钮 默认 true
+    /// Gets or sets whether to show the float button. Default is true.
     /// </summary>
     public bool ShowFloat { get; set; } = true;
 
     /// <summary>
-    /// 获得/设置 是否显示关闭按钮 默认 true 显示
+    /// Gets or sets whether to show the close button. Default is true.
     /// </summary>
     public bool ShowClose { get; set; }
 
     /// <summary>
-    /// 获得/设置 是否显示显示图钉按钮 默认 true
+    /// Gets or sets whether to show the pin button. Default is true.
     /// </summary>
     public bool ShowPin { get; set; } = true;
 
     /// <summary>
-    /// 获得/设置 是否显示最大化按钮 默认 true
+    /// Gets or sets whether to show the maximize button. Default is true.
     /// </summary>
     public bool ShowMaximize { get; set; } = true;
 
     /// <summary>
-    /// 获得/设置 客户端渲染模式 默认 null 客户端默认使用 always onlyWhenVisible 值
+    /// Gets or sets the client renderer mode. Default is <see cref="DockPanelRenderMode.OnlyWhenVisible"/>.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public DockPanelRenderMode Renderer { get; set; }
 
     /// <summary>
-    /// 获得/设置 标签页可见状态改变事件回调
+    /// Gets or sets the callback for panel visibility changes.
     /// </summary>
     public string? PanelVisibleChangedCallback { get; set; }
 
@@ -69,39 +69,91 @@ internal sealed class DockPanelConfig
     public string? PanelActiveChangedCallback { get; set; }
 
     /// <summary>
-    /// 获得/设置 组件初始化完成事件回调
+    /// Gets or sets the callback for panel registration.
+    /// </summary>
+    public string? PanelAddedCallback { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when a drawer group is ready.
+    /// </summary>
+    public string? DrawerReadyCallback { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when initialization completes.
     /// </summary>
     public string? InitializedCallback { get; set; }
 
     /// <summary>
-    /// 获得/设置 锁定事件回调
+    /// Gets or sets the callback when lock state changes.
     /// </summary>
     public string? LockChangedCallback { get; set; }
 
     /// <summary>
-    /// 获得/设置 分割栏调整事件回调
+    /// Gets or sets the callback when the splitter is resized.
     /// </summary>
     public string? SplitterCallback { get; set; }
 
     /// <summary>
-    /// 获得/设置 客户端缓存键值
+    /// Gets or sets the local storage key for layout persistence.
     /// </summary>
     public string? LocalStorageKey { get; set; }
 
     /// <summary>
-    /// 获得/设置 Golden-Layout 配置项集合 默认 空集合
+    /// Gets or sets the layout content configuration.
     /// </summary>
     [JsonPropertyName("content")]
     [JsonConverter(typeof(DockPanelComponentConverter))]
     public List<DockPanelComponentBase> Contents { get; set; } = [];
 
     /// <summary>
-    /// 获得/设置 组件主题 默认 null 未设置
+    /// Gets or sets the component theme.
     /// </summary>
     public string? Theme { get; set; }
 
     /// <summary>
-    /// 获得/设置 布局配置 默认 null 未设置
+    /// Gets or sets the sidebar width in pixels.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("asideWidthPx")]
+    public int? AsideWidthPx { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sidebar button inline padding in pixels.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("asideButtonPaddingInlinePx")]
+    public int? AsideButtonPaddingInlinePx { get; set; }
+
+    /// <summary>
+    /// Gets or sets the extra right-side inline padding for sidebar buttons in pixels.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("asideButtonPaddingInlineEndExtraPx")]
+    public int? AsideButtonPaddingInlineEndExtraPx { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sidebar button block padding in pixels.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("asideButtonPaddingBlockPx")]
+    public int? AsideButtonPaddingBlockPx { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sidebar button gap in pixels.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("asideButtonGapPx")]
+    public int? AsideButtonGapPx { get; set; }
+
+    /// <summary>
+    /// Gets or sets the gap between dock action buttons in pixels.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("actionButtonsGapPx")]
+    public int? ActionButtonsGapPx { get; set; }
+
+    /// <summary>
+    /// Gets or sets the layout configuration JSON.
     /// </summary>
     public string? LayoutConfig { get; set; }
 }

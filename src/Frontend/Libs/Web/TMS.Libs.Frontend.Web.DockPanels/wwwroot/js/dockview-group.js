@@ -93,7 +93,7 @@ const addPanelWidthGroupId = (dockview, panel, index) => {
         params: { ...panel.params, rect, packup, visible: true }
     })
     // console.log('[DockView] Panel added:', panel.title);
-    dockview._panelVisibleChanged?.fire({ title: panel.title, status: true });
+    dockview._panelVisibleChanged?.fire({ panelId: panel.id, status: true });
 }
 
 const addPanelWidthCreatGroup = (dockview, panel, panels) => {
@@ -149,7 +149,7 @@ const addPanelWidthCreatGroup = (dockview, panel, panels) => {
     }
     if (direction) option.position.direction = direction
     dockview.addPanel(option);
-    dockview._panelVisibleChanged?.fire({ title: panel.title, status: true });
+    dockview._panelVisibleChanged?.fire({ panelId: panel.id, status: true });
 }
 
 const getOrientation = function (child, group) {
@@ -323,11 +323,11 @@ const addActionEvent = group => {
         const ele = e.delegateTarget;
         if (ele.classList.contains('bb-dockview-control-icon-lock')) {
             toggleLock(group, actionContainer, false);
-            group.api.accessor._lockChanged.fire({ title: group.panels.map(panel => panel.title), isLock: false });
+            group.api.accessor._lockChanged.fire({ panelIds: group.panels.map(panel => panel.id), isLock: false });
         }
         else if (ele.classList.contains('bb-dockview-control-icon-unlock')) {
             toggleLock(group, actionContainer, true);
-            group.api.accessor._lockChanged.fire({ title: group.panels.map(panel => panel.title), isLock: true });
+            group.api.accessor._lockChanged.fire({ panelIds: group.panels.map(panel => panel.id), isLock: true });
         }
         else if (ele.classList.contains('bb-dockview-control-icon-restore')) {
             toggleFull(group, actionContainer, true);
@@ -372,7 +372,7 @@ const autoHide = group => {
     }
     if (type == 'grid') {
         if (!canFloat(group)) return;
-        // 1、点击图标创建浮动窗口并隐藏
+        // Step 1: Click the pin icon to create a floating drawer and hide the grid group.
         const { drawer = { width: 300, visible: true } } = group.getParams()
 
         const left = getOffsetFromDockview(group.element)
@@ -421,20 +421,37 @@ const createDrawerHandle = (floatingGroup, isRight) => {
     createDrawerBtn(floatingGroup, isRight)
 }
 
+const setDrawerButtonContent = (button, title, iconClass) => {
+    button.textContent = ''
+    if (iconClass) {
+        const icon = document.createElement('i')
+        icon.className = `bb-dockview-aside-button-icon ${iconClass}`
+        icon.setAttribute('aria-hidden', 'true')
+        button.append(icon)
+    }
+    if (title) {
+        const titleSpan = document.createElement('span')
+        titleSpan.className = 'bb-dockview-aside-button-title'
+        titleSpan.textContent = title
+        button.append(titleSpan)
+    }
+}
+
 const createDrawerBtn = (floatingGroup, isRight) => {
     const dockview = floatingGroup.api.accessor
     const btn = document.createElement('div')
     const params = floatingGroup.getParams?.() || {}
     const staticTitle = params.staticGroupTitle
+    const staticIcon = params.staticGroupIcon
     const title = staticTitle || floatingGroup.activePanel?.title || floatingGroup.panels[0]?.title
-    btn.innerHTML = title
+    setDrawerButtonContent(btn, title, staticIcon)
     btn.setAttribute('groupid', dockview.id + '_' + floatingGroup.id)
     btn.classList.add('bb-dockview-aside-button')
     if (staticTitle) {
         btn.dataset.staticTitle = staticTitle
-        if (floatingGroup.activePanel?.title) {
-            btn.dataset.panelTitle = floatingGroup.activePanel.title
-        }
+    }
+    if (staticIcon) {
+        btn.dataset.staticIcon = staticIcon
     }
     if (floatingGroup.element.parentElement.classList.contains('active')) {
         btn.classList.add('active')
@@ -442,8 +459,7 @@ const createDrawerBtn = (floatingGroup, isRight) => {
     if (dockview._fronttubeActiveTrackingReady && dockview._panelActiveChanged && floatingGroup.element.parentElement.classList.contains('active')) {
         const activePanel = floatingGroup.activePanel
         if (activePanel) {
-            const panelKey = activePanel.params?.key || activePanel.params?.Key || activePanel.id || activePanel.title
-            dockview._panelActiveChanged.fire({ title: activePanel.title, key: panelKey, isActive: true })
+            dockview._panelActiveChanged.fire({ panelId: activePanel.id, isActive: true })
         }
     }
 
@@ -477,8 +493,7 @@ const createDrawerBtn = (floatingGroup, isRight) => {
                 parentElement.classList.add('active')
             }
             if (dockview._fronttubeActiveTrackingReady && dockview._panelActiveChanged && activePanel) {
-                const panelKey = activePanel.params?.key || activePanel.params?.Key || activePanel.id || activePanel.title
-                dockview._panelActiveChanged.fire({ title: activePanel.title, key: panelKey, isActive: true })
+                dockview._panelActiveChanged.fire({ panelId: activePanel.id, isActive: true })
             }
         }
         saveConfig(dockview)
@@ -492,6 +507,12 @@ const createDrawerBtn = (floatingGroup, isRight) => {
         isRight ? dvEleBox.append(btnWrapper) : dvEleBox.prepend(btnWrapper)
     }
     btnWrapper.append(btn)
+
+    const readyPanel = floatingGroup.activePanel || floatingGroup.panels?.[0]
+    const groupId = floatingGroup.id.split('_')[0]
+    if (readyPanel && dockview._drawerReady) {
+        dockview._drawerReady.fire({ panelId: readyPanel.id, groupId })
+    }
 }
 
 const removeDrawerBtn = group => {
@@ -503,17 +524,20 @@ const removeDrawerBtn = group => {
 const setDrawerTitle = group => {
     const params = group.getParams?.() || {}
     const staticTitle = params.staticGroupTitle
+    const staticIcon = params.staticGroupIcon
     const title = staticTitle || group.activePanel?.title || group.panels[0]?.title
     const groupId = group.api.accessor.id + '_' + group.id
     const btnEle = group.api.accessor.element.parentElement.parentElement.querySelector(`.bb-dockview-aside>[groupId="${groupId}"]`)
     if (!btnEle) return
     if (staticTitle) {
         btnEle.dataset.staticTitle = staticTitle
-        if (group.activePanel?.title) {
-            btnEle.dataset.panelTitle = group.activePanel.title
-        }
     }
-    btnEle.innerHTML = title
+    if (staticIcon) {
+        btnEle.dataset.staticIcon = staticIcon
+    } else {
+        delete btnEle.dataset.staticIcon
+    }
+    setDrawerButtonContent(btnEle, title, staticIcon)
 }
 
 const removeActionEvent = group => {
@@ -661,14 +685,10 @@ const hideDrawerTabForGroup = group => {
         return false
     }
 
-    const title = group.activePanel?.title || group.panels?.[0]?.title
     const drawerContainer = group.element?.parentElement
     if (drawerContainer) {
         drawerContainer.classList.remove('active')
         drawerContainer.dataset.hiddenByFrontTube = 'true'
-        if (title) {
-            drawerContainer.dataset.hiddenPanelTitle = title
-        }
     }
 
     const contentEl = group.activePanel?.view?.content?.element?.parentElement
@@ -682,14 +702,11 @@ const hideDrawerTabForGroup = group => {
         button.classList.remove('active')
         button.style.display = 'none'
         button.dataset.hiddenByFrontTube = 'true'
-        if (title) {
-            button.dataset.hiddenPanelTitle = title
-        }
     }
 
     if (dockview._panelVisibleChanged) {
         group.panels?.forEach(panel => {
-            dockview._panelVisibleChanged.fire({ title: panel.title, status: false })
+            dockview._panelVisibleChanged.fire({ panelId: panel.id, status: false })
         })
     }
 
@@ -847,4 +864,4 @@ const setWidth = (observerList) => {
     })
 }
 
-export { onAddGroup, addGroupWithPanel, toggleLock, disposeGroup, observeFloatingGroupLocationChange, observeOverlayChange, createDrawerHandle, removeDrawerBtn, setDrawerTitle, hideDrawerTabForGroup };
+export { onAddGroup, addGroupWithPanel, toggleLock, disposeGroup, observeFloatingGroupLocationChange, observeOverlayChange, createDrawerHandle, removeDrawerBtn, setDrawerTitle, hideDrawerTabForGroup, autoHide };
