@@ -1,13 +1,13 @@
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
-using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious.DTOs;
 
 namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.Mappers;
 
 /// <summary>
 /// Maps Invidious API DTOs to common provider contracts.
 /// </summary>
-public static class InvidiousMapper
+internal static class InvidiousMapper
 {
     /// <summary>
     /// Maps an Invidious video details DTO to a common VideoInfo contract.
@@ -15,7 +15,7 @@ public static class InvidiousMapper
     /// <param name="dto">The Invidious video details DTO.</param>
     /// <param name="baseUrl">The base URL of the Invidious instance.</param>
     /// <returns>The mapped VideoInfo contract.</returns>
-    public static VideoCommon ToVideoInfo(InvidiousVideoDetailsDto dto, Uri baseUrl)
+    public static VideoCommon ToVideoInfo(VideoDetails dto, Uri baseUrl)
     {
         ArgumentNullException.ThrowIfNull(dto);
         ArgumentNullException.ThrowIfNull(baseUrl);
@@ -64,7 +64,7 @@ public static class InvidiousMapper
         };
     }
 
-    private static ChannelMetadataCommon MapChannel(InvidiousVideoDetailsDto dto)
+    private static ChannelMetadataCommon MapChannel(VideoDetails dto)
     {
         return new ChannelMetadataCommon
         {

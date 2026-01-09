@@ -1,3 +1,4 @@
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
 namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
@@ -8,25 +9,14 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 public sealed record VideosPageCommon : ICommonContract
 {
     /// <summary>
-    /// Empty page for error cases or when no results are found.
-    /// </summary>
-    public static VideosPageCommon Empty(RemoteIdentityCommon channelIdentity, string tab = "videos") => new()
-    {
-        ChannelRemoteIdentity = channelIdentity,
-        Tab = tab,
-        Videos = [],
-        ContinuationToken = null
-    };
-
-    /// <summary>
     /// The channel this page belongs to.
     /// </summary>
     public required RemoteIdentityCommon ChannelRemoteIdentity { get; init; }
 
     /// <summary>
-    /// The tab this page was retrieved from (e.g., "videos", "shorts", "live").
+    /// The tab this page was retrieved from.
     /// </summary>
-    public string Tab { get; init; } = "videos";
+    public ChannelTab Tab { get; init; } = ChannelTab.Videos;
 
     /// <summary>
     /// List of videos in this page.

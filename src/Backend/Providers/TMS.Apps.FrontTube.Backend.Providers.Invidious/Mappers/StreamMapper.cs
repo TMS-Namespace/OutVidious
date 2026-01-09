@@ -1,19 +1,19 @@
 using System.Text.RegularExpressions;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
-using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious.DTOs;
 
 namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.Mappers;
 
 /// <summary>
 /// Maps Invidious stream DTOs to common StreamInfo contracts.
 /// </summary>
-public static partial class StreamMapper
+internal static partial class StreamMapper
 {
     /// <summary>
     /// Maps an Invidious adaptive format DTO to a StreamInfo contract.
     /// </summary>
-    public static Common.ProviderCore.Contracts.StreamMetadataCommon ToStreamInfo(InvidiousAdaptiveFormatDto dto)
+    public static Common.ProviderCore.Contracts.StreamMetadataCommon ToStreamInfo(AdaptiveFormat dto)
     {
         var streamType = DetermineStreamType(dto.Type);
         var (width, height) = ParseResolution(dto.Resolution);
@@ -45,7 +45,7 @@ public static partial class StreamMapper
     /// <summary>
     /// Maps an Invidious format stream DTO to a StreamInfo contract.
     /// </summary>
-    public static Common.ProviderCore.Contracts.StreamMetadataCommon ToStreamInfo(InvidiousFormatStreamDto dto)
+    public static Common.ProviderCore.Contracts.StreamMetadataCommon ToStreamInfo(FormatStream dto)
     {
         var (width, height) = ParseResolution(dto.Resolution);
 

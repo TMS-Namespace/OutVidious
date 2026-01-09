@@ -1,14 +1,14 @@
 using System.Text.RegularExpressions;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
-using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious.DTOs;
 
 namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.Mappers;
 
 /// <summary>
 /// Maps Invidious thumbnail DTOs to common ThumbnailInfo contracts.
 /// </summary>
-public static partial class ThumbnailMapper
+internal static partial class ThumbnailMapper
 {
     // Matches video thumbnails: /vi/VIDEO_ID/quality.jpg or /vi/VIDEO_ID/quality.webp
     [GeneratedRegex(@"/vi/([^/]+)/([^/]+)$", RegexOptions.Compiled)]
@@ -25,7 +25,7 @@ public static partial class ThumbnailMapper
     /// <summary>
     /// Maps an Invidious video thumbnail DTO to a ThumbnailInfo contract.
     /// </summary>
-    public static ImageMetadataCommon ToThumbnailInfo(InvidiousVideoThumbnailDto dto)
+    public static ImageMetadataCommon ToThumbnailInfo(VideoThumbnail dto)
     {
         var originalUrl = ExtractVideoThumbnailUrl(dto.Url);
 
@@ -43,7 +43,7 @@ public static partial class ThumbnailMapper
     /// <summary>
     /// Maps an Invidious author thumbnail DTO to a ThumbnailInfo contract.
     /// </summary>
-    public static ImageMetadataCommon ToChannelThumbnailInfo(InvidiousAuthorThumbnailDto dto)
+    public static ImageMetadataCommon ToChannelThumbnailInfo(AuthorThumbnail dto)
     {
         // Determine quality based on dimensions
         var quality = dto.Width switch

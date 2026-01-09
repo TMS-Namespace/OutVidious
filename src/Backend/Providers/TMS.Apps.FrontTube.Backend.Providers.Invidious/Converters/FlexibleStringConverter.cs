@@ -8,7 +8,7 @@ namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.Converters;
 /// and converts them to string. This is needed because Invidious API returns
 /// inconsistent types for some fields.
 /// </summary>
-public sealed class FlexibleStringConverter : JsonConverter<string?>
+internal sealed class FlexibleStringConverter : JsonConverter<string?>
 {
     public override string? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {

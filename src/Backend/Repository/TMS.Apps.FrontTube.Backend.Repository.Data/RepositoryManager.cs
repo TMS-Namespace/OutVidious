@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious;
 using TMS.Apps.FrontTube.Backend.Repository.Cache;
 using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
@@ -15,7 +16,6 @@ using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Tools;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools.YouTube;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Enums;
 
 
@@ -315,17 +315,30 @@ public sealed class RepositoryManager
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(videoIdentity.AbsoluteRemoteUrl);
         var commonIdentity = CommonDomainMapper.FromDomain(videoIdentity);
-        var remoteVideo = await _provider.GetVideoAsync(commonIdentity, cancellationToken);
+        var response = await _provider.GetVideoAsync(commonIdentity, cancellationToken);
 
-        if (remoteVideo == null)
+        if (response.HasError)
         {
-            _logger.LogWarning("Video not found from remote provider: {@VideoIdentity}", videoIdentity);
+            _logger.LogWarning(
+                "[{Method}] Failed to fetch video from remote provider: '{VideoIdentity}'. Response: {Response}",
+                nameof(GetVideoFromProviderAsync),
+                videoIdentity,
+                response);
             return null;
         }
 
-        _dbSynchronizer.Enqueue(remoteVideo);
+        if (response.Data == null)
+        {
+            _logger.LogWarning(
+                "[{Method}] Video not found from remote provider: '{VideoIdentity}'.",
+                nameof(GetVideoFromProviderAsync),
+                videoIdentity);
+            return null;
+        }
 
-        return CommonDomainMapper.ToDomain(remoteVideo);
+        _dbSynchronizer.Enqueue(response.Data);
+
+        return CommonDomainMapper.ToDomain(response.Data);
     }
 
     private async Task<VideoDomain?> GetVideoFromDataBaseAsync(
@@ -370,48 +383,78 @@ public sealed class RepositoryManager
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(channelIdentity.AbsoluteRemoteUrl);
         var commonIdentity = CommonDomainMapper.FromDomain(channelIdentity);
-        var remoteChannel = await _provider.GetChannelAsync(commonIdentity, cancellationToken);
+        var response = await _provider.GetChannelAsync(commonIdentity, cancellationToken);
 
-        if (remoteChannel == null)
+        if (response.HasError)
         {
-            _logger.LogWarning("Channel not found from remote provider: {@ChannelIdentity}", channelIdentity);
+            _logger.LogWarning(
+                "[{Method}] Failed to fetch channel from remote provider: '{ChannelIdentity}'. Response: {Response}",
+                nameof(GetChannelFromProviderAsync),
+                channelIdentity,
+                response);
             return null;
         }
 
-        _dbSynchronizer.Enqueue(remoteChannel);
+        if (response.Data == null)
+        {
+            _logger.LogWarning(
+                "[{Method}] Channel not found from remote provider: '{ChannelIdentity}'.",
+                nameof(GetChannelFromProviderAsync),
+                channelIdentity);
+            return null;
+        }
 
-        return CommonDomainMapper.ToDomain(remoteChannel);
+        _dbSynchronizer.Enqueue(response.Data);
+
+        return CommonDomainMapper.ToDomain(response.Data);
     }
 
     private async Task<VideosPageDomain?> GetChannelPageFromProviderAsync(
         RemoteIdentityDomain channelIdentity,
-        string tab,
+        ChannelTab tab,
         string? continuationToken,
         CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(channelIdentity.AbsoluteRemoteUrl);
         var commonIdentity = CommonDomainMapper.FromDomain(channelIdentity);
-        var remotePage = await _provider.GetChannelVideosTabAsync(
+        var tabCommon = Common.ProviderCore.Tools.ChannelTabExtensions.ToChannelTabEnum(tab.ToLowerString());
+        var response = await _provider.GetChannelVideosTabAsync(
             commonIdentity,
-            tab,
+            tabCommon,
+            page: null, // Using continuation token pagination
             continuationToken,
             cancellationToken);
 
-        if (remotePage == null)
+        if (response.HasError)
         {
-            _logger.LogWarning("Channel videos page not found from remote provider: {@ChannelIdentity}, Tab: {Tab}, Continuation: {HasContinuation}",
-                channelIdentity, tab, continuationToken is not null);
+            _logger.LogWarning(
+                "[{Method}] Failed to fetch channel videos page from remote provider: '{ChannelIdentity}', Tab: '{Tab}'. Response: {Response}",
+                nameof(GetChannelPageFromProviderAsync),
+                channelIdentity,
+                tab,
+                response);
             return null;
         }
 
-        _dbSynchronizer.Enqueue(remotePage);
+        if (response.Data == null)
+        {
+            _logger.LogWarning(
+                "[{Method}] Channel videos page not found from remote provider: '{ChannelIdentity}', Tab: '{Tab}', Continuation: '{HasContinuation}'.",
+                nameof(GetChannelPageFromProviderAsync),
+                channelIdentity,
+                tab,
+                continuationToken is not null);
+            return null;
+        }
 
-        return CommonDomainMapper.ToDomain(remotePage);
+        _dbSynchronizer.Enqueue(response.Data);
+
+        return CommonDomainMapper.ToDomain(response.Data);
     }
 
     private async Task<VideosPageDomain?> GetChannelPageFromDataBaseAsync(
         RemoteIdentityDomain channelIdentity,
-        string tab,
+        ChannelTab tab,
         string? continuationToken,
         CancellationToken cancellationToken)
     {
@@ -513,13 +556,11 @@ public sealed class RepositoryManager
 
     public async Task<VideosPageDomain?> GetChannelsPageAsync(
         RemoteIdentityDomain channelIdentity,
-        string tab,
+        ChannelTab tab,
         string? continuationToken,
         CancellationToken cancellationToken,
         bool autoSave = true)
     {
-
-        tab = "videos";
         // try to get it from synchronization queue
         if (_dbSynchronizer.TryGetQueued<VideosPageCommon>(channelIdentity.Hash, true, out var queuedCommon))
         {

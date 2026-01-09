@@ -1,18 +1,18 @@
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
-using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious.DTOs;
 
 namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.Mappers;
 
 /// <summary>
 /// Maps Invidious caption DTOs to common CaptionInfo contracts.
 /// </summary>
-public static class CaptionMapper
+internal static class CaptionMapper
 {
     /// <summary>
     /// Maps an Invidious video caption DTO to a CaptionInfo contract.
     /// </summary>
-    public static CaptionMetadataCommon ToCaptionInfo(InvidiousVideoCaptionDto dto, Uri baseUrl)
+    public static CaptionMetadataCommon ToCaptionInfo(VideoCaption dto, Uri baseUrl)
     {
         var captionUrl = dto.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase)
             ? new Uri(dto.Url)

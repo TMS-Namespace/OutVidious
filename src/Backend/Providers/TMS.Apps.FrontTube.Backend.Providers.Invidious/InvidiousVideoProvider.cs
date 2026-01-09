@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
@@ -6,11 +5,12 @@ using TMS.Apps.FrontTube.Backend.Common.ProviderCore;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Models;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools.YouTube;
-using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
-using TMS.Apps.FrontTube.Backend.Providers.Invidious.Converters;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious.DTOs;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.Mappers;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious.Tools;
 
 namespace TMS.Apps.FrontTube.Backend.Providers.Invidious;
 
@@ -19,15 +19,14 @@ namespace TMS.Apps.FrontTube.Backend.Providers.Invidious;
 /// </summary>
 public sealed class InvidiousVideoProvider : ProviderBase
 {
-    private const string DefaultChannelTab = "videos";
-
+    private readonly JsonWebClient _webClient;
     private readonly JsonSerializerOptions _jsonOptions;
 
     public InvidiousVideoProvider(
         ILoggerFactory loggerFactory,
         IHttpClientFactory httpClientFactory,
         ProviderConfig config)
-        : base(CreateHttpClient(config), loggerFactory.CreateLogger<InvidiousVideoProvider>(), config.BaseUri)
+        : base(InvidiousHelpers.CreateHttpClient(config), loggerFactory.CreateLogger<InvidiousVideoProvider>(), loggerFactory, config.BaseUri ?? throw new ArgumentNullException(nameof(config), "BaseUri cannot be null."))
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
         ArgumentNullException.ThrowIfNull(httpClientFactory);
@@ -40,23 +39,8 @@ public sealed class InvidiousVideoProvider : ProviderBase
             NumberHandling = JsonNumberHandling.AllowReadingFromString,
             Converters = { new FlexibleStringConverter() }
         };
-    }
 
-    private static HttpClient CreateHttpClient(ProviderConfig config)
-    {
-        var handler = new HttpClientHandler();
-
-        if (config.BypassSslValidation)
-        {
-            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        }
-
-        var client = new HttpClient(handler)
-        {
-            Timeout = TimeSpan.FromSeconds(config.TimeoutSeconds)
-        };
-
-        return client;
+        _webClient = new JsonWebClient(HttpClient, _jsonOptions, loggerFactory);
     }
 
     /// <inheritdoc />
@@ -69,239 +53,458 @@ public sealed class InvidiousVideoProvider : ProviderBase
     public override string Description => "Privacy-focused YouTube frontend providing access to YouTube videos without tracking.";
 
     /// <inheritdoc />
-    public override async Task<VideoCommon?> GetVideoAsync(RemoteIdentityCommon videoIdentity, CancellationToken cancellationToken)
+    public override async Task<JsonWebResponse<VideoCommon?>> GetVideoAsync(
+        RemoteIdentityCommon videoIdentity,
+        CancellationToken cancellationToken)
     {
-        var videoId = GetRemoteIdOrThrow(videoIdentity, RemoteIdentityTypeCommon.Video);
+        var videoId = InvidiousHelpers.GetRemoteIdOrThrow(videoIdentity, RemoteIdentityTypeCommon.Video);
+        var apiUrl = UrlBuilder.BuildVideoUrl(BaseUrl, videoId);
 
-        var apiUrl = $"{BaseUrl.ToString().TrimEnd('/')}/api/v1/videos/{Uri.EscapeDataString(videoId)}";
-        Logger.LogDebug("Fetching video details from Invidious: {ApiUrl}", apiUrl);
+        Logger.LogDebug("[{Method}] Fetching video details from Invidious: '{ApiUrl}'.", nameof(GetVideoAsync), apiUrl);
 
-        try
+        var response = await _webClient.GetAsync<VideoDetails>(apiUrl, cancellationToken);
+
+        if (response.HasError)
         {
-            var response = await HttpClient.GetAsync(apiUrl, cancellationToken);
+            Logger.LogWarning(
+                "[{Method}] Failed to fetch video '{VideoId}' from Invidious. Response: {Response}",
+                nameof(GetVideoAsync),
+                videoId,
+                response);
 
-            if (!response.IsSuccessStatusCode)
-            {
-                Logger.LogWarning(
-                    "Invidious API request failed with status {StatusCode} for video {VideoId}",
-                    response.StatusCode, 
-                    videoId);
-                return null;
-            }
-
-            var dto = await response.Content.ReadFromJsonAsync<InvidiousVideoDetailsDto>(
-                _jsonOptions, 
-                cancellationToken);
-
-            if (dto == null)
-            {
-                Logger.LogWarning("Invidious API returned null for video {VideoId}", videoId);
-                return null;
-            }
-
-            var videoInfo = InvidiousMapper.ToVideoInfo(dto, BaseUrl);
-            Logger.LogDebug("Successfully fetched and mapped video details for: {VideoId}", videoId);
-
-            return videoInfo;
+            return response.MapOrNull<VideoCommon>(_ => null);
         }
-        catch (HttpRequestException ex)
-        {
-            Logger.LogError(ex, "HTTP error while fetching video {VideoId} from Invidious", videoId);
-            throw;
-        }
-        catch (JsonException ex)
-        {
-            Logger.LogError(ex, "JSON parsing error for video {VideoId} from Invidious", videoId);
-            throw;
-        }
+
+        var videoInfo = InvidiousMapper.ToVideoInfo(response.Data!, BaseUrl);
+        Logger.LogDebug("[{Method}] Successfully fetched and mapped video details for: '{VideoId}'.", nameof(GetVideoAsync), videoId);
+
+        return response.MapOrNull<VideoCommon>(_ => videoInfo);
     }
 
     /// <inheritdoc />
     public override Uri GetEmbedVideoPlayerUri(RemoteIdentityCommon videoIdentity)
     {
-        var videoId = GetRemoteIdOrThrow(videoIdentity, RemoteIdentityTypeCommon.Video);
-        
-        return CreateUri($"embed/{Uri.EscapeDataString(videoId)}?autoplay=1&local=true");
+        var videoId = InvidiousHelpers.GetRemoteIdOrThrow(videoIdentity, RemoteIdentityTypeCommon.Video);
+        var embedUrl = UrlBuilder.BuildEmbedUrl(BaseUrl, videoId, autoplay: true, local: true);
+
+        return new Uri(embedUrl);
     }
 
     /// <inheritdoc />
-    public override async Task<ChannelCommon?> GetChannelAsync(RemoteIdentityCommon channelIdentity, CancellationToken cancellationToken)
-    {
-        var channelId = GetRemoteIdOrThrow(channelIdentity, RemoteIdentityTypeCommon.Channel);
-
-        var apiUrl = $"{BaseUrl.ToString().TrimEnd('/')}/api/v1/channels/{Uri.EscapeDataString(channelId)}";
-        Logger.LogDebug("Fetching channel details from Invidious: {ApiUrl}", apiUrl);
-
-        string? responseContent = null;
-
-        try
-        {
-            var response = await HttpClient.GetAsync(apiUrl, cancellationToken);
-
-            responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                Logger.LogWarning(
-                    "Invidious API request failed with status {StatusCode} for channel {ChannelId}",
-                    response.StatusCode,
-                    channelId);
-                return null;
-            }
-
-
-            var dto = await response.Content.ReadFromJsonAsync<InvidiousChannelDto>(
-                _jsonOptions,
-                cancellationToken);
-
-            if (dto == null)
-            {
-                Logger.LogWarning("Invidious API returned null for channel {ChannelId}. Response content: {ResponseContent}", channelId, responseContent);
-                return null;
-            }
-
-            var channelDetails = ChannelMapper.ToChannelDetails(dto, BaseUrl);
-            Logger.LogDebug("Successfully fetched and mapped channel details for: {ChannelId}", channelId);
-
-            return channelDetails;
-        }
-        catch (HttpRequestException ex)
-        {
-            Logger.LogError(ex, "HTTP error while fetching channel {ChannelId} from Invidious. Response content: {ResponseContent}", channelId, responseContent);
-            throw;
-        }
-        catch (JsonException ex)
-        {
-            Logger.LogError(ex, "JSON parsing error for channel {ChannelId} from Invidious. Response content: {ResponseContent}", channelId, responseContent);
-            throw;
-        }
-    }
-
-    /// <inheritdoc />
-    public override async Task<VideosPageCommon?> GetChannelVideosTabAsync(
+    public override async Task<JsonWebResponse<ChannelCommon?>> GetChannelAsync(
         RemoteIdentityCommon channelIdentity,
-        string tab,
+        CancellationToken cancellationToken)
+    {
+        var channelId = InvidiousHelpers.GetRemoteIdOrThrow(channelIdentity, RemoteIdentityTypeCommon.Channel);
+        var apiUrl = UrlBuilder.BuildChannelUrl(BaseUrl, channelId);
+
+        Logger.LogDebug("[{Method}] Fetching channel details from Invidious: '{ApiUrl}'.", nameof(GetChannelAsync), apiUrl);
+
+        var response = await _webClient.GetAsync<Channel>(apiUrl, cancellationToken);
+
+        if (response.HasError)
+        {
+            Logger.LogWarning(
+                "[{Method}] Failed to fetch channel '{ChannelId}' from Invidious. Response: {Response}",
+                nameof(GetChannelAsync),
+                channelId,
+                response);
+
+            return response.MapOrNull<ChannelCommon>(_ => null);
+        }
+
+        var channelDetails = ChannelMapper.ToChannelDetails(response.Data!, BaseUrl);
+        Logger.LogDebug("[{Method}] Successfully fetched and mapped channel details for: '{ChannelId}'.", nameof(GetChannelAsync), channelId);
+
+        return response.MapOrNull<ChannelCommon>(_ => channelDetails);
+    }
+
+    /// <inheritdoc />
+    public override async Task<JsonWebResponse<VideosPageCommon?>> GetChannelVideosTabAsync(
+        RemoteIdentityCommon channelIdentity,
+        ChannelTab tab,
+        int? page,
         string? continuationToken,
         CancellationToken cancellationToken)
     {
-        var channelId = GetRemoteIdOrThrow(channelIdentity, RemoteIdentityTypeCommon.Channel);
-        var resolvedTab = string.IsNullOrWhiteSpace(tab) ? DefaultChannelTab : tab;
-        
-        var apiUrl = BuildChannelVideosUrl(channelId, resolvedTab, continuationToken);
-        Logger.LogDebug("Fetching channel videos from Invidious: {ApiUrl}", apiUrl);
+        var channelId = InvidiousHelpers.GetRemoteIdOrThrow(channelIdentity, RemoteIdentityTypeCommon.Channel);
+        var tabString = tab.ToApiString();
+        var apiUrl = UrlBuilder.BuildChannelTabUrl(BaseUrl, channelId, tabString, continuationToken, page);
 
-        try
+        Logger.LogDebug("[{Method}] Fetching channel videos from Invidious: '{ApiUrl}'.", nameof(GetChannelVideosTabAsync), apiUrl);
+
+        var response = await _webClient.GetAsync<ChannelVideosResponse>(apiUrl, cancellationToken);
+
+        if (response.HasError)
         {
-            var response = await HttpClient.GetAsync(apiUrl, cancellationToken);
+            Logger.LogWarning(
+                "[{Method}] Failed to fetch channel videos for '{ChannelId}' from Invidious. Response: {Response}",
+                nameof(GetChannelVideosTabAsync),
+                channelId,
+                response);
 
-            if (!response.IsSuccessStatusCode)
-            {
-                Logger.LogWarning(
-                    "Invidious API request failed with status {StatusCode} for channel videos {ChannelId}",
-                    response.StatusCode,
-                    channelId);
-                return VideosPageCommon.Empty(channelIdentity, resolvedTab);
-            }
-
-            // TODO: log the actual response when the is error or deserialization fails
-            var dto = await response.Content.ReadFromJsonAsync<InvidiousChannelVideosResponseDto>(
-                _jsonOptions,
-                cancellationToken);
-
-            if (dto == null || dto.Videos == null)
-            {
-                Logger.LogWarning("Invidious API returned null for channel videos {ChannelId}", channelId);
-                return VideosPageCommon.Empty(channelIdentity, resolvedTab);
-            }
-
-            var videos = dto.Videos.Select(v => ChannelMapper.ToVideoSummary(v, BaseUrl)).ToList();
-
-            var page = new VideosPageCommon
+            return response.MapOrNull<VideosPageCommon>(_ => new VideosPageCommon
             {
                 ChannelRemoteIdentity = channelIdentity,
-                Tab = resolvedTab,
-                Videos = videos,
-                ContinuationToken = dto.Continuation,
-                TotalVideoCount = null // Invidious doesn't provide total count in paginated responses
-            };
+                Tab = tab,
+                Videos = [],
+                ContinuationToken = null,
+                TotalVideoCount = null
+            });
+        }
 
-            Logger.LogDebug(
-                "Successfully fetched {VideoCount} videos for channel {ChannelId}, HasMore: {HasMore}",
-                videos.Count,
-                channelId,
-                page.HasMore);
+        if (response.Data?.Videos == null)
+        {
+            Logger.LogWarning(
+                "[{Method}] Invidious API returned null videos for channel '{ChannelId}'.",
+                nameof(GetChannelVideosTabAsync),
+                channelId);
 
-            return page;
+            return response.MapOrNull<VideosPageCommon>(_ => new VideosPageCommon
+            {
+                ChannelRemoteIdentity = channelIdentity,
+                Tab = tab,
+                Videos = [],
+                ContinuationToken = null,
+                TotalVideoCount = null
+            });
         }
-        catch (HttpRequestException ex)
+
+        var videos = new List<VideoMetadataCommon>();
+        foreach (var videoDto in response.Data.Videos)
         {
-            Logger.LogError(ex, "HTTP error while fetching channel videos {ChannelId} from Invidious", channelId);
-            throw;
+            if (string.IsNullOrWhiteSpace(videoDto.VideoId))
+            {
+                Logger.LogDebug(
+                    "[{Method}] Skipping video with empty ID from channel '{ChannelId}' tab '{Tab}'. Title: '{Title}'.",
+                    nameof(GetChannelVideosTabAsync),
+                    channelId,
+                    tab,
+                    videoDto.Title ?? "(no title)");
+                continue;
+            }
+
+            try
+            {
+                var video = ChannelMapper.ToVideoSummary(videoDto, BaseUrl);
+                videos.Add(video);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(
+                    ex,
+                    "[{Method}] Failed to map video '{VideoId}' from channel '{ChannelId}' tab '{Tab}': {Message}.",
+                    nameof(GetChannelVideosTabAsync),
+                    videoDto.VideoId,
+                    channelId,
+                    tab,
+                    ex.Message);
+            }
         }
-        catch (JsonException ex)
+
+        var videosPage = new VideosPageCommon
         {
-            Logger.LogError(ex, "JSON parsing error for channel videos {ChannelId} from Invidious", channelId);
-            throw;
-        }
+            ChannelRemoteIdentity = channelIdentity,
+            Tab = tab,
+            Videos = videos,
+            ContinuationToken = response.Data.Continuation,
+            TotalVideoCount = null // Invidious doesn't provide total count in paginated responses
+        };
+
+        Logger.LogDebug(
+            "[{Method}] Successfully fetched '{VideoCount}' videos for channel '{ChannelId}', HasMore: '{HasMore}'.",
+            nameof(GetChannelVideosTabAsync),
+            videos.Count,
+            channelId,
+            videosPage.HasMore);
+
+        return response.MapOrNull<VideosPageCommon>(_ => videosPage);
     }
 
-    private string BuildChannelVideosUrl(string channelId, string tab, string? continuationToken)
+    /// <inheritdoc />
+    public override async Task<JsonWebResponse<CommentsPageCommon?>> GetCommentsAsync(
+        RemoteIdentityCommon videoIdentity,
+        CommentSortType? sortBy,
+        string? continuationToken,
+        CancellationToken cancellationToken)
     {
-        var baseApiUrl = $"{BaseUrl.ToString().TrimEnd('/')}/api/v1/channels/{Uri.EscapeDataString(channelId)}/{tab}";
+        var videoId = InvidiousHelpers.GetRemoteIdOrThrow(videoIdentity, RemoteIdentityTypeCommon.Video);
+        var sortByString = sortBy?.ToApiString();
+        var apiUrl = UrlBuilder.BuildCommentsUrl(BaseUrl, videoId, sortByString, source: null, continuationToken);
 
-        if (!string.IsNullOrWhiteSpace(continuationToken))
+        Logger.LogDebug("[{Method}] Fetching comments from Invidious: '{ApiUrl}'.", nameof(GetCommentsAsync), apiUrl);
+
+        var response = await _webClient.GetAsync<CommentsResponse>(apiUrl, cancellationToken);
+
+        if (response.HasError)
         {
-            return $"{baseApiUrl}?continuation={Uri.EscapeDataString(continuationToken)}";
+            Logger.LogWarning(
+                "[{Method}] Failed to fetch comments for video '{VideoId}' from Invidious. Response: {Response}",
+                nameof(GetCommentsAsync),
+                videoId,
+                response);
+
+            return response.MapOrNull<CommentsPageCommon>(_ => new CommentsPageCommon
+            {
+                VideoId = videoId,
+                Comments = [],
+                ContinuationToken = null
+            });
         }
 
-        return baseApiUrl;
+        var commentsPage = CommentsMapper.ToCommentsPage(response.Data!, videoId);
+        Logger.LogDebug(
+            "[{Method}] Successfully fetched '{CommentCount}' comments for video '{VideoId}'.",
+            nameof(GetCommentsAsync),
+            commentsPage.Comments.Count,
+            videoId);
+
+        return response.MapOrNull<CommentsPageCommon>(_ => commentsPage);
     }
 
-    private static string GetRemoteIdOrThrow(RemoteIdentityCommon identity, RemoteIdentityTypeCommon expectedType)
+    /// <inheritdoc />
+    public override async Task<JsonWebResponse<SearchResultsCommon?>> SearchAsync(
+        string query,
+        int page,
+        SearchSortType? sortBy,
+        SearchType? type,
+        CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(identity);
+        ArgumentException.ThrowIfNullOrWhiteSpace(query);
 
-        if (identity.IdentityType != expectedType)
+        var sortByString = sortBy?.ToApiString();
+        var typeString = type?.ToApiString();
+        var apiUrl = UrlBuilder.BuildSearchUrl(BaseUrl, query, page, sortByString, type: typeString);
+
+        Logger.LogDebug("[{Method}] Searching Invidious: '{ApiUrl}'.", nameof(SearchAsync), apiUrl);
+
+        var response = await _webClient.GetAsync<List<object>>(apiUrl, cancellationToken);
+
+        if (response.HasError)
         {
-            throw new ArgumentException($"Identity type must be {expectedType}.", nameof(identity));
+            Logger.LogWarning(
+                "[{Method}] Failed to search for '{Query}' on Invidious. Response: {Response}",
+                nameof(SearchAsync),
+                query,
+                response);
+
+            return response.MapOrNull<SearchResultsCommon>(_ => null);
         }
 
-        if (!string.IsNullOrWhiteSpace(identity.RemoteId))
+        var items = InvidiousHelpers.ParseSearchResults(response.Data ?? [], BaseUrl, _jsonOptions, msg => Logger.LogWarning(msg));
+
+        var searchResults = new SearchResultsCommon
         {
-            return identity.RemoteId;
+            Query = query,
+            Items = items
+        };
+
+        Logger.LogDebug(
+            "[{Method}] Successfully fetched '{ResultCount}' search results for query '{Query}'.",
+            nameof(SearchAsync),
+            items.Count,
+            query);
+
+        return response.MapOrNull<SearchResultsCommon>(_ => searchResults);
+    }
+
+    /// <inheritdoc />
+    public override async Task<JsonWebResponse<SearchSuggestionsCommon?>> GetSearchSuggestionsAsync(
+        string query,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(query);
+
+        var apiUrl = UrlBuilder.BuildSearchSuggestionsUrl(BaseUrl, query);
+
+        Logger.LogDebug("[{Method}] Fetching search suggestions from Invidious: '{ApiUrl}'.", nameof(GetSearchSuggestionsAsync), apiUrl);
+
+        var response = await _webClient.GetAsync<SearchSuggestions>(apiUrl, cancellationToken);
+
+        if (response.HasError)
+        {
+            Logger.LogWarning(
+                "[{Method}] Failed to fetch search suggestions for '{Query}' from Invidious. Response: {Response}",
+                nameof(GetSearchSuggestionsAsync),
+                query,
+                response);
+
+            return response.MapOrNull<SearchSuggestionsCommon>(_ => null);
         }
 
-        if (!YouTubeIdentityParser.TryParse(identity.AbsoluteRemoteUrl, out var parts))
+        var suggestions = SearchMapper.ToSearchSuggestions(response.Data!);
+        Logger.LogDebug(
+            "[{Method}] Successfully fetched '{SuggestionCount}' suggestions for query '{Query}'.",
+            nameof(GetSearchSuggestionsAsync),
+            suggestions.Suggestions.Count,
+            query);
+
+        return response.MapOrNull<SearchSuggestionsCommon>(_ => suggestions);
+    }
+
+    /// <inheritdoc />
+    public override async Task<JsonWebResponse<TrendingVideosCommon?>> GetTrendingAsync(
+        TrendingCategory category,
+        RegionCode? region,
+        CancellationToken cancellationToken)
+    {
+        var type = category switch
         {
-            throw new ArgumentException(
-                $"Remote identity URL '{identity.AbsoluteRemoteUrl}' is not a valid YouTube URL: {string.Join(", ", parts.Errors)}.",
-                nameof(identity));
+            TrendingCategory.Music => ApiConstants.TrendingTypeMusic,
+            TrendingCategory.Gaming => ApiConstants.TrendingTypeGaming,
+            TrendingCategory.News => ApiConstants.TrendingTypeNews,
+            TrendingCategory.Movies => ApiConstants.TrendingTypeMovies,
+            _ => null
+        };
+
+        var regionString = region?.ToApiString();
+        var apiUrl = UrlBuilder.BuildTrendingUrl(BaseUrl, type, regionString);
+
+        Logger.LogDebug("[{Method}] Fetching trending videos from Invidious: '{ApiUrl}'.", nameof(GetTrendingAsync), apiUrl);
+
+        var response = await _webClient.GetAsync<List<TrendingVideo>>(apiUrl, cancellationToken);
+
+        if (response.HasError)
+        {
+            Logger.LogWarning(
+                "[{Method}] Failed to fetch trending videos from Invidious. Response: {Response}",
+                nameof(GetTrendingAsync),
+                response);
+
+            return response.MapOrNull<TrendingVideosCommon>(_ => null);
         }
 
-        if (!parts.IsSupported())
+        var trendingVideos = TrendingMapper.ToTrendingVideos(response.Data ?? [], category, regionString, BaseUrl);
+        Logger.LogDebug(
+            "[{Method}] Successfully fetched '{VideoCount}' trending videos.",
+            nameof(GetTrendingAsync),
+            trendingVideos.Videos.Count);
+
+        return response.MapOrNull<TrendingVideosCommon>(_ => trendingVideos);
+    }
+
+    /// <inheritdoc />
+    public override async Task<JsonWebResponse<TrendingVideosCommon?>> GetPopularAsync(CancellationToken cancellationToken)
+    {
+        var apiUrl = UrlBuilder.BuildPopularUrl(BaseUrl);
+
+        Logger.LogDebug("[{Method}] Fetching popular videos from Invidious: '{ApiUrl}'.", nameof(GetPopularAsync), apiUrl);
+
+        var response = await _webClient.GetAsync<List<PopularVideo>>(apiUrl, cancellationToken);
+
+        if (response.HasError)
         {
-            throw new ArgumentException(
-                $"Remote identity URL '{identity.AbsoluteRemoteUrl}' is not supported by FrontTube, the recognized identity type is '{parts.IdentityType}'.",
-                nameof(identity));
+            Logger.LogWarning(
+                "[{Method}] Failed to fetch popular videos from Invidious. Response: {Response}",
+                nameof(GetPopularAsync),
+                response);
+
+            return response.MapOrNull<TrendingVideosCommon>(_ => null);
         }
 
-        if (expectedType == RemoteIdentityTypeCommon.Video && !parts.IsVideo)
+        var popularVideos = TrendingMapper.ToPopularVideos(response.Data ?? [], BaseUrl);
+        Logger.LogDebug(
+            "[{Method}] Successfully fetched '{VideoCount}' popular videos.",
+            nameof(GetPopularAsync),
+            popularVideos.Videos.Count);
+
+        return response.MapOrNull<TrendingVideosCommon>(_ => popularVideos);
+    }
+
+    /// <inheritdoc />
+    public override async Task<JsonWebResponse<PlaylistCommon?>> GetPlaylistAsync(
+        RemoteIdentityCommon playlistIdentity,
+        int page,
+        CancellationToken cancellationToken)
+    {
+        var playlistId = InvidiousHelpers.GetRemoteIdOrThrow(playlistIdentity, RemoteIdentityTypeCommon.Playlist);
+
+        var apiUrl = UrlBuilder.BuildPlaylistUrl(BaseUrl, playlistId, page);
+
+        Logger.LogDebug("[{Method}] Fetching playlist from Invidious: '{ApiUrl}'.", nameof(GetPlaylistAsync), apiUrl);
+
+        var response = await _webClient.GetAsync<Playlist>(apiUrl, cancellationToken);
+
+        if (response.HasError)
         {
-            throw new ArgumentException($"Remote identity URL '{identity.AbsoluteRemoteUrl}' is not a valid video identity.", nameof(identity));
+            Logger.LogWarning(
+                "[{Method}] Failed to fetch playlist '{PlaylistId}' from Invidious. Response: {Response}",
+                nameof(GetPlaylistAsync),
+                playlistId,
+                response);
+
+            return response.MapOrNull<PlaylistCommon>(_ => null);
         }
 
-        if (expectedType == RemoteIdentityTypeCommon.Channel && !parts.IsChannel)
+        var playlist = PlaylistMapper.ToPlaylist(response.Data!, BaseUrl);
+        Logger.LogDebug(
+            "[{Method}] Successfully fetched playlist '{PlaylistId}' with '{VideoCount}' videos.",
+            nameof(GetPlaylistAsync),
+            playlistId,
+            playlist.Videos.Count);
+
+        return response.MapOrNull<PlaylistCommon>(_ => playlist);
+    }
+
+    /// <inheritdoc />
+    public override async Task<JsonWebResponse<PlaylistCommon?>> GetMixAsync(
+        RemoteIdentityCommon mixIdentity,
+        CancellationToken cancellationToken)
+    {
+        var mixId = InvidiousHelpers.GetRemoteIdOrThrow(mixIdentity, RemoteIdentityTypeCommon.Mix);
+
+        var apiUrl = UrlBuilder.BuildMixUrl(BaseUrl, mixId);
+
+        Logger.LogDebug("[{Method}] Fetching mix from Invidious: '{ApiUrl}'.", nameof(GetMixAsync), apiUrl);
+
+        var response = await _webClient.GetAsync<Mix>(apiUrl, cancellationToken);
+
+        if (response.HasError)
         {
-            throw new ArgumentException($"Remote identity URL '{identity.AbsoluteRemoteUrl}' is not a valid channel identity.", nameof(identity));
+            Logger.LogWarning(
+                "[{Method}] Failed to fetch mix '{MixId}' from Invidious. Response: {Response}",
+                nameof(GetMixAsync),
+                mixId,
+                response);
+
+            return response.MapOrNull<PlaylistCommon>(_ => null);
         }
 
-        var remoteId = parts.PrimaryRemoteId;
+        var playlist = PlaylistMapper.ToPlaylistFromMix(response.Data!, BaseUrl);
+        Logger.LogDebug(
+            "[{Method}] Successfully fetched mix '{MixId}' with '{VideoCount}' videos.",
+            nameof(GetMixAsync),
+            mixId,
+            playlist.Videos.Count);
 
-        if (string.IsNullOrWhiteSpace(remoteId))
+        return response.MapOrNull<PlaylistCommon>(_ => playlist);
+    }
+
+    /// <inheritdoc />
+    public override async Task<JsonWebResponse<InstanceStatsCommon?>> GetInstanceStatsAsync(CancellationToken cancellationToken)
+    {
+        var apiUrl = UrlBuilder.BuildStatsUrl(BaseUrl);
+
+        Logger.LogDebug("[{Method}] Fetching instance stats from Invidious: '{ApiUrl}'.", nameof(GetInstanceStatsAsync), apiUrl);
+
+        var response = await _webClient.GetAsync<InstanceStats>(apiUrl, cancellationToken);
+
+        if (response.HasError)
         {
-            throw new ArgumentException($"Remote ID is required for {expectedType} identity.", nameof(identity));
+            Logger.LogWarning(
+                "[{Method}] Failed to fetch instance stats from Invidious. Response: {Response}",
+                nameof(GetInstanceStatsAsync),
+                response);
+
+            return response.MapOrNull<InstanceStatsCommon>(_ => null);
         }
 
-        return remoteId;
+        var stats = InstanceStatsMapper.ToInstanceStats(response.Data!);
+        Logger.LogDebug(
+            "[{Method}] Successfully fetched instance stats. Version: '{Version}'.",
+            nameof(GetInstanceStatsAsync),
+            stats.Version);
+
+        return response.MapOrNull<InstanceStatsCommon>(_ => stats);
     }
 }

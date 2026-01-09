@@ -15,7 +15,7 @@ public record RemoteIdentityCommon
 
         IdentityType = identityType;
 
-        if (identityType is RemoteIdentityTypeCommon.Video or RemoteIdentityTypeCommon.Channel)
+        if (identityType is RemoteIdentityTypeCommon.Video or RemoteIdentityTypeCommon.Channel or RemoteIdentityTypeCommon.Playlist)
         {
             var isValid = YouTubeIdentityParser.TryParse(remoteIdentity, out var parts);
 
@@ -37,6 +37,11 @@ public record RemoteIdentityCommon
             if (identityType == RemoteIdentityTypeCommon.Channel && !parts.IsChannel)
             {
                 throw new ArgumentException($"The provided URL '{remoteIdentity}' is not a valid channel identity.", nameof(remoteIdentity));
+            }
+
+            if (identityType == RemoteIdentityTypeCommon.Playlist && !parts.IsPlaylist)
+            {
+                throw new ArgumentException($"The provided URL '{remoteIdentity}' is not a valid playlist identity.", nameof(remoteIdentity));
             }
 
             var canonicalUrl = parts.ToUrl() ?? parts.AbsoluteRemoteUrl;

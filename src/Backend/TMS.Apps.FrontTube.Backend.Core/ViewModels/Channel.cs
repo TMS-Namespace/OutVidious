@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using TMS.Apps.FrontTube.Backend.Core.Enums;
 using TMS.Apps.FrontTube.Backend.Core.Mappers;
 using TMS.Apps.FrontTube.Backend.Core.Tools;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
@@ -15,7 +16,7 @@ public sealed class Channel : ViewModelBase
     private readonly ILogger<Channel> _logger;
     private CancellationTokenSource? _loadCts;
     private string? _currentContinuationToken;
-    private string? _selectedTab;
+    private ChannelTab? _selectedTab;
     private bool _isDisposed;
 
     internal ChannelDomain Domain { get; private set; }
@@ -73,18 +74,18 @@ public sealed class Channel : ViewModelBase
     public IReadOnlyList<Image> Banners { get; private set; } = [];
 
     /// <summary>
-    /// Available channel tab IDs (e.g., "videos", "shorts", "streams").
+    /// Available channel tabs.
     /// </summary>
-    public IReadOnlyList<string> AvailableTabs
+    public IReadOnlyList<ChannelTab> AvailableTabs
     {
         get
         {
             if (Domain.AvailableTabs.Count > 0)
             {
-                return Domain.AvailableTabs;
+                return Domain.AvailableTabs.Select(DomainViewModelMapper.ToViewModelChannelTab).ToList();
             }
 
-            return ["videos"];
+            return [ChannelTab.Videos];
         }
     }
 
@@ -94,9 +95,9 @@ public sealed class Channel : ViewModelBase
     public IReadOnlyList<Video> Videos { get; private set; } = [];
 
     /// <summary>
-    /// The currently selected tab ID.
+    /// The currently selected tab.
     /// </summary>
-    public string? SelectedTab
+    public ChannelTab? SelectedTab
     {
         get => _selectedTab;
         private set => _selectedTab = value;
@@ -139,7 +140,7 @@ public sealed class Channel : ViewModelBase
         ErrorMessage = Domain.FetchingError;
 
         var availableTabs = AvailableTabs;
-        if (_selectedTab is null || !availableTabs.Contains(_selectedTab))
+        if (_selectedTab is null || !availableTabs.Any(t => t == _selectedTab.Value))
         {
             _selectedTab = availableTabs.Count > 0 ? availableTabs[0] : null;
         }
@@ -204,34 +205,25 @@ public sealed class Channel : ViewModelBase
     /// </summary>
     public async Task LoadInitialVideosAsync(CancellationToken cancellationToken)
     {
-        if (SelectedTab is null)
-        {
-            return;
-        }
-
-        await LoadVideosForTabAsync(SelectedTab, isInitial: true, cancellationToken);
+        var tab = SelectedTab ?? ChannelTab.Videos;
+        await LoadVideosForTabAsync(tab, isInitial: true, cancellationToken);
     }
 
     /// <summary>
     /// Loads videos for a specific tab.
     /// </summary>
-    public async Task SelectTabAsync(string tabId, CancellationToken cancellationToken)
+    public async Task SelectTabAsync(ChannelTab tab, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(tabId))
+        if (tab == SelectedTab)
         {
             return;
         }
 
-        if (tabId == SelectedTab)
-        {
-            return;
-        }
-
-        SelectedTab = tabId;
+        SelectedTab = tab;
         Videos = [];
         _currentContinuationToken = null;
 
-        await LoadVideosForTabAsync(tabId, isInitial: true, cancellationToken);
+        await LoadVideosForTabAsync(tab, isInitial: true, cancellationToken);
     }
 
     /// <summary>
@@ -244,10 +236,10 @@ public sealed class Channel : ViewModelBase
             return;
         }
 
-        await LoadVideosForTabAsync(SelectedTab, isInitial: false, cancellationToken);
+        await LoadVideosForTabAsync(SelectedTab.Value, isInitial: false, cancellationToken);
     }
 
-    private async Task LoadVideosForTabAsync(string tabId, bool isInitial, CancellationToken cancellationToken)
+    private async Task LoadVideosForTabAsync(ChannelTab tab, bool isInitial, CancellationToken cancellationToken)
     {
         CancelPendingLoads();
         _loadCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -272,7 +264,7 @@ public sealed class Channel : ViewModelBase
 
             var page = await Super.RepositoryManager.GetChannelsPageAsync(
                 identity,
-                tabId,
+                tab.ToDomainChannelTab(),
                 _currentContinuationToken,
                 token,
                 autoSave: true);

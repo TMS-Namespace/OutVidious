@@ -1,5 +1,6 @@
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools;
 using CommonConfig = TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 using CommonContracts = TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using DomainConfig = TMS.Apps.FrontTube.Backend.Repository.Data.Contracts.Configuration;
@@ -37,6 +38,40 @@ public static class CommonDomainMapper
         where TEnum : struct, Enum
     {
         return Enum.IsDefined(typeof(TEnum), value) ? (TEnum)(object)value : fallback;
+    }
+
+    private static DomainEnums.ChannelTab ToChannelTabDomain(ChannelTab commonTab)
+    {
+        return commonTab switch
+        {
+            ChannelTab.Videos => DomainEnums.ChannelTab.Videos,
+            ChannelTab.Shorts => DomainEnums.ChannelTab.Shorts,
+            ChannelTab.Streams => DomainEnums.ChannelTab.Streams,
+            ChannelTab.Playlists => DomainEnums.ChannelTab.Playlists,
+            ChannelTab.Community => DomainEnums.ChannelTab.Community,
+            ChannelTab.Channels => DomainEnums.ChannelTab.Channels,
+            ChannelTab.Latest => DomainEnums.ChannelTab.Latest,
+            ChannelTab.Podcasts => DomainEnums.ChannelTab.Podcasts,
+            ChannelTab.Releases => DomainEnums.ChannelTab.Releases,
+            _ => DomainEnums.ChannelTab.Videos
+        };
+    }
+
+    private static ChannelTab FromChannelTabDomain(DomainEnums.ChannelTab domainTab)
+    {
+        return domainTab switch
+        {
+            DomainEnums.ChannelTab.Videos => ChannelTab.Videos,
+            DomainEnums.ChannelTab.Shorts => ChannelTab.Shorts,
+            DomainEnums.ChannelTab.Streams => ChannelTab.Streams,
+            DomainEnums.ChannelTab.Playlists => ChannelTab.Playlists,
+            DomainEnums.ChannelTab.Community => ChannelTab.Community,
+            DomainEnums.ChannelTab.Channels => ChannelTab.Channels,
+            DomainEnums.ChannelTab.Latest => ChannelTab.Latest,
+            DomainEnums.ChannelTab.Podcasts => ChannelTab.Podcasts,
+            DomainEnums.ChannelTab.Releases => ChannelTab.Releases,
+            _ => ChannelTab.Videos
+        };
     }
 
     private static DomainEnums.RemoteIdentityTypeDomain ToDomain(RemoteIdentityTypeCommon type)
@@ -198,11 +233,7 @@ public static class CommonDomainMapper
         target.Banners = channel.Banners
             .Select((CommonContracts.ImageMetadataCommon banner) => ToDomain(banner))
             .ToList();
-        target.AvailableTabs = channel.AvailableTabs
-#pragma warning disable CS0618
-            .Select(t => t.RemoteTabId)
-#pragma warning restore CS0618
-            .ToList();
+        target.AvailableTabs = channel.AvailableTabs.Select(ToChannelTabDomain).ToList();
 
         return target;
     }
@@ -247,16 +278,7 @@ public static class CommonDomainMapper
             .Select((DomainContracts.ImageDomain banner) => FromDomain(banner))
             .ToList();
 
-        var tabs = domain.AvailableTabs
-            .Select(t => new CommonContracts.ChannelTab
-            {
-#pragma warning disable CS0618
-                RemoteTabId = t,
-#pragma warning restore CS0618
-                Name = t,
-                IsAvailable = true
-            })
-            .ToList();
+        var tabs = domain.AvailableTabs.Select(FromChannelTabDomain).ToList();
 
         if (target is null)
         {
@@ -687,7 +709,7 @@ public static class CommonDomainMapper
         };
 
         target.ChannelRemoteIdentity = ToDomain(page.ChannelRemoteIdentity);
-        target.Tab = page.Tab;
+        target.Tab = ToChannelTabDomain(page.Tab);
         target.ContinuationToken = page.ContinuationToken;
         target.TotalVideoCount = page.TotalVideoCount;
         target.PageNumber = page.PageNumber;
@@ -711,7 +733,7 @@ public static class CommonDomainMapper
             return new VideosPageCommon
             {
                 ChannelRemoteIdentity = FromDomain(domain.ChannelRemoteIdentity),
-                Tab = domain.Tab,
+                Tab = FromChannelTabDomain(domain.Tab),
                 Videos = videos,
                 ContinuationToken = domain.ContinuationToken,
                 TotalVideoCount = domain.TotalVideoCount,
@@ -722,7 +744,7 @@ public static class CommonDomainMapper
         return target with
         {
             ChannelRemoteIdentity = FromDomain(domain.ChannelRemoteIdentity),
-            Tab = domain.Tab,
+            Tab = FromChannelTabDomain(domain.Tab),
             Videos = videos,
             ContinuationToken = domain.ContinuationToken,
             TotalVideoCount = domain.TotalVideoCount,

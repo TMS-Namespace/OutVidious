@@ -1,3 +1,4 @@
+using TMS.Apps.FrontTube.Backend.Repository.Data.Enums;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Interfaces;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
@@ -71,9 +72,9 @@ public sealed class ChannelDomain : ICacheableDomain
     public string? Keywords { get; set; }
 
     /// <summary>
-    /// Available channel tab identifiers (e.g., "videos", "shorts", "live").
+    /// Available channel tab types.
     /// </summary>
-    public IReadOnlyList<string> AvailableTabs { get; set; } = [];
+    public IReadOnlyList<ChannelTab> AvailableTabs { get; set; } = [];
 
     // Navigation properties
     public ICollection<VideoDomain> Videos { get; set; } = [];

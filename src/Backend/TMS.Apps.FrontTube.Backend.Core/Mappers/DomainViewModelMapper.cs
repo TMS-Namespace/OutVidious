@@ -2,6 +2,8 @@ using TMS.Apps.FrontTube.Backend.Core.Enums;
 using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Enums;
+using DomainEnums = TMS.Apps.FrontTube.Backend.Repository.Data.Enums;
+using CoreEnums = TMS.Apps.FrontTube.Backend.Core.Enums;
 
 namespace TMS.Apps.FrontTube.Backend.Core.Mappers;
 
@@ -30,6 +32,23 @@ public static class DomainViewModelMapper
             RemoteIdentityTypeDomain.Caption => RemoteIdentityType.Caption,
             RemoteIdentityTypeDomain.Stream => RemoteIdentityType.Stream,
             _ => throw new NotSupportedException($"Unsupported identity type: {type}.")
+        };
+    }
+
+    public static CoreEnums.ChannelTab ToViewModelChannelTab(DomainEnums.ChannelTab domainTab)
+    {
+        return domainTab switch
+        {
+            DomainEnums.ChannelTab.Videos => CoreEnums.ChannelTab.Videos,
+            DomainEnums.ChannelTab.Shorts => CoreEnums.ChannelTab.Shorts,
+            DomainEnums.ChannelTab.Streams => CoreEnums.ChannelTab.Streams,
+            DomainEnums.ChannelTab.Playlists => CoreEnums.ChannelTab.Playlists,
+            DomainEnums.ChannelTab.Community => CoreEnums.ChannelTab.Community,
+            DomainEnums.ChannelTab.Channels => CoreEnums.ChannelTab.Channels,
+            DomainEnums.ChannelTab.Latest => CoreEnums.ChannelTab.Latest,
+            DomainEnums.ChannelTab.Podcasts => CoreEnums.ChannelTab.Podcasts,
+            DomainEnums.ChannelTab.Releases => CoreEnums.ChannelTab.Releases,
+            _ => CoreEnums.ChannelTab.Videos
         };
     }
 
@@ -99,7 +118,7 @@ public static class DomainViewModelMapper
         return target with
         {
             Channel = channel,
-            Tab = domain.Tab,
+            Tab = ToViewModelChannelTab(domain.Tab),
             Videos = resolvedVideos,
             ContinuationToken = domain.ContinuationToken,
             TotalVideoCount = domain.TotalVideoCount,

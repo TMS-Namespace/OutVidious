@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Models;
 
 namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore;
 
@@ -13,11 +15,13 @@ public abstract class ProviderBase : IProvider
 
     protected readonly HttpClient HttpClient;
     protected readonly ILogger Logger;
+    protected readonly ILoggerFactory LoggerFactory;
 
-    protected ProviderBase(HttpClient httpClient, ILogger logger, Uri baseUrl)
+    protected ProviderBase(HttpClient httpClient, ILogger logger, ILoggerFactory loggerFactory, Uri baseUrl)
     {
         HttpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         BaseUrl = baseUrl ?? throw new ArgumentNullException(nameof(baseUrl));
     }
 
@@ -37,20 +41,64 @@ public abstract class ProviderBase : IProvider
     public virtual bool IsConfigured => BaseUrl.IsAbsoluteUri;
 
     /// <inheritdoc />
-    public abstract Task<VideoCommon?> GetVideoAsync(RemoteIdentityCommon videoIdentity, CancellationToken cancellationToken);
+    public abstract Task<JsonWebResponse<VideoCommon?>> GetVideoAsync(RemoteIdentityCommon videoIdentity, CancellationToken cancellationToken);
 
     /// <inheritdoc />
     public abstract Uri GetEmbedVideoPlayerUri(RemoteIdentityCommon videoIdentity);
 
     /// <inheritdoc />
-    public abstract Task<ChannelCommon?> GetChannelAsync(RemoteIdentityCommon channelIdentity, CancellationToken cancellationToken);
+    public abstract Task<JsonWebResponse<ChannelCommon?>> GetChannelAsync(RemoteIdentityCommon channelIdentity, CancellationToken cancellationToken);
 
     /// <inheritdoc />
-    public abstract Task<VideosPageCommon?> GetChannelVideosTabAsync(
+    public abstract Task<JsonWebResponse<VideosPageCommon?>> GetChannelVideosTabAsync(
         RemoteIdentityCommon channelIdentity,
-        string tab,
+        ChannelTab tab,
+        int? page,
         string? continuationToken,
         CancellationToken cancellationToken);
+
+    /// <inheritdoc />
+    public abstract Task<JsonWebResponse<CommentsPageCommon?>> GetCommentsAsync(
+        RemoteIdentityCommon videoIdentity,
+        CommentSortType? sortBy,
+        string? continuationToken,
+        CancellationToken cancellationToken);
+
+    /// <inheritdoc />
+    public abstract Task<JsonWebResponse<SearchResultsCommon?>> SearchAsync(
+        string query,
+        int page,
+        SearchSortType? sortBy,
+        SearchType? type,
+        CancellationToken cancellationToken);
+
+    /// <inheritdoc />
+    public abstract Task<JsonWebResponse<SearchSuggestionsCommon?>> GetSearchSuggestionsAsync(
+        string query,
+        CancellationToken cancellationToken);
+
+    /// <inheritdoc />
+    public abstract Task<JsonWebResponse<TrendingVideosCommon?>> GetTrendingAsync(
+        TrendingCategory category,
+        RegionCode? region,
+        CancellationToken cancellationToken);
+
+    /// <inheritdoc />
+    public abstract Task<JsonWebResponse<TrendingVideosCommon?>> GetPopularAsync(CancellationToken cancellationToken);
+
+    /// <inheritdoc />
+    public abstract Task<JsonWebResponse<PlaylistCommon?>> GetPlaylistAsync(
+        RemoteIdentityCommon playlistIdentity,
+        int page,
+        CancellationToken cancellationToken);
+
+    /// <inheritdoc />
+    public abstract Task<JsonWebResponse<PlaylistCommon?>> GetMixAsync(
+        RemoteIdentityCommon mixIdentity,
+        CancellationToken cancellationToken);
+
+    /// <inheritdoc />
+    public abstract Task<JsonWebResponse<InstanceStatsCommon?>> GetInstanceStatsAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Creates a URI by combining the base URL with a relative path.

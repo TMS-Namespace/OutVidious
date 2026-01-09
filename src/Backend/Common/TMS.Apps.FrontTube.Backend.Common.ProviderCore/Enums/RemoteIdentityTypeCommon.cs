@@ -1,15 +1,42 @@
-namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums
+namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
+
+/// <summary>
+/// Types of remote identities that can be referenced.
+/// </summary>
+public enum RemoteIdentityTypeCommon
 {
-    public enum RemoteIdentityTypeCommon
-    {
-        Video,
+    /// <summary>
+    /// A video resource.
+    /// </summary>
+    Video,
 
-        Channel,
+    /// <summary>
+    /// A channel resource.
+    /// </summary>
+    Channel,
 
-        Image,
+    /// <summary>
+    /// An image resource.
+    /// </summary>
+    Image,
 
-        Caption,
+    /// <summary>
+    /// A caption/subtitle resource.
+    /// </summary>
+    Caption,
 
-        Stream
-    }
+    /// <summary>
+    /// A stream resource.
+    /// </summary>
+    Stream,
+
+    /// <summary>
+    /// A playlist resource.
+    /// </summary>
+    Playlist,
+
+    /// <summary>
+    /// A mix resource (auto-generated playlist).
+    /// </summary>
+    Mix
 }

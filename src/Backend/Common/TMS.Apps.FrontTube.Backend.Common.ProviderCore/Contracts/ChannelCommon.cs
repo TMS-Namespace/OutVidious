@@ -1,3 +1,5 @@
+using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
+
 namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 
 /// <summary>

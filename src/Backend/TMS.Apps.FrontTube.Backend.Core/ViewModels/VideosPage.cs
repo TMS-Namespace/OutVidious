@@ -1,3 +1,5 @@
+using TMS.Apps.FrontTube.Backend.Core.Enums;
+using TMS.Apps.FrontTube.Backend.Core.Mappers;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 
 namespace TMS.Apps.FrontTube.Backend.Core.ViewModels;
@@ -10,7 +12,7 @@ public sealed record VideosPage
     internal VideosPage(Super super, VideosPageDomain domain, List<Video> videos, Channel channel)
     {
         Channel = channel;
-        Tab = domain.Tab;
+        Tab = DomainViewModelMapper.ToViewModelChannelTab(domain.Tab);
         Videos = videos;
         ContinuationToken = domain.ContinuationToken;
         TotalVideoCount = domain.TotalVideoCount;
@@ -23,9 +25,9 @@ public sealed record VideosPage
     public Channel Channel { get; init; }
 
     /// <summary>
-    /// The tab this page was retrieved from (e.g., "videos", "shorts", "live").
+    /// The tab this page was retrieved from.
     /// </summary>
-    public string Tab { get; init; } = "videos";
+    public ChannelTab Tab { get; init; } = ChannelTab.Videos;
 
     /// <summary>
     /// List of videos in this page.

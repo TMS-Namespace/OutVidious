@@ -184,7 +184,7 @@ public sealed class Super : IDisposable
     /// <returns>A page of video summaries.</returns>
     public async Task<VideosPage?> GetChannelVideosAsync(
         string remoteIdentity,
-        string tab,
+        Enums.ChannelTab tab,
         string? continuationToken,
         CancellationToken cancellationToken)
     {
@@ -217,7 +217,7 @@ public sealed class Super : IDisposable
 
         var pageDomain = await RepositoryManager.GetChannelsPageAsync(
             identity,
-            tab,
+            tab.ToDomainChannelTab(),
             continuationToken,
             cancellationToken);
 

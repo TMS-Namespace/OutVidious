@@ -1,29 +1,19 @@
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
-using TMS.Apps.FrontTube.Backend.Providers.Invidious.ApiModels;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious.DTOs;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious.Tools;
 
 namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.Mappers;
 
 /// <summary>
 /// Maps Invidious channel DTOs to common contracts.
 /// </summary>
-public static class ChannelMapper
+internal static class ChannelMapper
 {
-    private static readonly Dictionary<string, string> TabDisplayNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["videos"] = "Videos",
-        ["shorts"] = "Shorts",
-        ["streams"] = "Live",
-        ["playlists"] = "Playlists",
-        ["community"] = "Community",
-        ["channels"] = "Channels",
-        ["about"] = "About"
-    };
-
     /// <summary>
     /// Maps an Invidious channel DTO to a ChannelDetails contract.
     /// </summary>
-    public static ChannelCommon ToChannelDetails(InvidiousChannelDto dto, Uri baseUrl)
+    public static ChannelCommon ToChannelDetails(Channel dto, Uri baseUrl)
     {
         ArgumentNullException.ThrowIfNull(dto);
         ArgumentNullException.ThrowIfNull(baseUrl);
@@ -44,7 +34,7 @@ public static class ChannelMapper
             JoinedAt = dto.Joined > 0 ? DateTimeOffset.FromUnixTimeSeconds(dto.Joined) : null,
             Avatars = dto.AuthorThumbnails.Select(ThumbnailMapper.ToChannelThumbnailInfo).ToList(),
             Banners = dto.AuthorBanners.Select(ToBannerThumbnailInfo).ToList(),
-            AvailableTabs = dto.Tabs.Select(ToChannelTab).ToList(),
+            AvailableTabs = dto.Tabs.Select(t => t.ToChannelTabEnum()).ToList(),
             IsVerified = false, // Invidious doesn't expose this directly
             Tags = []
         };
@@ -53,7 +43,7 @@ public static class ChannelMapper
     /// <summary>
     /// Maps an Invidious channel video DTO to a VideoSummary contract.
     /// </summary>
-    public static VideoMetadataCommon ToVideoSummary(InvidiousChannelVideoDto dto, Uri baseUrl)
+    public static VideoMetadataCommon ToVideoSummary(ChannelVideo dto, Uri baseUrl)
     {
         ArgumentNullException.ThrowIfNull(dto);
         ArgumentNullException.ThrowIfNull(baseUrl);
@@ -85,7 +75,7 @@ public static class ChannelMapper
         };
     }
 
-    private static ImageMetadataCommon ToBannerThumbnailInfo(InvidiousChannelBannerDto dto)
+    private static ImageMetadataCommon ToBannerThumbnailInfo(ChannelBanner dto)
     {
         // Determine quality based on width
         var quality = dto.Width switch
@@ -107,18 +97,6 @@ public static class ChannelMapper
                 originalUrl.ToString()),
             Width = dto.Width,
             Height = dto.Height
-        };
-    }
-
-    private static ChannelTab ToChannelTab(string tabName)
-    {
-        var displayName = TabDisplayNames.TryGetValue(tabName, out var name) ? name : tabName;
-        
-        return new ChannelTab
-        {
-            RemoteTabId = tabName.ToLowerInvariant(),
-            Name = displayName,
-            IsAvailable = true
         };
     }
 

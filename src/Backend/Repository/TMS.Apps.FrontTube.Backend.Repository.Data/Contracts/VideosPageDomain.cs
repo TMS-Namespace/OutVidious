@@ -1,3 +1,5 @@
+using TMS.Apps.FrontTube.Backend.Repository.Data.Enums;
+
 namespace TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 
 /// <summary>
@@ -8,7 +10,7 @@ public sealed class VideosPageDomain
     /// <summary>
     /// Empty page for error cases or when no results are found.
     /// </summary>
-    public static VideosPageDomain Empty(RemoteIdentityDomain channelIdentity, string tab = "videos") => new()
+    public static VideosPageDomain Empty(RemoteIdentityDomain channelIdentity, ChannelTab tab = ChannelTab.Videos) => new()
     {
         ChannelRemoteIdentity = channelIdentity,
         Tab = tab,
@@ -22,9 +24,9 @@ public sealed class VideosPageDomain
     public required RemoteIdentityDomain ChannelRemoteIdentity { get; set; }
 
     /// <summary>
-    /// The tab this page was retrieved from (e.g., "videos", "shorts", "live").
+    /// The tab this page was retrieved from.
     /// </summary>
-    public string Tab { get; set; } = "videos";
+    public ChannelTab Tab { get; set; } = ChannelTab.Videos;
 
     /// <summary>
     /// List of videos in this page.
