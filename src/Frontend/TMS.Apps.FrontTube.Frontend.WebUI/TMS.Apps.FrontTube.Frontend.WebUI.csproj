@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../Backend/TMS.Apps.FrontTube.Backend.Core/TMS.Apps.FrontTube.Backend.Core.csproj" />
+    <ProjectReference Include="../Libs/Web/TMS.Libs.Frontend.Web.CombinedVideoPlayer/TMS.Libs.Frontend.Web.CombinedVideoPlayer.csproj" />
     <ProjectReference Include="../Libs/Web/TMS.Libs.Frontend.Web.DockPanels/TMS.Libs.Frontend.Web.DockPanels.csproj" />
   </ItemGroup>
 

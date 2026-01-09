@@ -9,6 +9,7 @@ namespace TMS.Apps.FrontTube.Frontend.WebUI.Services;
 public sealed class Orchestrator : IDisposable
 {
     private readonly ILogger<Orchestrator> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly Lazy<Super> _super;
     private bool _disposed;
 
@@ -27,6 +28,7 @@ public sealed class Orchestrator : IDisposable
         ArgumentNullException.ThrowIfNull(loggerFactory);
         ArgumentNullException.ThrowIfNull(httpClientFactory);
 
+        _loggerFactory = loggerFactory;
         _logger = loggerFactory.CreateLogger<Orchestrator>();
 
         // Lazy initialization of Super to defer creation until first access
@@ -50,6 +52,8 @@ public sealed class Orchestrator : IDisposable
     /// Gets the Super ViewModel instance.
     /// </summary>
     public Super Super => _super.Value;
+
+    internal ILoggerFactory LoggerFactory => _loggerFactory;
 
     /// <summary>
     /// Gets the video provider base URL.

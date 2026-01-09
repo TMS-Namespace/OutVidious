@@ -43,6 +43,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{E5B0B40D-27A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Libs.Frontend.Web.DockPanels", "src\Frontend\Libs\Web\TMS.Libs.Frontend.Web.DockPanels\TMS.Libs.Frontend.Web.DockPanels.csproj", "{CBEFA740-EAE3-4F4A-96A4-B23274AAC532}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Libs.Frontend.Web.CombinedVideoPlayer", "src\Frontend\Libs\Web\TMS.Libs.Frontend.Web.CombinedVideoPlayer\TMS.Libs.Frontend.Web.CombinedVideoPlayer.csproj", "{C77C7496-939A-4C6D-971D-D65C0AC51856}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -85,6 +87,10 @@ Global
 		{CBEFA740-EAE3-4F4A-96A4-B23274AAC532}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBEFA740-EAE3-4F4A-96A4-B23274AAC532}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CBEFA740-EAE3-4F4A-96A4-B23274AAC532}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C77C7496-939A-4C6D-971D-D65C0AC51856}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C77C7496-939A-4C6D-971D-D65C0AC51856}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C77C7496-939A-4C6D-971D-D65C0AC51856}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C77C7496-939A-4C6D-971D-D65C0AC51856}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -108,5 +114,6 @@ Global
 		{C9AE9BB0-66B0-4CCF-8342-CD601D1C0BEB} = {0A75EFCF-51A8-7DF6-F0FF-99A97DE3AF67}
 		{E5B0B40D-27AF-46B0-8B96-6EBF6713D2FD} = {C9AE9BB0-66B0-4CCF-8342-CD601D1C0BEB}
 		{CBEFA740-EAE3-4F4A-96A4-B23274AAC532} = {E5B0B40D-27AF-46B0-8B96-6EBF6713D2FD}
+		{C77C7496-939A-4C6D-971D-D65C0AC51856} = {E5B0B40D-27AF-46B0-8B96-6EBF6713D2FD}
 	EndGlobalSection
 EndGlobal

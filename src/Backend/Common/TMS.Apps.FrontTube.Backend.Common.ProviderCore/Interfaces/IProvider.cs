@@ -21,7 +21,7 @@ public interface IProvider : IProviderMetadata, IDisposable
     /// </summary>
     /// <param name="videoIdentity">The remote identity for the video.</param>
     /// <returns>The embed URL.</returns>
-    Uri GetEmbedUrl(RemoteIdentityCommon videoIdentity);
+    Uri GetEmbedVideoPlayerUri(RemoteIdentityCommon videoIdentity);
 
     /// <summary>
     /// Gets detailed information about a channel.

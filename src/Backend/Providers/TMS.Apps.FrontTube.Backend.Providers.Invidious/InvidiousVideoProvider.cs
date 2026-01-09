@@ -117,7 +117,7 @@ public sealed class InvidiousVideoProvider : ProviderBase
     }
 
     /// <inheritdoc />
-    public override Uri GetEmbedUrl(RemoteIdentityCommon videoIdentity)
+    public override Uri GetEmbedVideoPlayerUri(RemoteIdentityCommon videoIdentity)
     {
         var videoId = GetRemoteIdOrThrow(videoIdentity, RemoteIdentityTypeCommon.Video);
         

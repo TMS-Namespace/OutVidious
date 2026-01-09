@@ -62,16 +62,12 @@ else if (ViewModel.LoadState == VideoLoadState.Loaded)
                                Variant="Variant.Outlined"
                                Dense="true"
                                Style="width: 120px;">
-                        <MudSelectItem Value="@("auto")">Auto (ABR)</MudSelectItem>
+                        <MudSelectItem Value="@AutoQualityLabel">Auto (ABR)</MudSelectItem>
                         @foreach (var quality in ViewModel.Streams.AvailableDashQualities)
                         {
                             <MudSelectItem Value="@quality">@quality</MudSelectItem>
                         }
                     </MudSelect>
-                    @if (!string.IsNullOrEmpty(_currentDashQuality))
-                    {
-                        <MudChip T="string" Size="Size.Small" Color="Color.Info">@_currentDashQuality</MudChip>
-                    }
                 </MudStack>
             }
         </MudStack>
@@ -79,72 +75,57 @@ else if (ViewModel.LoadState == VideoLoadState.Loaded)
         @* DASH mode info banner *@
         @if (ViewModel.Streams.PlayerMode == PlayerMode.Dash)
         {
-            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2" Icon="@Icons.Material.Filled.HighQuality">
+            <MudAlert Severity="Severity.Info"
+                      Dense="true"
+                      Class="mb-2"
+                      Icon="@Icons.Material.Filled.HighQuality">
                 DASH mode supports 1080p, 1440p, and 4K quality with separate audio/video streams via Shaka Player.
-                @if (_shakaPlayerLoading)
+                @if (_playerLoading)
                 {
-                    <MudProgressLinear Indeterminate="true" Size="Size.Small" Class="mt-1" />
+                    <MudProgressLinear Indeterminate="true"
+                                       Size="Size.Small"
+                                       Class="mt-1" />
                 }
             </MudAlert>
         }
 
         @* Video Player *@
-        <MudPaper Class="mb-4" Elevation="0" Style="background-color: black;">
-            @if (ViewModel.Streams.PlayerMode == PlayerMode.Native)
+        <MudPaper Class="mb-4"
+                  Elevation="0">
+            <CombinedVideoPlayerComponent
+                @ref="_combinedPlayer"
+                LoggerFactory="@Orchestrator.LoggerFactory"
+                Variant="@SelectedVariant"
+                StreamUrl="@StreamUrl"
+                DashManifestUrl="@DashManifestUrl"
+                EmbedUrl="@EmbedUrl"
+                PosterUrl="@PosterUrl"
+                AutoPlay="@AutoPlay"
+                IsMuted="@IsMuted"
+                Volume="@Volume"
+                PlaybackRate="@PlaybackRate"
+                StartPosition="@StartPosition"
+                Captions="@Captions"
+                SelectedCaptionId="@SelectedCaptionId"
+                AvailableQualities="@AvailableQualities"
+                SelectedQuality="@SelectedQuality"
+                ShowNativeControls="@ShowNativeControls"
+                LoadingStateChanged="@OnPlayerLoadingChangedAsync"
+                PlayerError="@OnPlayerErrorAsync"
+                SurfaceClick="@OnSurfaceClickAsync"
+                SurfaceWheel="@OnSurfaceWheelAsync" />
+
+            @if (!string.IsNullOrWhiteSpace(_playerError))
             {
-                <video controls 
-                       style="width: 100%; aspect-ratio: 16/9; max-height: 70vh;"
-                       poster="@GetPosterUrl()">
-                    @if (!string.IsNullOrEmpty(ViewModel.Streams.CurrentStreamUrl))
-                    {
-                        <source src="@ViewModel.Streams.CurrentStreamUrl" type="video/mp4" />
-                    }
-                    Your browser does not support the video tag.
-                </video>
-                @if (string.IsNullOrEmpty(ViewModel.Streams.CurrentStreamUrl))
-                {
-                    <MudAlert Severity="Severity.Warning" Class="mt-2">
-                        No stream URL available for native playback. Try switching to DASH or Embedded mode.
-                    </MudAlert>
-                }
-            }
-            else if (ViewModel.Streams.PlayerMode == PlayerMode.Dash)
-            {
-                <video id="@ShakaVideoElementId"
-                       controls 
-                       style="width: 100%; aspect-ratio: 16/9; max-height: 70vh;"
-                       poster="@GetPosterUrl()">
-                </video>
-                @if (!string.IsNullOrEmpty(_shakaPlayerError))
-                {
-                    <MudAlert Severity="Severity.Error" Class="mt-2">
-                        DASH playback error: @_shakaPlayerError
-                        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="RetryDashPlayerAsync">Retry</MudButton>
-                    </MudAlert>
-                }
-                @if (string.IsNullOrEmpty(ViewModel.Streams.DashManifestUrl))
-                {
-                    <MudAlert Severity="Severity.Warning" Class="mt-2">
-                        No DASH manifest URL available. Try switching to Embedded mode.
-                    </MudAlert>
-                }
-            }
-            else
-            {
-                @if (!string.IsNullOrEmpty(ViewModel.Streams.EmbedUrl))
-                {
-                    <iframe src="@ViewModel.Streams.EmbedUrl"
-                            style="width: 100%; min-height: 480px; border: none;"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowfullscreen>
-                    </iframe>
-                }
-                else
-                {
-                    <MudAlert Severity="Severity.Warning">
-                        No embed URL available.
-                    </MudAlert>
-                }
+                <MudAlert Severity="Severity.Error"
+                          Class="mt-2">
+                    @_playerError
+                    <MudButton Variant="Variant.Text"
+                               Size="Size.Small"
+                               OnClick="RetryPlaybackAsync">
+                        Retry
+                    </MudButton>
+                </MudAlert>
             }
         </MudPaper>
 
@@ -154,12 +135,12 @@ else if (ViewModel.LoadState == VideoLoadState.Loaded)
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                 <MudAvatar Size="Size.Medium" Color="Color.Primary">
-                    @(ViewModel.ChannelName?.FirstOrDefault().ToString().ToUpperInvariant() ?? "?")
+                    @(ChannelName?.FirstOrDefault().ToString().ToUpperInvariant() ?? "?")
                 </MudAvatar>
                 <MudLink OnClick="@OnChannelLinkClicked"
                          Typo="Typo.subtitle1"
                          Style="cursor: pointer;">
-                    @ViewModel.ChannelName
+                    @ChannelName
                 </MudLink>
             </MudStack>
 

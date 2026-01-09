@@ -18,10 +18,14 @@ applyTo: '**'
     - **ProviderCore** - the shared contracts, models, enums, and interfaces between `Core` and various `Providers`.
   - **Repository** - Data access layer, handles local storage of cached objects etc.
     - **DataBase** - A Code first, `PostgreSQL` database access via EF Core, migrations, DbContext, entities.
-    - **Cache** - Caching layer, abstracts caching logic, uses `DataBase` to persist cached data, and `Providers` to fetch data when not in cache.
+    - **Cache** - Caching layer, abstracts caching logic, uses `DataBase` to persist cached data, and `Providers` to fetch data when not in cache (Under construction).
+    - **Data** - Has a top level `RepositoryManager` that orchestrates calls to `CacheManager`, querying database, and fetching missing or stale data from internet via the `provider`, and exposes methods that return `ViewModels` ready for UI consumption.. the project also has background workers, to dump new and refreshed data to the database.
   - **Core** - Top level backend project, fully self-contained (manages everything internally, and does not expose what it reference), and abstracts all business logic in `ViewModels (VMs)` for UI consumption, and uses events to notify UI, It also manages configurations, orchestrates calls to `Providers` and `Repository`.
 - **Frontend** - The end user UI implemented in various frameworks.
   - **WebUI** - Blazor based UI, consumes only `ViewModels` from backend (passed as parameters).
+  - **Libs/Web** - Our helper isolated libraries, that basically blazor components.
+    - **DockPanels** - a bootstrap-based docking layout system for Blazor.
+    - **CombinedVideoPlayer** - An abstraction over multiple video players (web browser's native video player, Shaka player for DASH, embedded video from the provider, etc..) for Blazor.
 
 ### ViewModels (VMs) Architecture
 

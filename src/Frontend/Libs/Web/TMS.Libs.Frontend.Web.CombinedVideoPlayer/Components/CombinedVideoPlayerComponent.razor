@@ -1,0 +1,148 @@
+<div class="@ContainerClass"
+     style="@Appearance.ContainerStyle">
+    <div class="@SurfaceClass"
+         style="@SurfaceStyle">
+        @if (Variant == VideoPlayerVariant.Native)
+        {
+            <NativeVideoPlayerComponent
+                @ref="_nativePlayer"
+                LoggerFactory="@LoggerFactory"
+                StreamUrl="@StreamUrl"
+                PosterUrl="@PosterUrl"
+                AutoPlay="@AutoPlay"
+                IsMuted="@IsMuted"
+                Volume="@Volume"
+                PlaybackRate="@PlaybackRate"
+                ShowNativeControls="@ShowNativeControls"
+                StartPosition="@StartPosition"
+                Captions="@Captions"
+                SelectedCaptionId="@SelectedCaptionId"
+                AvailableQualities="@AvailableQualities"
+                StatisticsUpdateInterval="@StatisticsUpdateInterval"
+                PlayerClass="@Appearance.PlayerClass"
+                PlayerStyle="@Appearance.PlayerStyle"
+                PlayerReady="@OnPlayerReadyAsync"
+                PlaybackProgressChanged="@OnPlaybackProgressChangedAsync"
+                BufferingProgressChanged="@OnBufferingProgressChangedAsync"
+                BufferingStateChanged="@OnBufferingStateChangedAsync"
+                PlaybackStatisticsChanged="@OnPlaybackStatisticsChangedAsync"
+                PlayerError="@OnPlayerErrorAsync" />
+        }
+        else if (Variant == VideoPlayerVariant.Dash)
+        {
+            <DashVideoPlayerComponent
+                @ref="_dashPlayer"
+                LoggerFactory="@LoggerFactory"
+                ManifestUrl="@DashManifestUrl"
+                PosterUrl="@PosterUrl"
+                AutoPlay="@AutoPlay"
+                IsMuted="@IsMuted"
+                Volume="@Volume"
+                PlaybackRate="@PlaybackRate"
+                ShowNativeControls="@ShowNativeControls"
+                StartPosition="@StartPosition"
+                Captions="@Captions"
+                SelectedCaptionId="@SelectedCaptionId"
+                SelectedQuality="@SelectedQuality"
+                AvailableQualities="@AvailableQualities"
+                StatisticsUpdateInterval="@StatisticsUpdateInterval"
+                PlayerClass="@Appearance.PlayerClass"
+                PlayerStyle="@Appearance.PlayerStyle"
+                PlayerReady="@OnPlayerReadyAsync"
+                PlaybackProgressChanged="@OnPlaybackProgressChangedAsync"
+                BufferingProgressChanged="@OnBufferingProgressChangedAsync"
+                BufferingStateChanged="@OnBufferingStateChangedAsync"
+                PlaybackStatisticsChanged="@OnPlaybackStatisticsChangedAsync"
+                PlayerError="@OnPlayerErrorAsync" />
+        }
+        else
+        {
+            <EmbeddedVideoPlayerComponent
+                @ref="_embeddedPlayer"
+                LoggerFactory="@LoggerFactory"
+                EmbedUrl="@ModifiedEmbedUrl"
+                PlayerClass="@Appearance.PlayerClass"
+                PlayerStyle="@Appearance.PlayerStyle"
+                FrameTitle="@FrameTitle"
+                PlayerReady="@OnPlayerReadyAsync"
+                PlayerError="@OnPlayerErrorAsync" />
+        }
+
+        @* Poster image - shown while loading or until play starts *@
+        @if (ShouldShowPoster)
+        {
+            <img src="@PosterUrl"
+                 alt="@FrameTitle"
+                 class="@Appearance.PosterClass"
+                 style="@Appearance.PosterStyle" />
+        }
+
+        @* Loading spinner overlay *@
+        @if (Behavior.ShowSpinnerWhileLoading && IsLoading)
+        {
+            <div class="@Appearance.OverlayClass">
+                <MudStack
+                    Spacing="2"
+                    AlignItems="AlignItems.Center">
+                    <MudProgressCircular
+                        Indeterminate="true"
+                        Size="Size.Large"
+                        Class="@Appearance.SpinnerClass" />
+                    <MudText
+                        Typo="Typo.subtitle1"
+                        Align="Align.Center">
+                        @CombinedVideoPlayerText.LoadingMessage
+                    </MudText>
+                </MudStack>
+            </div>
+        }
+
+        @* Missing source overlay *@
+        @if (!string.IsNullOrWhiteSpace(MissingSourceMessage))
+        {
+            <div class="@Appearance.OverlayClass">
+                <MudAlert
+                    Severity="Severity.Warning"
+                    Dense="true">
+                    @MissingSourceMessage
+                </MudAlert>
+            </div>
+        }
+
+        @* Error overlay *@
+        @if (Behavior.ShowErrorOverlay && !string.IsNullOrWhiteSpace(PlayerErrorMessage))
+        {
+            <MudAlert
+                Severity="Severity.Error"
+                Class="@Appearance.ErrorClass">
+                @PlayerErrorMessage
+            </MudAlert>
+        }
+
+        @* Paused overlay with play button - shown when paused or ready to play *@
+        @if (ShouldShowPlayButton && Behavior.ShowPausedOverlay)
+        {
+            <div class="@Appearance.PausedOverlayClass"
+                 style="@PausedOverlayStyle; @PlayButtonStyle"
+                 @onclick="@OnOverlayClickAsync"
+                 @onclick:stopPropagation="true">
+                <div class="@Appearance.PlayButtonClass">
+                    <div class="@Appearance.PlayIconClass"></div>
+                </div>
+            </div>
+        }
+
+        @* Interaction layer - captures mouse events when not showing paused overlay *@
+        @if (!ShouldShowPlayButton || !Behavior.ShowPausedOverlay)
+        {
+            <div class="@Appearance.InteractionClass"
+                 @onclick="@OnSurfaceClickAsync"
+                 @ondblclick="@OnSurfaceDoubleClickAsync"
+                 @oncontextmenu="@OnSurfaceContextMenuAsync"
+                 @oncontextmenu:preventDefault="true"
+                 @onwheel="@OnSurfaceWheelAsync"
+                 @onwheel:preventDefault="true">
+            </div>
+        }
+    </div>
+</div>

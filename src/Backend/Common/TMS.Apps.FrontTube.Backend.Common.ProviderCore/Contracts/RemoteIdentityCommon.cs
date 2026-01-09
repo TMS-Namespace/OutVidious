@@ -76,9 +76,6 @@ public record RemoteIdentityCommon
 
     public string? RemoteId { get; init; }
 
-    [Obsolete]
-    public int? DataBaseId { get; init; }
-
     public Uri AbsoluteRemoteUri { get; init; }
 
 }

@@ -1,0 +1,28 @@
+<video
+    id="@VideoElementId"
+    class="@PlayerClass"
+    style="@PlayerStyle"
+    controls="@ShowNativeControls"
+    autoplay="@AutoPlay"
+    muted="@IsMuted"
+    playsinline>
+    @if (!string.IsNullOrWhiteSpace(StreamUrl))
+    {
+        <source
+            src="@StreamUrl"
+            type="@CombinedVideoPlayerConstants.Mp4MimeType" />
+    }
+
+    @if (AvailableCaptionTracks.Count > 0)
+    {
+        @foreach (var caption in AvailableCaptionTracks)
+        {
+            <track
+                id="@caption.Id"
+                src="@caption.Url"
+                srclang="@caption.Language"
+                label="@caption.Label"
+                default="@caption.IsDefault" />
+        }
+    }
+</video>

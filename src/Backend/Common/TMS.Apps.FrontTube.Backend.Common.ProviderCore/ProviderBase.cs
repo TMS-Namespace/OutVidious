@@ -40,7 +40,7 @@ public abstract class ProviderBase : IProvider
     public abstract Task<VideoCommon?> GetVideoAsync(RemoteIdentityCommon videoIdentity, CancellationToken cancellationToken);
 
     /// <inheritdoc />
-    public abstract Uri GetEmbedUrl(RemoteIdentityCommon videoIdentity);
+    public abstract Uri GetEmbedVideoPlayerUri(RemoteIdentityCommon videoIdentity);
 
     /// <inheritdoc />
     public abstract Task<ChannelCommon?> GetChannelAsync(RemoteIdentityCommon channelIdentity, CancellationToken cancellationToken);

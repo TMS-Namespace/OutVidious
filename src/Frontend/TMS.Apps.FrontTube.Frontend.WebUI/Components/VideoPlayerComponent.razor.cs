@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
-using Microsoft.JSInterop;
 using TMS.Apps.FrontTube.Backend.Core.Enums;
 using TMS.Apps.FrontTube.Backend.Core.ViewModels;
 using TMS.Apps.FrontTube.Frontend.WebUI.Services;
+using TMS.Libs.Frontend.Web.CombinedVideoPlayer.Components;
+using TMS.Libs.Frontend.Web.CombinedVideoPlayer.Enums;
+using TMS.Libs.Frontend.Web.CombinedVideoPlayer.Models;
 
 namespace TMS.Apps.FrontTube.Frontend.WebUI.Components;
 
@@ -11,20 +13,16 @@ namespace TMS.Apps.FrontTube.Frontend.WebUI.Components;
 /// Code-behind for the Invidious video player component.
 /// Supports Native, DASH (Shaka Player), and Embedded player modes.
 /// </summary>
-public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
+public partial class VideoPlayerComponent : ComponentBase, IDisposable
 {
-    private bool _disposed;
-    private DotNetObjectReference<VideoPlayerComponent>? _dotNetRef;
-    private bool _shakaPlayerLoading;
-    private bool _shakaPlayerInitialized;
-    private string? _shakaPlayerError;
-    private string? _selectedDashQuality = "auto";
-    private string? _currentDashQuality;
-    private string _instanceId = Guid.NewGuid().ToString("N")[..8];
-    private string? _lastInitializedManifestUrl;
+    private const string AutoQualityLabel = "auto";
 
-    [Inject]
-    private IJSRuntime JsRuntime { get; set; } = default!;
+    private bool _disposed;
+    private bool _playerLoading;
+    private string? _playerError;
+    private string? _selectedDashQuality = AutoQualityLabel;
+    private Video? _lastViewModel;
+    private CombinedVideoPlayerComponent? _combinedPlayer;
 
     [Inject]
     private ILogger<VideoPlayerComponent> Logger { get; set; } = default!;
@@ -33,41 +31,84 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
     private Orchestrator Orchestrator { get; set; } = default!;
 
     [Parameter]
-    public Backend.Core.ViewModels.Video? ViewModel { get; set; }
+    public Video? ViewModel { get; set; }
 
     [Parameter]
     public string ProviderBaseUrl { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Unique ID for the Shaka Player video element.
-    /// </summary>
-    private string ShakaVideoElementId => $"shaka-video-{_instanceId}";
+    private string? ChannelName => ViewModel?.Channel?.Name;
+
+    private string? StreamUrl => ViewModel?.Streams?.CurrentStreamUrl;
+
+    private string? DashManifestUrl => ViewModel?.Streams?.DashManifestUrl;
+
+    private string? EmbedUrl => ViewModel?.Streams?.EmbedUrl;
+
+    private string? PosterUrl => GetPosterUrl();
+
+    private bool AutoPlay => false;
+
+    private bool IsMuted => false;
+
+    private double Volume => 1.0;
+
+    private double PlaybackRate => 1.0;
+
+    private TimeSpan? StartPosition => null;
+
+    private bool ShowNativeControls => true;
+
+    private IReadOnlyList<CaptionTrack> Captions => [];
+
+    private string? SelectedCaptionId => null;
+
+    private VideoPlayerVariant SelectedVariant => ViewModel?.Streams?.PlayerMode switch
+    {
+        PlayerMode.Dash => VideoPlayerVariant.Dash,
+        PlayerMode.Embedded => VideoPlayerVariant.Embedded,
+        _ => VideoPlayerVariant.Native
+    };
+
+    private IReadOnlyList<VideoQualityOption> AvailableQualities
+    {
+        get
+        {
+            if (ViewModel?.Streams is null)
+            {
+                return [];
+            }
+
+            return SelectedVariant == VideoPlayerVariant.Dash
+                ? BuildQualityOptions(ViewModel.Streams.AvailableDashQualities, includeAuto: true)
+                : BuildQualityOptions(ViewModel.Streams.AvailableQualities, includeAuto: false);
+        }
+    }
+
+    private VideoQualityOption? SelectedQuality => SelectedVariant == VideoPlayerVariant.Dash
+        ? BuildDashQualityOption(_selectedDashQuality)
+        : null;
 
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
 
+        if (!ReferenceEquals(_lastViewModel, ViewModel))
+        {
+            if (_lastViewModel is not null)
+            {
+                _lastViewModel.StateChanged -= OnViewModelStateChanged;
+            }
+
+            _lastViewModel = ViewModel;
+            _playerError = null;
+            _playerLoading = false;
+            _selectedDashQuality = AutoQualityLabel;
+        }
+
         if (ViewModel != null)
         {
             ViewModel.StateChanged -= OnViewModelStateChanged;
             ViewModel.StateChanged += OnViewModelStateChanged;
-        }
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        await base.OnAfterRenderAsync(firstRender);
-
-        // Initialize Shaka Player when in DASH mode (only once per manifest URL)
-        if (ViewModel?.Streams?.PlayerMode == PlayerMode.Dash && 
-            ViewModel.LoadState == VideoLoadState.Loaded &&
-            !string.IsNullOrEmpty(ViewModel.Streams.DashManifestUrl) &&
-            !_shakaPlayerLoading &&
-            !_shakaPlayerInitialized &&
-            string.IsNullOrEmpty(_shakaPlayerError) &&
-            _lastInitializedManifestUrl != ViewModel.Streams.DashManifestUrl)
-        {
-            await InitializeShakaPlayerAsync();
         }
     }
 
@@ -78,20 +119,19 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
 
     private async Task OnPlayerModeChangedAsync(PlayerMode mode)
     {
-        Logger.LogDebug("Player mode changing from {OldMode} to {NewMode}", ViewModel?.Streams?.PlayerMode, mode);
-        
-        // Clean up Shaka player when switching away from DASH mode
-        if (ViewModel?.Streams?.PlayerMode == PlayerMode.Dash && mode != PlayerMode.Dash)
-        {
-            await DestroyShakaPlayerAsync();
-            _shakaPlayerInitialized = false;
-            _lastInitializedManifestUrl = null;
-        }
+        Logger.LogDebug("[{MethodName}] Player mode changing from '{OldMode}' to '{NewMode}'.",
+            nameof(OnPlayerModeChangedAsync),
+            ViewModel?.Streams?.PlayerMode,
+            mode);
 
         ViewModel?.Streams?.SetPlayerMode(mode);
-        _shakaPlayerError = null;
-        _currentDashQuality = null;
-        
+        _playerError = null;
+
+        if (mode == PlayerMode.Dash)
+        {
+            _selectedDashQuality = AutoQualityLabel;
+        }
+
         await InvokeAsync(StateHasChanged);
     }
 
@@ -104,147 +144,143 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
     {
         _selectedDashQuality = quality;
 
-        if (quality == "auto")
-        {
-            await JsRuntime.InvokeVoidAsync("shakaPlayerInterop.setQuality", ShakaVideoElementId, "auto");
-        }
-        else
-        {
-            // Parse quality label (e.g., "1080p" -> 1080)
-            var heightStr = new string(quality.TakeWhile(char.IsDigit).ToArray());
-            if (int.TryParse(heightStr, out var height))
-            {
-                await JsRuntime.InvokeVoidAsync("shakaPlayerInterop.setMaxResolution", ShakaVideoElementId, height);
-            }
-        }
-    }
-
-    private async Task InitializeShakaPlayerAsync()
-    {
-        if (ViewModel?.Streams?.DashManifestUrl == null)
+        var option = BuildDashQualityOption(quality);
+        if (option is null || _combinedPlayer is null)
         {
             return;
         }
 
-        Logger.LogDebug("Initializing Shaka Player for manifest: {ManifestUrl}", ViewModel.Streams.DashManifestUrl);
-        
-        _shakaPlayerLoading = true;
-        _shakaPlayerError = null;
-        // Don't call StateHasChanged here to avoid triggering another render cycle
+        await _combinedPlayer.SetQualityAsync(option, CancellationToken.None);
+    }
 
-        try
+    private Task OnPlayerLoadingChangedAsync(bool isLoading)
+    {
+        _playerLoading = isLoading;
+        if (isLoading)
         {
-            _dotNetRef ??= DotNetObjectReference.Create(this);
+            _playerError = null;
+        }
+        return Task.CompletedTask;
+    }
 
-            // Small delay to ensure the video element is rendered
-            await Task.Delay(100);
+    private Task OnPlayerErrorAsync(string errorMessage)
+    {
+        _playerError = errorMessage;
+        return Task.CompletedTask;
+    }
 
-            var success = await JsRuntime.InvokeAsync<bool>(
-                "shakaPlayerInterop.initialize",
-                ShakaVideoElementId,
-                ViewModel.Streams.DashManifestUrl,
-                _dotNetRef);
+    private async Task OnSurfaceClickAsync(PlayerMouseEventArgs args)
+    {
+        if (_combinedPlayer is null)
+        {
+            return;
+        }
 
-            if (success)
+        Logger.LogDebug("[{MethodName}] Surface clicked, toggling play/pause.", nameof(OnSurfaceClickAsync));
+        await _combinedPlayer.TogglePlayPauseAsync(CancellationToken.None);
+    }
+
+    private async Task OnSurfaceWheelAsync(PlayerWheelEventArgs args)
+    {
+        if (_combinedPlayer is null || ViewModel?.Streams is null)
+        {
+            return;
+        }
+
+        var volumeStep = 0.05;
+        var currentVolume = Volume;
+        var newVolume = args.DeltaY < 0
+            ? Math.Min(1.0, currentVolume + volumeStep)
+            : Math.Max(0.0, currentVolume - volumeStep);
+
+        if (Math.Abs(newVolume - currentVolume) > 0.001)
+        {
+            Logger.LogDebug("[{MethodName}] Wheel scroll, adjusting volume from '{OldVolume}' to '{NewVolume}'.",
+                nameof(OnSurfaceWheelAsync),
+                currentVolume,
+                newVolume);
+            await _combinedPlayer.SetVolumeAsync(newVolume, CancellationToken.None);
+        }
+    }
+
+    private async Task RetryPlaybackAsync()
+    {
+        if (_combinedPlayer is null)
+        {
+            return;
+        }
+
+        var success = await _combinedPlayer.ReloadAsync(CancellationToken.None);
+        if (!success)
+        {
+            Logger.LogWarning("[{MethodName}] Reload request ignored or unsupported.", nameof(RetryPlaybackAsync));
+        }
+    }
+
+    private static IReadOnlyList<VideoQualityOption> BuildQualityOptions(
+        IReadOnlyList<string> qualityLabels,
+        bool includeAuto)
+    {
+        var options = new List<VideoQualityOption>();
+
+        if (includeAuto)
+        {
+            options.Add(new VideoQualityOption
             {
-                _shakaPlayerInitialized = true;
-                _lastInitializedManifestUrl = ViewModel.Streams.DashManifestUrl;
-                Logger.LogDebug("Shaka Player initialized successfully for: {ManifestUrl}", ViewModel.Streams.DashManifestUrl);
-            }
-            else
+                Label = AutoQualityLabel,
+                IsAuto = true
+            });
+        }
+
+        options.AddRange(qualityLabels
+            .Where(label => !string.IsNullOrWhiteSpace(label))
+            .Select(label => new VideoQualityOption
             {
-                _shakaPlayerError = "Failed to initialize DASH player. Your browser may not support this feature.";
-                Logger.LogWarning("Shaka Player initialization failed for: {ManifestUrl}", ViewModel.Streams.DashManifestUrl);
-            }
-        }
-        catch (JSException ex)
+                Label = label,
+                Height = ParseQualityHeight(label)
+            }));
+
+        return options;
+    }
+
+    private static VideoQualityOption? BuildDashQualityOption(string? quality)
+    {
+        if (string.IsNullOrWhiteSpace(quality))
         {
-            _shakaPlayerError = $"JavaScript error: {ex.Message}";
-            Logger.LogError(ex, "JavaScript error during Shaka Player initialization");
+            return null;
         }
-        catch (Exception ex)
+
+        if (string.Equals(quality, AutoQualityLabel, StringComparison.OrdinalIgnoreCase))
         {
-            _shakaPlayerError = $"Unexpected error: {ex.Message}";
-            Logger.LogError(ex, "Unexpected error during Shaka Player initialization");
+            return new VideoQualityOption
+            {
+                Label = AutoQualityLabel,
+                IsAuto = true
+            };
         }
-        finally
+
+        return new VideoQualityOption
         {
-            _shakaPlayerLoading = false;
-            await InvokeAsync(StateHasChanged);
-        }
+            Label = quality,
+            Height = ParseQualityHeight(quality)
+        };
     }
 
-    private async Task DestroyShakaPlayerAsync()
+    private static int? ParseQualityHeight(string qualityLabel)
     {
-        try
-        {
-            await JsRuntime.InvokeVoidAsync("shakaPlayerInterop.destroy", ShakaVideoElementId);
-        }
-        catch
-        {
-            // Ignore errors during cleanup
-        }
-    }
-
-    private async Task RetryDashPlayerAsync()
-    {
-        Logger.LogDebug("Retrying Shaka Player initialization");
-        _shakaPlayerError = null;
-        _shakaPlayerInitialized = false;
-        _lastInitializedManifestUrl = null;
-        await DestroyShakaPlayerAsync();
-        await InitializeShakaPlayerAsync();
-    }
-
-    /// <summary>
-    /// Called from JavaScript when the player encounters an error.
-    /// </summary>
-    [JSInvokable]
-    public void OnPlayerError(string errorMessage)
-    {
-        _shakaPlayerError = errorMessage;
-        InvokeAsync(StateHasChanged);
-    }
-
-    /// <summary>
-    /// Called from JavaScript when the video quality changes (ABR adaptation).
-    /// </summary>
-    [JSInvokable]
-    public void OnDashQualityAdapted(string quality)
-    {
-        _currentDashQuality = quality;
-        InvokeAsync(StateHasChanged);
-    }
-
-    /// <summary>
-    /// Called from JavaScript when the video is loaded.
-    /// </summary>
-    [JSInvokable]
-    public void OnVideoLoaded()
-    {
-        _shakaPlayerLoading = false;
-        InvokeAsync(StateHasChanged);
-    }
-
-    /// <summary>
-    /// Called from JavaScript when playback starts.
-    /// </summary>
-    [JSInvokable]
-    public void OnPlaybackStarted()
-    {
-        // Can be used for analytics or UI updates
+        var numericPart = new string(qualityLabel.TakeWhile(char.IsDigit).ToArray());
+        return int.TryParse(numericPart, out var height) ? height : null;
     }
 
     private string? GetPosterUrl()
     {
         var thumbnailIdentity = ViewModel?.GetBestThumbnailIdentity();
-        
+
         if (thumbnailIdentity is null)
         {
             return null;
         }
 
-        // Now proxy it through our local image proxy endpoint for caching
         var proxyUrl = thumbnailIdentity.GetProxyUrl(Orchestrator.Super.Proxy);
         return string.IsNullOrWhiteSpace(proxyUrl) ? null : proxyUrl;
     }
@@ -276,21 +312,11 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
             >= 1_000_000_000 => $"{count / 1_000_000_000.0:F1}B",
             >= 1_000_000 => $"{count / 1_000_000.0:F1}M",
             >= 1_000 => $"{count / 1_000.0:F1}K",
-            _ => count!.Value.ToString("N0")
+            _ => count.Value.ToString("N0")
         };
     }
 
-    private static string FormatNumber(int count)
-    {
-        return count switch
-        {
-            >= 1_000_000 => $"{count / 1_000_000.0:F1}M",
-            >= 1_000 => $"{count / 1_000.0:F1}K",
-            _ => count.ToString("N0")
-        };
-    }
-
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
         if (_disposed)
         {
@@ -301,9 +327,6 @@ public partial class VideoPlayerComponent : ComponentBase, IAsyncDisposable
         {
             ViewModel.StateChanged -= OnViewModelStateChanged;
         }
-
-        await DestroyShakaPlayerAsync();
-        _dotNetRef?.Dispose();
 
         _disposed = true;
         GC.SuppressFinalize(this);
