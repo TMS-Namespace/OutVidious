@@ -2,12 +2,13 @@ using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Repository.Models;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 using DomainContracts = TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Cache;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data.Mappers;
 
 internal static class CacheDomainMapper
 {
-    public static DomainContracts.ChannelDomain ToDomain(CacheResult<ChannelEntity> cacheResult, DomainContracts.ChannelDomain? target = null)
+    public static DomainContracts.ChannelDomain ToDomain(CacheResult<CacheChannelEntity> cacheResult, DomainContracts.ChannelDomain? target = null)
     {
         ArgumentNullException.ThrowIfNull(cacheResult);
 
@@ -22,7 +23,7 @@ internal static class CacheDomainMapper
         return target;
     }
 
-    public static DomainContracts.VideoDomain ToDomain(CacheResult<VideoEntity> cacheResult, DomainContracts.VideoDomain? target = null)
+    public static DomainContracts.VideoDomain ToDomain(CacheResult<CacheVideoEntity> cacheResult, DomainContracts.VideoDomain? target = null)
     {
         ArgumentNullException.ThrowIfNull(cacheResult);
 
@@ -37,7 +38,7 @@ internal static class CacheDomainMapper
         return target;
     }
 
-    public static DomainContracts.ImageDomain ToDomain(CacheResult<ImageEntity> cacheResult, DomainContracts.ImageDomain? target = null)
+    public static DomainContracts.ImageDomain ToDomain(CacheResult<CacheImageEntity> cacheResult, DomainContracts.ImageDomain? target = null)
     {
         ArgumentNullException.ThrowIfNull(cacheResult);
 
@@ -52,7 +53,7 @@ internal static class CacheDomainMapper
         return target;
     }
 
-    public static DomainContracts.StreamDomain ToDomain(CacheResult<StreamEntity> cacheResult, DomainContracts.StreamDomain? target = null)
+    public static DomainContracts.StreamDomain ToDomain(CacheResult<CacheStreamEntity> cacheResult, DomainContracts.StreamDomain? target = null)
     {
         ArgumentNullException.ThrowIfNull(cacheResult);
 
@@ -67,7 +68,7 @@ internal static class CacheDomainMapper
         return target;
     }
 
-    public static DomainContracts.CaptionDomain ToDomain(CacheResult<CaptionEntity> cacheResult, DomainContracts.CaptionDomain? target = null)
+    public static DomainContracts.CaptionDomain ToDomain(CacheResult<CacheCaptionEntity> cacheResult, DomainContracts.CaptionDomain? target = null)
     {
         ArgumentNullException.ThrowIfNull(cacheResult);
 

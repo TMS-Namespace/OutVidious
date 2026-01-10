@@ -1,3 +1,4 @@
+using TMS.Apps.FrontTube.Backend.Common.DataEnums.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools;
@@ -40,37 +41,37 @@ internal static class CommonDomainMapper
         return Enum.IsDefined(typeof(TEnum), value) ? (TEnum)(object)value : fallback;
     }
 
-    private static DomainEnums.ChannelTab ToChannelTabDomain(ChannelTab commonTab)
+    private static DomainEnums.ChannelTabType ToChannelTabDomain(ChannelTabType commonTab)
     {
         return commonTab switch
         {
-            ChannelTab.Videos => DomainEnums.ChannelTab.Videos,
-            ChannelTab.Shorts => DomainEnums.ChannelTab.Shorts,
-            ChannelTab.Streams => DomainEnums.ChannelTab.Streams,
-            ChannelTab.Playlists => DomainEnums.ChannelTab.Playlists,
-            ChannelTab.Community => DomainEnums.ChannelTab.Community,
-            ChannelTab.Channels => DomainEnums.ChannelTab.Channels,
-            ChannelTab.Latest => DomainEnums.ChannelTab.Latest,
-            ChannelTab.Podcasts => DomainEnums.ChannelTab.Podcasts,
-            ChannelTab.Releases => DomainEnums.ChannelTab.Releases,
-            _ => DomainEnums.ChannelTab.Videos
+            ChannelTabType.Videos => DomainEnums.ChannelTabType.Videos,
+            ChannelTabType.Shorts => DomainEnums.ChannelTabType.Shorts,
+            ChannelTabType.Streams => DomainEnums.ChannelTabType.Streams,
+            ChannelTabType.Playlists => DomainEnums.ChannelTabType.Playlists,
+            ChannelTabType.Community => DomainEnums.ChannelTabType.Community,
+            ChannelTabType.Channels => DomainEnums.ChannelTabType.Channels,
+            ChannelTabType.Latest => DomainEnums.ChannelTabType.Latest,
+            ChannelTabType.Podcasts => DomainEnums.ChannelTabType.Podcasts,
+            ChannelTabType.Releases => DomainEnums.ChannelTabType.Releases,
+            _ => DomainEnums.ChannelTabType.Videos
         };
     }
 
-    private static ChannelTab FromChannelTabDomain(DomainEnums.ChannelTab domainTab)
+    private static ChannelTabType FromChannelTabDomain(DomainEnums.ChannelTabType domainTab)
     {
         return domainTab switch
         {
-            DomainEnums.ChannelTab.Videos => ChannelTab.Videos,
-            DomainEnums.ChannelTab.Shorts => ChannelTab.Shorts,
-            DomainEnums.ChannelTab.Streams => ChannelTab.Streams,
-            DomainEnums.ChannelTab.Playlists => ChannelTab.Playlists,
-            DomainEnums.ChannelTab.Community => ChannelTab.Community,
-            DomainEnums.ChannelTab.Channels => ChannelTab.Channels,
-            DomainEnums.ChannelTab.Latest => ChannelTab.Latest,
-            DomainEnums.ChannelTab.Podcasts => ChannelTab.Podcasts,
-            DomainEnums.ChannelTab.Releases => ChannelTab.Releases,
-            _ => ChannelTab.Videos
+            DomainEnums.ChannelTabType.Videos => ChannelTabType.Videos,
+            DomainEnums.ChannelTabType.Shorts => ChannelTabType.Shorts,
+            DomainEnums.ChannelTabType.Streams => ChannelTabType.Streams,
+            DomainEnums.ChannelTabType.Playlists => ChannelTabType.Playlists,
+            DomainEnums.ChannelTabType.Community => ChannelTabType.Community,
+            DomainEnums.ChannelTabType.Channels => ChannelTabType.Channels,
+            DomainEnums.ChannelTabType.Latest => ChannelTabType.Latest,
+            DomainEnums.ChannelTabType.Podcasts => ChannelTabType.Podcasts,
+            DomainEnums.ChannelTabType.Releases => ChannelTabType.Releases,
+            _ => ChannelTabType.Videos
         };
     }
 
@@ -128,7 +129,12 @@ internal static class CommonDomainMapper
         target.Thumbnails = video.Thumbnails
             .Select((CommonContracts.ImageMetadataCommon thumbnail) => ToDomain(thumbnail))
             .ToList();
-        target.LastSyncedAt = DateTime.UtcNow;
+
+        // we set synced time only if we have full video info
+        if (video is VideoCommon)
+        {
+        target.LastSyncedAt =  DateTime.UtcNow;
+        }
 
         return target;
     }
@@ -212,7 +218,7 @@ internal static class CommonDomainMapper
             .Select((CommonContracts.ImageMetadataCommon avatar) => ToDomain(avatar))
             .ToList();
 
-        target.LastSyncedAt = DateTime.UtcNow;
+        target.LastSyncedAt = null; // not full info
 
         return target;
     }
@@ -338,7 +344,7 @@ internal static class CommonDomainMapper
 
         target.Width = image.Width;
         target.Height = image.Height;
-        target.LastSyncedAt = DateTime.UtcNow;
+        target.LastSyncedAt = null; // data not downloaded yet
 
         return target;
     }
@@ -351,7 +357,7 @@ internal static class CommonDomainMapper
         {
             return new CommonContracts.ImageMetadataCommon
             {
-                Quality = ImageQuality.Unknown,
+                //Quality = ImageQuality.Unknown,
                 RemoteIdentity = FromDomain(domain.RemoteIdentity),
                 Width = domain.Width ?? 0,
                 Height = domain.Height ?? 0
@@ -360,7 +366,7 @@ internal static class CommonDomainMapper
 
         return target with
         {
-            Quality = ImageQuality.Unknown,
+            //Quality = ImageQuality.Unknown,
             RemoteIdentity = FromDomain(domain.RemoteIdentity),
             Width = domain.Width ?? 0,
             Height = domain.Height ?? 0
@@ -388,7 +394,7 @@ internal static class CommonDomainMapper
         target.Label = caption.Name;
         target.LanguageCode = caption.LanguageCode;
         target.IsAutoGenerated = caption.IsAutoGenerated;
-        target.LastSyncedAt = DateTime.UtcNow;
+        target.LastSyncedAt = null; // data not downloaded yet
         if (target.CreatedAt == default)
         {
             target.CreatedAt = DateTime.UtcNow;
@@ -443,7 +449,7 @@ internal static class CommonDomainMapper
         target.ContainerId = (int)stream.Container;
         target.VideoCodecId = stream.VideoCodec is null ? null : (int?)stream.VideoCodec;
         target.AudioCodecId = stream.AudioCodec is null ? null : (int?)stream.AudioCodec;
-        target.AudioQualityId = stream.AudioQualityLevel is null ? null : (int?)stream.AudioQualityLevel;
+        // target.AudioQualityId = stream.AudioQualityLevel is null ? null : (int?)stream.AudioQualityLevel;
         target.ProjectionTypeId = (int)stream.Projection;
         target.QualityLabel = stream.QualityLabel;
         target.Width = stream.Width;
@@ -455,7 +461,7 @@ internal static class CommonDomainMapper
         target.AudioChannels = stream.AudioChannels;
         target.MimeType = stream.MimeType;
         target.Itag = stream.Itag;
-        target.LastSyncedAt = DateTime.UtcNow;
+        target.LastSyncedAt = DateTime.UtcNow; // formal, we do not cache stream data
 
         if (target.CreatedAt == default)
         {
@@ -478,12 +484,12 @@ internal static class CommonDomainMapper
             : ToEnum(domain.VideoCodecId.Value, VideoCodec.Unknown);
 
         var audioCodec = domain.AudioCodecId is null
-            ? (AudioCodec?)null
-            : ToEnum(domain.AudioCodecId.Value, AudioCodec.Unknown);
+            ? (AudioCodecType?)null
+            : ToEnum(domain.AudioCodecId.Value, AudioCodecType.Unknown);
 
-        var audioQuality = domain.AudioQualityId is null
-            ? (AudioQuality?)null
-            : ToEnum(domain.AudioQualityId.Value, AudioQuality.Unknown);
+        // var audioQuality = domain.AudioQualityId is null
+        //     ? (AudioQuality?)null
+        //     : ToEnum(domain.AudioQualityId.Value, AudioQuality.Unknown);
 
         if (target is null)
         {
@@ -502,7 +508,7 @@ internal static class CommonDomainMapper
                 ContentLength = domain.ContentLength,
                 AudioSampleRate = domain.AudioSampleRate,
                 AudioChannels = domain.AudioChannels,
-                AudioQualityLevel = audioQuality,
+                //AudioQualityLevel = audioQuality,
                 Projection = projection,
                 MimeType = domain.MimeType,
                 Itag = domain.Itag
@@ -524,7 +530,7 @@ internal static class CommonDomainMapper
             ContentLength = domain.ContentLength,
             AudioSampleRate = domain.AudioSampleRate,
             AudioChannels = domain.AudioChannels,
-            AudioQualityLevel = audioQuality,
+            //AudioQualityLevel = audioQuality,
             Projection = projection,
             MimeType = domain.MimeType,
             Itag = domain.Itag

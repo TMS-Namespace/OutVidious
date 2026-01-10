@@ -74,7 +74,7 @@ public sealed class ChannelDomain : ICacheableDomain
     /// <summary>
     /// Available channel tab types.
     /// </summary>
-    public IReadOnlyList<ChannelTab> AvailableTabs { get; set; } = [];
+    public IReadOnlyList<ChannelTabType> AvailableTabs { get; set; } = [];
 
     // Navigation properties
     public ICollection<VideoDomain> Videos { get; set; } = [];

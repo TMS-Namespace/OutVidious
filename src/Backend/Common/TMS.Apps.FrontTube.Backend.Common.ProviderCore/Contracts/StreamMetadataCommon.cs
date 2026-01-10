@@ -1,3 +1,4 @@
+using TMS.Apps.FrontTube.Backend.Common.DataEnums.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
@@ -28,7 +29,7 @@ public sealed record StreamMetadataCommon : ICacheableCommon
     /// <summary>
     /// Audio codec (null for video-only streams).
     /// </summary>
-    public AudioCodec? AudioCodec { get; init; }
+    public AudioCodecType? AudioCodec { get; init; }
 
     /// <summary>
     /// Quality label (e.g., "1080p", "720p60").
@@ -70,10 +71,10 @@ public sealed record StreamMetadataCommon : ICacheableCommon
     /// </summary>
     public int? AudioChannels { get; init; }
 
-    /// <summary>
-    /// Audio quality level (null for video-only streams).
-    /// </summary>
-    public AudioQuality? AudioQualityLevel { get; init; }
+    // /// <summary>
+    // /// Audio quality level (null for video-only streams).
+    // /// </summary>
+    // public AudioQuality? AudioQualityLevel { get; init; }
 
     /// <summary>
     /// Projection type for VR/360 videos.

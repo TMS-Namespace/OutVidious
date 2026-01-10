@@ -8,10 +8,10 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// </summary>
 public sealed record ImageMetadataCommon : ICacheableCommon
 {
-    /// <summary>
-    /// Quality level of the thumbnail.
-    /// </summary>
-    public required ImageQuality Quality { get; init; }
+    // /// <summary>
+    // /// Quality level of the thumbnail.
+    // /// </summary>
+    // public required ImageQuality Quality { get; init; }
 
     public required RemoteIdentityCommon RemoteIdentity { get; init; }
 

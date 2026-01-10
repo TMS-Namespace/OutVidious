@@ -6,6 +6,8 @@ using TMS.Apps.FrontTube.Backend.Repository.Interfaces;
 using TMS.Apps.FrontTube.Backend.Repository.Models;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Cache;
+using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Tools;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data.Tools;
 
@@ -15,9 +17,7 @@ internal class DatabaseSynchronizer
 
     private readonly ILogger<DatabaseSynchronizer> _logger;
 
-    private readonly CacheHelper _cacheManager;
-
-    private readonly CacheHelper _cacheHelper;
+    private readonly CacheInvalidator _cacheHelper;
 
     private ConcurrentDictionary<string, ICommonContract> _commons = [];
 
@@ -25,7 +25,7 @@ internal class DatabaseSynchronizer
 
     public DatabaseSynchronizer(
         DataBaseContextPool pool,
-        CacheHelper cacheHelper,
+        CacheInvalidator cacheHelper,
         ILoggerFactory loggerFactory)
     {
         _pool = pool;
@@ -117,16 +117,16 @@ internal class DatabaseSynchronizer
 
     }
 
-    private async Task<List<CacheResult<ChannelEntity>>> SyncChannelsMetadataAsync(DataBaseContext db, List<ChannelMetadataCommon> channelsMetadata, CancellationToken cancellationToken)
+    private async Task<List<CacheResult<CacheChannelEntity>>> SyncChannelsMetadataAsync(DataBaseContext db, List<ChannelMetadataCommon> channelsMetadata, CancellationToken cancellationToken)
     {
-        var channelCacheResults = await _cacheHelper.InvalidateCachedAsync<ChannelEntity>(
+        var channelCacheResults = await _cacheHelper.InvalidateCachedAsync<CacheChannelEntity>(
             channelsMetadata,
             db,
             cancellationToken,
             null);
 
         // invalidate all avatars for these channels
-        await _cacheHelper.InvalidateImagesCacheAsync<ChannelEntity, ChannelAvatarMapEntity, ChannelMetadataCommon>(
+        await _cacheHelper.InvalidateImagesCacheAsync<CacheChannelEntity, CacheChannelAvatarMapEntity, ChannelMetadataCommon>(
             channelCacheResults,
             c => c.Avatars,
             db,
@@ -143,16 +143,16 @@ internal class DatabaseSynchronizer
             cancellationToken);
 
         // invalidate all banners for these channels
-        await _cacheHelper.InvalidateImagesCacheAsync<ChannelEntity, ChannelBannerMapEntity, ChannelCommon>(
+        await _cacheHelper.InvalidateImagesCacheAsync<CacheChannelEntity, CacheChannelBannerMapEntity, ChannelCommon>(
             channelCacheResults,
             c => c.Banners,
             db,
             cancellationToken);
     }
 
-    private async Task<List<CacheResult<VideoEntity>>> SyncVideosMetadataAsync(DataBaseContext db, List<VideoBaseCommon> videosBase, CancellationToken cancellationToken)
+    private async Task<List<CacheResult<CacheVideoEntity>>> SyncVideosMetadataAsync(DataBaseContext db, List<VideoBaseCommon> videosBase, CancellationToken cancellationToken)
     {
-        var videoCacheResults = await _cacheHelper.InvalidateCachedAsync<VideoEntity>(
+        var videoCacheResults = await _cacheHelper.InvalidateCachedAsync<CacheVideoEntity>(
             videosBase,
             db,
             cancellationToken,
@@ -183,7 +183,7 @@ internal class DatabaseSynchronizer
             .ToList();
 
         // invalidate all video thumbnails
-        await _cacheHelper.InvalidateImagesCacheAsync<VideoEntity, VideoThumbnailMapEntity, VideoBaseCommon>(
+        await _cacheHelper.InvalidateImagesCacheAsync<CacheVideoEntity, CacheVideoThumbnailMapEntity, VideoBaseCommon>(
             videoCacheResults,
             v => v.Thumbnails,
             db,
@@ -231,10 +231,14 @@ internal class DatabaseSynchronizer
         var videosHashes = videoStreams
             .Select(vs => vs.VideoCacheResult.Common!.RemoteIdentity.Hash)
             .ToList();
-        var streamsToRemove = db.Streams.Where(s => videosHashes.Contains(s.Video.Hash));
+        
+        var streamsToRemove = db
+            .Streams
+            .Where(s => videosHashes.Contains(s.Video.Hash));
+
         db.Streams.RemoveRange(streamsToRemove);        
 
-        await _cacheHelper.InvalidateCachedAsync<StreamEntity>(
+        await _cacheHelper.InvalidateCachedAsync<CacheStreamEntity>(
             videoStreams
                 .SelectMany(vs => vs.StreamsCommons)
                 .ToList(),
@@ -251,7 +255,7 @@ internal class DatabaseSynchronizer
                     .ToList()))
             .ToList();
 
-        await _cacheHelper.InvalidateCachedAsync<CaptionEntity>(
+        await _cacheHelper.InvalidateCachedAsync<CacheCaptionEntity>(
             videoCaptions
                 .SelectMany(vc => vc.CaptionsCommons)
                 .ToList(),

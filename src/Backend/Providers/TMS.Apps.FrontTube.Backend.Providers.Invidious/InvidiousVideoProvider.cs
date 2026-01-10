@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using TMS.Apps.FrontTube.Backend.Common.DataEnums.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
@@ -74,7 +75,7 @@ public sealed class InvidiousVideoProvider : ProviderBase
             return response.MapOrNull<VideoCommon>(_ => null);
         }
 
-        var videoInfo = InvidiousMapper.ToVideoInfo(response.Data!, BaseUrl);
+        var videoInfo = VideoMapper.ToVideoInfo(response.Data!, BaseUrl);
         Logger.LogDebug("[{Method}] Successfully fetched and mapped video details for: '{VideoId}'.", nameof(GetVideoAsync), videoId);
 
         return response.MapOrNull<VideoCommon>(_ => videoInfo);
@@ -121,7 +122,7 @@ public sealed class InvidiousVideoProvider : ProviderBase
     /// <inheritdoc />
     public override async Task<JsonWebResponse<VideosPageCommon?>> GetChannelVideosTabAsync(
         RemoteIdentityCommon channelIdentity,
-        ChannelTab tab,
+        ChannelTabType tab,
         int? page,
         string? continuationToken,
         CancellationToken cancellationToken)

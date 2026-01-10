@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
 
 /// <summary>
@@ -6,11 +8,10 @@ namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
 /// </summary>
 public interface ICacheableEntity : IEntity
 {
-  
-
     /// <summary>
     /// XxHash64 hash of the AbsoluteRemoteUrl for unique lookup and cache key.
     /// </summary>
+    [Required]
     long Hash { get; set; }
 
     // /// <summary>
@@ -27,5 +28,6 @@ public interface ICacheableEntity : IEntity
     // /// <summary>
     // /// The original remote URL of this entity.
     // /// </summary>
-    string AbsoluteRemoteUrl { get; set; }
+    [Required]
+    string RemoteIdentity { get; set; }
 }

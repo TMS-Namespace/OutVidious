@@ -1,3 +1,4 @@
+using TMS.Apps.FrontTube.Backend.Common.DataEnums.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 
@@ -16,7 +17,7 @@ public sealed record VideosPageCommon : ICommonContract
     /// <summary>
     /// The tab this page was retrieved from.
     /// </summary>
-    public ChannelTab Tab { get; init; } = ChannelTab.Videos;
+    public ChannelTabType Tab { get; init; } = ChannelTabType.Videos;
 
     /// <summary>
     /// List of videos in this page.

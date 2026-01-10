@@ -31,7 +31,7 @@ internal static partial class ThumbnailMapper
 
         return new ImageMetadataCommon
         {
-            Quality = ParseThumbnailQuality(dto.Quality),
+            //Quality = ParseThumbnailQuality(dto.Quality),
             RemoteIdentity = new RemoteIdentityCommon(
                 RemoteIdentityTypeCommon.Image,
                 originalUrl.ToString()),
@@ -46,19 +46,19 @@ internal static partial class ThumbnailMapper
     public static ImageMetadataCommon ToChannelThumbnailInfo(AuthorThumbnail dto)
     {
         // Determine quality based on dimensions
-        var quality = dto.Width switch
-        {
-            >= 512 => ImageQuality.MaxRes,
-            >= 176 => ImageQuality.High,
-            >= 88 => ImageQuality.Medium,
-            _ => ImageQuality.Default
-        };
+        // var quality = dto.Width switch
+        // {
+        //     >= 512 => ImageQuality.MaxRes,
+        //     >= 176 => ImageQuality.High,
+        //     >= 88 => ImageQuality.Medium,
+        //     _ => ImageQuality.Default
+        // };
 
         var originalUrl = ExtractAvatarUrl(dto.Url);
 
         return new ImageMetadataCommon
         {
-            Quality = quality,
+            //Quality = quality,
             RemoteIdentity = new RemoteIdentityCommon(
                 RemoteIdentityTypeCommon.Image,
                 originalUrl.ToString()),
@@ -135,16 +135,16 @@ internal static partial class ThumbnailMapper
         return new Uri(providerUrl, UriKind.RelativeOrAbsolute);
     }
 
-    private static ImageQuality ParseThumbnailQuality(string quality)
-    {
-        return quality.ToLowerInvariant() switch
-        {
-            "default" => ImageQuality.Default,
-            "medium" => ImageQuality.Medium,
-            "high" => ImageQuality.High,
-            "standard" or "sd" or "sddefault" => ImageQuality.Standard,
-            "maxres" or "maxresdefault" => ImageQuality.MaxRes,
-            _ => ImageQuality.Unknown
-        };
-    }
+    // private static ImageQuality ParseThumbnailQuality(string quality)
+    // {
+    //     return quality.ToLowerInvariant() switch
+    //     {
+    //         "default" => ImageQuality.Default,
+    //         "medium" => ImageQuality.Medium,
+    //         "high" => ImageQuality.High,
+    //         "standard" or "sd" or "sddefault" => ImageQuality.Standard,
+    //         "maxres" or "maxresdefault" => ImageQuality.MaxRes,
+    //         _ => ImageQuality.Unknown
+    //     };
+    // }
 }

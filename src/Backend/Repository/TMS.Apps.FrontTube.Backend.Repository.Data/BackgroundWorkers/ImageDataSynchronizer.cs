@@ -1,9 +1,8 @@
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using TMS.Apps.FrontTube.Backend.Repository.Interfaces;
-using TMS.Apps.FrontTube.Backend.Repository.DataBase;
-using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Cache;
+using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Tools;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data.Tools;
 
@@ -13,19 +12,14 @@ internal class ImageDataSynchronizer
 
     private readonly ILogger<ImageDataSynchronizer> _logger;
 
-    //private readonly ICacheManager _cacheManager;
-
-    //private readonly CacheHelper _cacheHelper;
-
     private ConcurrentDictionary<long, (byte[] Data, int Width, int Height, DateTime SyncedAt)> _imagesToSync = new();
 
-    private ConcurrentDictionary<long, ImageEntity> _syncedImages = [];
+    private ConcurrentDictionary<long, CacheImageEntity> _syncedImages = [];
 
     public bool IsSynchronizing { get; private set; }
 
     public ImageDataSynchronizer(
         DataBaseContextPool pool,
-        //CacheHelper cacheHelper,
         ILoggerFactory loggerFactory)
     {
         _pool = pool;
@@ -95,7 +89,7 @@ internal class ImageDataSynchronizer
 
             await using var db = await _pool.GetContextAsync(cancellationToken);
 
-            List<ImageEntity> syncedImageEntities = new();
+            List<CacheImageEntity> syncedImageEntities = new();
 
             var snapshot = _imagesToSync.ToArray();
 

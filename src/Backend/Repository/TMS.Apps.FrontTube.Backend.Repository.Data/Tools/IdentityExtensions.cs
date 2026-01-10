@@ -1,7 +1,7 @@
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
-using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Cache;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Tools;
@@ -20,18 +20,18 @@ internal static class IdentityExtensions
         ArgumentNullException.ThrowIfNull(entity);
 
         var identityType = ResolveIdentityType(entity);
-        return new RemoteIdentityCommon(identityType, entity.AbsoluteRemoteUrl);
+        return new RemoteIdentityCommon(identityType, entity.RemoteIdentity);
     }
 
     private static RemoteIdentityTypeCommon ResolveIdentityType(ICacheableEntity entity)
     {
         return entity switch
         {
-            VideoEntity => RemoteIdentityTypeCommon.Video,
-            ChannelEntity => RemoteIdentityTypeCommon.Channel,
-            ImageEntity => RemoteIdentityTypeCommon.Image,
-            CaptionEntity => RemoteIdentityTypeCommon.Caption,
-            StreamEntity => RemoteIdentityTypeCommon.Stream,
+            CacheVideoEntity => RemoteIdentityTypeCommon.Video,
+            CacheChannelEntity => RemoteIdentityTypeCommon.Channel,
+            CacheImageEntity => RemoteIdentityTypeCommon.Image,
+            CacheCaptionEntity => RemoteIdentityTypeCommon.Caption,
+            CacheStreamEntity => RemoteIdentityTypeCommon.Stream,
             _ => throw new NotSupportedException($"Entity type {entity.GetType().Name} is not supported for identity resolution.")
         };
     }

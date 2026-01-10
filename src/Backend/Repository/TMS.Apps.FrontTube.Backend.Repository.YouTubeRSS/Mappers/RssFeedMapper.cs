@@ -78,11 +78,11 @@ internal static class RssFeedMapper
     {
         ArgumentNullException.ThrowIfNull(dto);
 
-        var quality = DetermineQuality(dto.Width, dto.Height);
+        //var quality = DetermineQuality(dto.Width, dto.Height);
 
         return new ImageMetadataCommon
         {
-            Quality = quality,
+            //Quality = quality,
             RemoteIdentity = new RemoteIdentityCommon(
                 RemoteIdentityTypeCommon.Image,
                 dto.Url),
@@ -91,28 +91,28 @@ internal static class RssFeedMapper
         };
     }
 
-    /// <summary>
-    /// Determines the image quality based on dimensions.
-    /// </summary>
-    /// <param name="width">The width in pixels.</param>
-    /// <param name="height">The height in pixels.</param>
-    /// <returns>The determined image quality.</returns>
-    private static ImageQuality DetermineQuality(int width, int height)
-    {
-        // Standard YouTube thumbnail sizes:
-        // - default: 120x90
-        // - medium (mqdefault): 320x180
-        // - high (hqdefault): 480x360
-        // - standard (sddefault): 640x480
-        // - maxres (maxresdefault): 1280x720
+    // /// <summary>
+    // /// Determines the image quality based on dimensions.
+    // /// </summary>
+    // /// <param name="width">The width in pixels.</param>
+    // /// <param name="height">The height in pixels.</param>
+    // /// <returns>The determined image quality.</returns>
+    // private static ImageQuality DetermineQuality(int width, int height)
+    // {
+    //     // Standard YouTube thumbnail sizes:
+    //     // - default: 120x90
+    //     // - medium (mqdefault): 320x180
+    //     // - high (hqdefault): 480x360
+    //     // - standard (sddefault): 640x480
+    //     // - maxres (maxresdefault): 1280x720
 
-        return width switch
-        {
-            >= 1280 => ImageQuality.MaxRes,
-            >= 640 => ImageQuality.Standard,
-            >= 480 => ImageQuality.High,
-            >= 320 => ImageQuality.Medium,
-            _ => ImageQuality.Default
-        };
-    }
+    //     return width switch
+    //     {
+    //         >= 1280 => ImageQuality.MaxRes,
+    //         >= 640 => ImageQuality.Standard,
+    //         >= 480 => ImageQuality.High,
+    //         >= 320 => ImageQuality.Medium,
+    //         _ => ImageQuality.Default
+    //     };
+    // }
 }

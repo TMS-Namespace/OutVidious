@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using TMS.Apps.FrontTube.Backend.Common.DataEnums.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
@@ -52,7 +53,7 @@ public abstract class ProviderBase : IProvider
     /// <inheritdoc />
     public abstract Task<JsonWebResponse<VideosPageCommon?>> GetChannelVideosTabAsync(
         RemoteIdentityCommon channelIdentity,
-        ChannelTab tab,
+        ChannelTabType tab,
         int? page,
         string? continuationToken,
         CancellationToken cancellationToken);

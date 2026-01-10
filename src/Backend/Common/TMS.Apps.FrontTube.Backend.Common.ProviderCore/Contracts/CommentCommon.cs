@@ -5,11 +5,12 @@ namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 /// <summary>
 /// Represents a single comment.
 /// </summary>
-public sealed record CommentCommon : ICommonContract
+public sealed record CommentCommon : ICacheableCommon
 {
     /// <summary>
     /// Comment ID.
     /// </summary>
+    [Obsolete("Use RemoteIdentity instead.")]
     public required string RemoteCommentId { get; init; }
 
     /// <summary>
@@ -20,20 +21,23 @@ public sealed record CommentCommon : ICommonContract
     /// <summary>
     /// Author's channel ID.
     /// </summary>
-    [Obsolete("Use AuthorChannelIdentity instead.")]
+    [Obsolete("Use AuthorChannel instead.")]
     public required string AuthorId { get; init; }
 
     /// <summary>
     /// Author's channel URL.
     /// </summary>
-    [Obsolete("Use AuthorChannelIdentity instead.")]
+    [Obsolete("Use AuthorChannel instead.")]
     public string? AuthorUrl { get; init; }
 
-    public required RemoteIdentityCommon AuthorChannelIdentity { get; init; }
+    public required RemoteIdentityCommon RemoteIdentity { get; init; }
+
+    public required ChannelMetadataCommon AuthorChannel { get; init; }
 
     /// <summary>
     /// Author's thumbnail images.
     /// </summary>
+    [Obsolete("Use AuthorChannel instead.")]
     public IReadOnlyList<ImageMetadataCommon> Avatars { get; init; } = [];
 
     /// <summary>
@@ -69,11 +73,12 @@ public sealed record CommentCommon : ICommonContract
     /// <summary>
     /// Publication timestamp (Unix epoch).
     /// </summary>
-    public long PublishedAt { get; init; }
+    public DateTime PublishedAtUTC { get; init; }
 
     /// <summary>
     /// Human-readable publication time (e.g., "2 hours ago").
     /// </summary>
+    [Obsolete("Use PublishedAtUTC instead.")]
     public string? PublishedText { get; init; }
 
     /// <summary>
@@ -100,4 +105,6 @@ public sealed record CommentCommon : ICommonContract
     /// Whether there are replies to load.
     /// </summary>
     public bool HasReplies => ReplyCount > 0 || !string.IsNullOrEmpty(RepliesContinuationToken);
+
+    public bool IsMetaData => false;
 }

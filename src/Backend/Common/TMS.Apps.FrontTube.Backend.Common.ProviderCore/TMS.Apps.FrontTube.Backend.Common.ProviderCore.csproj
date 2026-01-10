@@ -12,4 +12,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../TMS.Apps.FrontTube.Backend.Common.DataEnums/TMS.Apps.FrontTube.Backend.Common.DataEnums.csproj" />
+  </ItemGroup>
+
 </Project>

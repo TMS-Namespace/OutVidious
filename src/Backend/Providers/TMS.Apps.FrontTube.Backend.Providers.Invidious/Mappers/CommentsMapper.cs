@@ -44,9 +44,19 @@ internal static class CommentsMapper
             AuthorName = dto.Author,
             AuthorId = dto.AuthorId,
             AuthorUrl = dto.AuthorUrl,
-            AuthorChannelIdentity = new RemoteIdentityCommon(
-                RemoteIdentityTypeCommon.Channel,
-                InvidiousHelpers.ResolveAuthorChannelUrl(dto.AuthorId)),
+            RemoteIdentity = new RemoteIdentityCommon(
+                RemoteIdentityTypeCommon.Comment,
+                dto.CommentId),
+            AuthorChannel = new ChannelMetadataCommon
+            {
+                RemoteIdentity = new RemoteIdentityCommon(
+                    RemoteIdentityTypeCommon.Channel,
+                    InvidiousHelpers.ResolveAuthorChannelUrl(dto.AuthorId)),
+                Name = dto.Author,
+                Avatars = dto.AuthorThumbnails
+                    .Select(ThumbnailMapper.ToChannelThumbnailInfo)
+                    .ToList()
+            },
             Avatars = dto.AuthorThumbnails.Select(ThumbnailMapper.ToChannelThumbnailInfo).ToList(),
             IsAuthorVerified = dto.AuthorIsChannelOwner,
             IsVideoAuthor = dto.AuthorIsChannelOwner,
@@ -54,7 +64,7 @@ internal static class CommentsMapper
             Content = dto.Content,
             ContentHtml = dto.ContentHtml,
             LikeCount = dto.LikeCount,
-            PublishedAt = dto.Published,
+            PublishedAtUTC = DateTimeOffset.FromUnixTimeSeconds(dto.Published).UtcDateTime,
             PublishedText = dto.PublishedText,
             IsPinned = dto.IsPinned,
             IsEdited = dto.IsEdited,

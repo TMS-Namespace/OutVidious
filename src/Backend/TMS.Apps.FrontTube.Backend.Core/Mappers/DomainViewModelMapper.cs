@@ -35,19 +35,19 @@ public static class DomainViewModelMapper
         };
     }
 
-    public static CoreEnums.ChannelTab ToViewModelChannelTab(DomainEnums.ChannelTab domainTab)
+    public static CoreEnums.ChannelTab ToViewModelChannelTab(DomainEnums.ChannelTabType domainTab)
     {
         return domainTab switch
         {
-            DomainEnums.ChannelTab.Videos => CoreEnums.ChannelTab.Videos,
-            DomainEnums.ChannelTab.Shorts => CoreEnums.ChannelTab.Shorts,
-            DomainEnums.ChannelTab.Streams => CoreEnums.ChannelTab.Streams,
-            DomainEnums.ChannelTab.Playlists => CoreEnums.ChannelTab.Playlists,
-            DomainEnums.ChannelTab.Community => CoreEnums.ChannelTab.Community,
-            DomainEnums.ChannelTab.Channels => CoreEnums.ChannelTab.Channels,
-            DomainEnums.ChannelTab.Latest => CoreEnums.ChannelTab.Latest,
-            DomainEnums.ChannelTab.Podcasts => CoreEnums.ChannelTab.Podcasts,
-            DomainEnums.ChannelTab.Releases => CoreEnums.ChannelTab.Releases,
+            DomainEnums.ChannelTabType.Videos => CoreEnums.ChannelTab.Videos,
+            DomainEnums.ChannelTabType.Shorts => CoreEnums.ChannelTab.Shorts,
+            DomainEnums.ChannelTabType.Streams => CoreEnums.ChannelTab.Streams,
+            DomainEnums.ChannelTabType.Playlists => CoreEnums.ChannelTab.Playlists,
+            DomainEnums.ChannelTabType.Community => CoreEnums.ChannelTab.Community,
+            DomainEnums.ChannelTabType.Channels => CoreEnums.ChannelTab.Channels,
+            DomainEnums.ChannelTabType.Latest => CoreEnums.ChannelTab.Latest,
+            DomainEnums.ChannelTabType.Podcasts => CoreEnums.ChannelTab.Podcasts,
+            DomainEnums.ChannelTabType.Releases => CoreEnums.ChannelTab.Releases,
             _ => CoreEnums.ChannelTab.Videos
         };
     }

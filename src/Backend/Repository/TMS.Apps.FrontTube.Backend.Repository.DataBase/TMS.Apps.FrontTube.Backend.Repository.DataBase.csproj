@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Common\TMS.Apps.FrontTube.Backend.Common.ProviderCore\TMS.Apps.FrontTube.Backend.Common.ProviderCore.csproj" PrivateAssets="all" />
+    <ProjectReference Include="../../Common/TMS.Apps.FrontTube.Backend.Common.DataEnums/TMS.Apps.FrontTube.Backend.Common.DataEnums.csproj" />
   </ItemGroup>
 
 </Project>

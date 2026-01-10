@@ -1,3 +1,4 @@
+using TMS.Apps.FrontTube.Backend.Common.DataEnums.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Models;
@@ -44,7 +45,7 @@ public interface IProvider : IProviderMetadata, IDisposable
     /// <returns>Response containing a page of videos with continuation token for next page or error details.</returns>
     Task<JsonWebResponse<VideosPageCommon?>> GetChannelVideosTabAsync(
         RemoteIdentityCommon channelIdentity,
-        ChannelTab tab,
+        ChannelTabType tab,
         int? page,
         string? continuationToken,
         CancellationToken cancellationToken);

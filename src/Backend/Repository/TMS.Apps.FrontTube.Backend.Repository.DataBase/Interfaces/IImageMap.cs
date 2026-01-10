@@ -1,4 +1,5 @@
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Cache;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
 
@@ -9,9 +10,9 @@ namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
     {
         int ImageId { get; set; }
 
-        ImageEntity Image { get; set; }
+        CacheImageEntity Image { get; set; }
 
         virtual static IImageMap Create(
-            ImageEntity imageEntity,
+            CacheImageEntity imageEntity,
             ICacheableEntity parentEntity) => throw new NotImplementedException();
     }

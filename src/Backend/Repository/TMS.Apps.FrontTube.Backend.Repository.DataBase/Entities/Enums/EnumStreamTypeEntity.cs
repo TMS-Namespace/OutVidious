@@ -3,9 +3,6 @@ namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Enums;
 /// <summary>
 /// Database entity for StreamType enum values.
 /// </summary>
-public class EnumStreamTypeEntity
+public class EnumStreamTypeEntity : EnumEntityBase
 {
-    public int Id { get; set; }
-
-    public required string Name { get; set; }
 }

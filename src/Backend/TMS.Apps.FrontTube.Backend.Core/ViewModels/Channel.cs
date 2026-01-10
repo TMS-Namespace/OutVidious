@@ -206,7 +206,7 @@ public sealed class Channel : ViewModelBase
     public async Task LoadInitialVideosAsync(CancellationToken cancellationToken)
     {
         var tab = SelectedTab ?? ChannelTab.Videos;
-        await LoadVideosForTabAsync(tab, isInitial: true, cancellationToken);
+        await LoadChannelVideosAsync(tab, isInitial: true, cancellationToken);
     }
 
     /// <summary>
@@ -223,7 +223,7 @@ public sealed class Channel : ViewModelBase
         Videos = [];
         _currentContinuationToken = null;
 
-        await LoadVideosForTabAsync(tab, isInitial: true, cancellationToken);
+        await LoadChannelVideosAsync(tab, isInitial: true, cancellationToken);
     }
 
     /// <summary>
@@ -236,10 +236,10 @@ public sealed class Channel : ViewModelBase
             return;
         }
 
-        await LoadVideosForTabAsync(SelectedTab.Value, isInitial: false, cancellationToken);
+        await LoadChannelVideosAsync(SelectedTab.Value, isInitial: false, cancellationToken);
     }
 
-    private async Task LoadVideosForTabAsync(ChannelTab tab, bool isInitial, CancellationToken cancellationToken)
+    private async Task LoadChannelVideosAsync(ChannelTab tab, bool isInitial, CancellationToken cancellationToken)
     {
         CancelPendingLoads();
         _loadCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -266,8 +266,7 @@ public sealed class Channel : ViewModelBase
                 identity,
                 tab.ToDomainChannelTab(),
                 _currentContinuationToken,
-                token,
-                autoSave: true);
+                token);
 
             if (page is not null)
             {

@@ -53,6 +53,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Repository", "Repository", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.FrontTube.Backend.Repository.YouTubeRSS.Tests.Integration", "tests\Backend\Repository\TMS.Apps.FrontTube.Backend.Repository.YouTubeRSS.Tests.Integration\TMS.Apps.FrontTube.Backend.Repository.YouTubeRSS.Tests.Integration.csproj", "{1430822D-62AD-486B-98D6-78D5184DDCC0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMS.Apps.FrontTube.Backend.Common.DataEnums", "src\Backend\Common\TMS.Apps.FrontTube.Backend.Common.DataEnums\TMS.Apps.FrontTube.Backend.Common.DataEnums.csproj", "{BEBB373A-6D8F-47A8-B1B8-730514A88786}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -107,6 +109,10 @@ Global
 		{1430822D-62AD-486B-98D6-78D5184DDCC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1430822D-62AD-486B-98D6-78D5184DDCC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1430822D-62AD-486B-98D6-78D5184DDCC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BEBB373A-6D8F-47A8-B1B8-730514A88786}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEBB373A-6D8F-47A8-B1B8-730514A88786}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BEBB373A-6D8F-47A8-B1B8-730514A88786}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BEBB373A-6D8F-47A8-B1B8-730514A88786}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -135,5 +141,6 @@ Global
 		{5F5D83AB-0025-4832-8AC3-8F65F6DA3C58} = {9EFB56BC-C02A-BFC8-8CAF-57F312DE9EAE}
 		{16044E71-730A-4C06-8F22-9ABFF50CBAFF} = {F37D4BA1-59FC-4FFF-B149-2DDB1A3E7E42}
 		{1430822D-62AD-486B-98D6-78D5184DDCC0} = {16044E71-730A-4C06-8F22-9ABFF50CBAFF}
+		{BEBB373A-6D8F-47A8-B1B8-730514A88786} = {FBFEC309-7942-AA5B-F164-D92B09364702}
 	EndGlobalSection
 EndGlobal

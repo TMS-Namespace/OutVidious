@@ -38,7 +38,7 @@ public sealed class CommentsTests : IntegrationTestBase
             comment.AuthorName.Should().NotBeNullOrWhiteSpace();
             comment.Content.Should().NotBeNullOrWhiteSpace();
             comment.LikeCount.Should().BeGreaterThanOrEqualTo(0);
-            comment.PublishedAt.Should().BeGreaterThan(0);
+            comment.PublishedAtUTC.Should().BeAfter(DateTime.MinValue);
         }
     }
 

@@ -7,7 +7,7 @@ namespace TMS.Apps.FrontTube.Backend.Repository.Interfaces;
 
 internal interface ICacheResult
 {
-    EntityStatus ResultType { get;  }
+    EntityCacheStatus ResultType { get;  }
     RemoteIdentityCommon Identity { get;  }
     ICacheableEntity? EntityNeutral { get;  }
     ICacheableCommon? Common { get;  }

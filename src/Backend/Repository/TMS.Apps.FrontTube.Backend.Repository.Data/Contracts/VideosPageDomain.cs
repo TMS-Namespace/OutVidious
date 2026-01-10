@@ -10,7 +10,7 @@ public sealed class VideosPageDomain
     /// <summary>
     /// Empty page for error cases or when no results are found.
     /// </summary>
-    public static VideosPageDomain Empty(RemoteIdentityDomain channelIdentity, ChannelTab tab = ChannelTab.Videos) => new()
+    public static VideosPageDomain Empty(RemoteIdentityDomain channelIdentity, ChannelTabType tab = ChannelTabType.Videos) => new()
     {
         ChannelRemoteIdentity = channelIdentity,
         Tab = tab,
@@ -26,7 +26,7 @@ public sealed class VideosPageDomain
     /// <summary>
     /// The tab this page was retrieved from.
     /// </summary>
-    public ChannelTab Tab { get; set; } = ChannelTab.Videos;
+    public ChannelTabType Tab { get; set; } = ChannelTabType.Videos;
 
     /// <summary>
     /// List of videos in this page.

@@ -1,3 +1,5 @@
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Scoped;
+
 namespace TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
 /// <summary>

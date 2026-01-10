@@ -78,20 +78,20 @@ internal static class ChannelMapper
     private static ImageMetadataCommon ToBannerThumbnailInfo(ChannelBanner dto)
     {
         // Determine quality based on width
-        var quality = dto.Width switch
-        {
-            >= 2560 => ImageQuality.MaxRes,
-            >= 1920 => ImageQuality.High,
-            >= 1280 => ImageQuality.Standard,
-            >= 640 => ImageQuality.Medium,
-            _ => ImageQuality.Default
-        };
+        // var quality = dto.Width switch
+        // {
+        //     >= 2560 => ImageQuality.MaxRes,
+        //     >= 1920 => ImageQuality.High,
+        //     >= 1280 => ImageQuality.Standard,
+        //     >= 640 => ImageQuality.Medium,
+        //     _ => ImageQuality.Default
+        // };
 
         var originalUrl = ThumbnailMapper.ExtractBannerUrl(dto.Url);
 
         return new ImageMetadataCommon
         {
-            Quality = quality,
+            //Quality = quality,
             RemoteIdentity = new RemoteIdentityCommon(
                 RemoteIdentityTypeCommon.Image,
                 originalUrl.ToString()),

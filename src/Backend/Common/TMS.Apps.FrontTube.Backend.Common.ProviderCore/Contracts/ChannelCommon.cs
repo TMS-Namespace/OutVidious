@@ -1,3 +1,4 @@
+using TMS.Apps.FrontTube.Backend.Common.DataEnums.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 
 namespace TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
@@ -39,7 +40,7 @@ public sealed record ChannelCommon : ChannelMetadataCommon
     /// <summary>
     /// Available tabs for this channel.
     /// </summary>
-    public IReadOnlyList<ChannelTab> AvailableTabs { get; init; } = [];
+    public IReadOnlyList<ChannelTabType> AvailableTabs { get; init; } = [];
 
     /// <summary>
     /// Whether the channel is verified.

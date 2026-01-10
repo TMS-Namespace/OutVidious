@@ -1,5 +1,6 @@
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Cache;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Mappers;
 
@@ -13,7 +14,7 @@ internal static class CommonToEntityMapper
     }
 
     // Video (full)
-    public static VideoEntity ToEntity(VideoCommon common, VideoEntity? targetEntity = null)
+    public static CacheVideoEntity ToEntity(VideoCommon common, CacheVideoEntity? targetEntity = null)
     {
         ArgumentNullException.ThrowIfNull(common);
 
@@ -24,7 +25,7 @@ internal static class CommonToEntityMapper
         if (targetEntity is not null)
         {
             targetEntity.Hash = hash;
-            targetEntity.AbsoluteRemoteUrl = absoluteRemoteUrl;
+            targetEntity.RemoteIdentity = absoluteRemoteUrl;
             targetEntity.Title = common.Title;
             targetEntity.Description = common.DescriptionText;
             targetEntity.DescriptionHtml = common.DescriptionHtml;
@@ -42,10 +43,10 @@ internal static class CommonToEntityMapper
             return targetEntity;
         }
 
-        return new VideoEntity
+        return new CacheVideoEntity
         {
             Hash = hash,
-            AbsoluteRemoteUrl = absoluteRemoteUrl,
+            RemoteIdentity = absoluteRemoteUrl,
             Title = common.Title,
             Description = common.DescriptionText,
             DescriptionHtml = common.DescriptionHtml,
@@ -64,7 +65,7 @@ internal static class CommonToEntityMapper
     }
 
     // Video metadata (summary)
-    public static VideoEntity ToEntity(VideoMetadataCommon common, VideoEntity? targetEntity = null)
+    public static CacheVideoEntity ToEntity(VideoMetadataCommon common, CacheVideoEntity? targetEntity = null)
     {
         ArgumentNullException.ThrowIfNull(common);
 
@@ -75,7 +76,7 @@ internal static class CommonToEntityMapper
         if (targetEntity is not null)
         {
             targetEntity.Hash = hash;
-            targetEntity.AbsoluteRemoteUrl = absoluteRemoteUrl;
+            targetEntity.RemoteIdentity = absoluteRemoteUrl;
             targetEntity.Title = common.Title;
             targetEntity.DurationSeconds = (long)common.Duration.TotalSeconds;
             targetEntity.ViewCount = common.ViewCount;
@@ -83,15 +84,14 @@ internal static class CommonToEntityMapper
             targetEntity.IsLive = common.IsLive;
             targetEntity.IsUpcoming = common.IsUpcoming;
             targetEntity.IsShort = common.IsShort;
-            targetEntity.LastSyncedAt = DateTime.UtcNow;
 
             return targetEntity;
         }
 
-        return new VideoEntity
+        return new CacheVideoEntity
         {
             Hash = hash,
-            AbsoluteRemoteUrl = absoluteRemoteUrl,
+            RemoteIdentity = absoluteRemoteUrl,
             Title = common.Title,
             DurationSeconds = (long)common.Duration.TotalSeconds,
             ViewCount = common.ViewCount,
@@ -100,12 +100,11 @@ internal static class CommonToEntityMapper
             IsUpcoming = common.IsUpcoming,
             IsShort = common.IsShort,
             CreatedAt = DateTime.UtcNow,
-            LastSyncedAt = DateTime.UtcNow
         };
     }
 
     // Channel (full)
-    public static ChannelEntity ToEntity(ChannelCommon common, ChannelEntity? targetEntity = null)
+    public static CacheChannelEntity ToEntity(ChannelCommon common, CacheChannelEntity? targetEntity = null)
     {
         ArgumentNullException.ThrowIfNull(common);
 
@@ -116,7 +115,7 @@ internal static class CommonToEntityMapper
         if (targetEntity is not null)
         {
             targetEntity.Hash = hash;
-            targetEntity.AbsoluteRemoteUrl = absoluteRemoteUrl;
+            targetEntity.RemoteIdentity = absoluteRemoteUrl;
             targetEntity.Title = common.Name;
             targetEntity.Description = common.Description;
             targetEntity.DescriptionHtml = common.DescriptionHtml;
@@ -131,10 +130,10 @@ internal static class CommonToEntityMapper
             return targetEntity;
         }
 
-        return new ChannelEntity
+        return new CacheChannelEntity
         {
             Hash = hash,
-            AbsoluteRemoteUrl = absoluteRemoteUrl,
+            RemoteIdentity = absoluteRemoteUrl,
             Title = common.Name,
             Description = common.Description,
             DescriptionHtml = common.DescriptionHtml,
@@ -150,7 +149,7 @@ internal static class CommonToEntityMapper
     }
 
     // Channel metadata
-    public static ChannelEntity ToEntity(ChannelMetadataCommon common, ChannelEntity? targetEntity = null)
+    public static CacheChannelEntity ToEntity(ChannelMetadataCommon common, CacheChannelEntity? targetEntity = null)
     {
         ArgumentNullException.ThrowIfNull(common);
 
@@ -161,25 +160,23 @@ internal static class CommonToEntityMapper
         if (targetEntity is not null)
         {
             targetEntity.Hash = hash;
-            targetEntity.AbsoluteRemoteUrl = absoluteRemoteUrl;
+            targetEntity.RemoteIdentity = absoluteRemoteUrl;
             targetEntity.Title = common.Name;
-            targetEntity.LastSyncedAt = DateTime.UtcNow;
 
             return targetEntity;
         }
 
-        return new ChannelEntity
+        return new CacheChannelEntity
         {
             Hash = hash,
-            AbsoluteRemoteUrl = absoluteRemoteUrl,
+            RemoteIdentity = absoluteRemoteUrl,
             Title = common.Name,
             CreatedAt = DateTime.UtcNow,
-            LastSyncedAt = DateTime.UtcNow
         };
     }
 
     // Image metadata
-    public static ImageEntity ToEntity(ImageMetadataCommon common, ImageEntity? targetEntity = null)
+    public static CacheImageEntity ToEntity(ImageMetadataCommon common, CacheImageEntity? targetEntity = null)
     {
         ArgumentNullException.ThrowIfNull(common);
 
@@ -190,27 +187,25 @@ internal static class CommonToEntityMapper
         if (targetEntity is not null)
         {
             targetEntity.Hash = hash;
-            targetEntity.AbsoluteRemoteUrl = absoluteRemoteUrl;
+            targetEntity.RemoteIdentity = absoluteRemoteUrl;
             targetEntity.Width = common.Width;
             targetEntity.Height = common.Height;
-            targetEntity.LastSyncedAt = DateTime.UtcNow;
 
             return targetEntity;
         }
 
-        return new ImageEntity
+        return new CacheImageEntity
         {
             Hash = hash,
-            AbsoluteRemoteUrl = absoluteRemoteUrl,
+            RemoteIdentity = absoluteRemoteUrl,
             Width = common.Width,
             Height = common.Height,
             CreatedAt = DateTime.UtcNow,
-            LastSyncedAt = null // data not downloaded yet
         };
     }
 
     // Caption metadata
-    public static CaptionEntity ToEntity(CaptionMetadataCommon common, CaptionEntity? targetEntity = null)
+    public static CacheCaptionEntity ToEntity(CaptionMetadataCommon common, CacheCaptionEntity? targetEntity = null)
     {
         ArgumentNullException.ThrowIfNull(common);
 
@@ -221,29 +216,27 @@ internal static class CommonToEntityMapper
         if (targetEntity is not null)
         {
             targetEntity.Hash = hash;
-            targetEntity.AbsoluteRemoteUrl = absoluteRemoteUrl;
+            targetEntity.RemoteIdentity = absoluteRemoteUrl;
             targetEntity.Label = common.Name;
             targetEntity.LanguageCode = common.LanguageCode;
             targetEntity.IsAutoGenerated = common.IsAutoGenerated;
-            targetEntity.LastSyncedAt = DateTime.UtcNow;
 
             return targetEntity;
         }
 
-        return new CaptionEntity
+        return new CacheCaptionEntity
         {
             Hash = hash,
-            AbsoluteRemoteUrl = absoluteRemoteUrl,
+            RemoteIdentity = absoluteRemoteUrl,
             Label = common.Name,
             LanguageCode = common.LanguageCode,
             IsAutoGenerated = common.IsAutoGenerated,
             CreatedAt = DateTime.UtcNow,
-            LastSyncedAt = null // data not dowloaded yet
         };
     }
 
     // Stream metadata (basic mapping)
-    public static StreamEntity ToEntity(StreamMetadataCommon common, StreamEntity? targetEntity = null)
+    public static CacheStreamEntity ToEntity(StreamMetadataCommon common, CacheStreamEntity? targetEntity = null)
     {
         ArgumentNullException.ThrowIfNull(common);
 
@@ -254,7 +247,7 @@ internal static class CommonToEntityMapper
         if (targetEntity is not null)
         {
             targetEntity.Hash = hash;
-            targetEntity.AbsoluteRemoteUrl = absoluteRemoteUrl;
+            targetEntity.RemoteIdentity = absoluteRemoteUrl;
             targetEntity.Bitrate = common.Bitrate;
             targetEntity.MimeType = common.MimeType;
             targetEntity.Itag = common.Itag;
@@ -275,10 +268,10 @@ internal static class CommonToEntityMapper
             return targetEntity;
         }
 
-        return new StreamEntity
+        return new CacheStreamEntity
         {
             Hash = hash,
-            AbsoluteRemoteUrl = absoluteRemoteUrl,
+            RemoteIdentity = absoluteRemoteUrl,
             Bitrate = common.Bitrate,
             MimeType = common.MimeType,
             Itag = common.Itag,

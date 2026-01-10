@@ -10,39 +10,39 @@ internal static class ChannelTabExtensions
     /// <summary>
     /// Converts a channel tab string to its corresponding domain enum value.
     /// </summary>
-    public static DomainEnums.ChannelTab ToChannelTabEnum(this string tabString)
+    public static DomainEnums.ChannelTabType ToChannelTabEnum(this string tabString)
     {
         return tabString.Trim().ToLowerInvariant() switch
         {
-            "videos" or "video" => DomainEnums.ChannelTab.Videos,
-            "shorts" or "short" => DomainEnums.ChannelTab.Shorts,
-            "streams" or "stream" or "live" => DomainEnums.ChannelTab.Streams,
-            "playlists" or "playlist" => DomainEnums.ChannelTab.Playlists,
-            "community" => DomainEnums.ChannelTab.Community,
-            "channels" or "channel" => DomainEnums.ChannelTab.Channels,
-            "latest" => DomainEnums.ChannelTab.Latest,
-            "podcasts" or "podcast" => DomainEnums.ChannelTab.Podcasts,
-            "releases" or "release" => DomainEnums.ChannelTab.Releases,
-            _ => DomainEnums.ChannelTab.Videos // Default to videos tab
+            "videos" or "video" => DomainEnums.ChannelTabType.Videos,
+            "shorts" or "short" => DomainEnums.ChannelTabType.Shorts,
+            "streams" or "stream" or "live" => DomainEnums.ChannelTabType.Streams,
+            "playlists" or "playlist" => DomainEnums.ChannelTabType.Playlists,
+            "community" => DomainEnums.ChannelTabType.Community,
+            "channels" or "channel" => DomainEnums.ChannelTabType.Channels,
+            "latest" => DomainEnums.ChannelTabType.Latest,
+            "podcasts" or "podcast" => DomainEnums.ChannelTabType.Podcasts,
+            "releases" or "release" => DomainEnums.ChannelTabType.Releases,
+            _ => DomainEnums.ChannelTabType.Videos // Default to videos tab
         };
     }
 
     /// <summary>
     /// Converts a domain ChannelTab enum to its lowercase string representation.
     /// </summary>
-    public static string ToLowerString(this DomainEnums.ChannelTab tab)
+    public static string ToLowerString(this DomainEnums.ChannelTabType tab)
     {
         return tab switch
         {
-            DomainEnums.ChannelTab.Videos => "videos",
-            DomainEnums.ChannelTab.Shorts => "shorts",
-            DomainEnums.ChannelTab.Streams => "streams",
-            DomainEnums.ChannelTab.Playlists => "playlists",
-            DomainEnums.ChannelTab.Community => "community",
-            DomainEnums.ChannelTab.Channels => "channels",
-            DomainEnums.ChannelTab.Latest => "latest",
-            DomainEnums.ChannelTab.Podcasts => "podcasts",
-            DomainEnums.ChannelTab.Releases => "releases",
+            DomainEnums.ChannelTabType.Videos => "videos",
+            DomainEnums.ChannelTabType.Shorts => "shorts",
+            DomainEnums.ChannelTabType.Streams => "streams",
+            DomainEnums.ChannelTabType.Playlists => "playlists",
+            DomainEnums.ChannelTabType.Community => "community",
+            DomainEnums.ChannelTabType.Channels => "channels",
+            DomainEnums.ChannelTabType.Latest => "latest",
+            DomainEnums.ChannelTabType.Podcasts => "podcasts",
+            DomainEnums.ChannelTabType.Releases => "releases",
             _ => "videos"
         };
     }

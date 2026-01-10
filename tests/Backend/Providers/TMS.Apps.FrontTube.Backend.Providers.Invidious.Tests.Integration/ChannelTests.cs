@@ -1,3 +1,4 @@
+using TMS.Apps.FrontTube.Backend.Common.DataEnums.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
@@ -51,7 +52,7 @@ public sealed class ChannelTests : IntegrationTestBase
         // Act
         var response = await Provider.GetChannelVideosTabAsync(
             channelIdentity,
-            ChannelTab.Videos,
+            ChannelTabType.Videos,
             page: null,
             continuationToken: null,
             cts.Token);
@@ -64,7 +65,7 @@ public sealed class ChannelTests : IntegrationTestBase
 
         var page = response.Data!;
         page.ChannelRemoteIdentity.Should().NotBeNull();
-        page.Tab.Should().Be(ChannelTab.Videos);
+        page.Tab.Should().Be(ChannelTabType.Videos);
         page.Videos.Should().NotBeEmpty();
 
         foreach (var video in page.Videos)
@@ -85,7 +86,7 @@ public sealed class ChannelTests : IntegrationTestBase
         // Act - Get first page
         var firstPageResponse = await Provider.GetChannelVideosTabAsync(
             channelIdentity,
-            ChannelTab.Videos,
+            ChannelTabType.Videos,
             page: null,
             continuationToken: null,
             cts.Token);
@@ -103,7 +104,7 @@ public sealed class ChannelTests : IntegrationTestBase
         // Act - Get second page
         var secondPageResponse = await Provider.GetChannelVideosTabAsync(
             channelIdentity,
-            ChannelTab.Videos,
+            ChannelTabType.Videos,
             page: null,
             continuationToken: continuationToken,
             cts.Token);
@@ -135,20 +136,20 @@ public sealed class ChannelTests : IntegrationTestBase
         // Act - Test Videos tab
         var videosResponse = await Provider.GetChannelVideosTabAsync(
             channelIdentity,
-            ChannelTab.Videos,
+            ChannelTabType.Videos,
             page: null,
             continuationToken: null,
             cts.Token);
 
         // Assert Videos tab works
         videosResponse.IsSuccess.Should().BeTrue();
-        videosResponse.Data!.Tab.Should().Be(ChannelTab.Videos);
+        videosResponse.Data!.Tab.Should().Be(ChannelTabType.Videos);
         videosResponse.Data.Videos.Should().NotBeEmpty();
 
         // Act - Test Shorts tab (might not exist for all channels)
         var shortsResponse = await Provider.GetChannelVideosTabAsync(
             channelIdentity,
-            ChannelTab.Shorts,
+            ChannelTabType.Shorts,
             page: null,
             continuationToken: null,
             cts.Token);
@@ -156,7 +157,7 @@ public sealed class ChannelTests : IntegrationTestBase
         // Shorts tab might not exist or be supported
         if (shortsResponse.IsSuccess && shortsResponse.Data!.Videos.Any())
         {
-            shortsResponse.Data.Tab.Should().Be(ChannelTab.Shorts);
+            shortsResponse.Data.Tab.Should().Be(ChannelTabType.Shorts);
         }
     }
 }

@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Cache;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Enums;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Scoped;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.DataBase;
 
@@ -15,21 +17,21 @@ public class DataBaseContext : DbContext
     }
 
     // Shared tables (not user-scoped)
-    public DbSet<ChannelEntity> Channels => Set<ChannelEntity>();
+    public DbSet<CacheChannelEntity> Channels => Set<CacheChannelEntity>();
 
-    public DbSet<VideoEntity> Videos => Set<VideoEntity>();
+    public DbSet<CacheVideoEntity> Videos => Set<CacheVideoEntity>();
 
-    public DbSet<ImageEntity> Images => Set<ImageEntity>();
+    public DbSet<CacheImageEntity> Images => Set<CacheImageEntity>();
 
-    public DbSet<CaptionEntity> Captions => Set<CaptionEntity>();
+    public DbSet<CacheCaptionEntity> Captions => Set<CacheCaptionEntity>();
 
-    public DbSet<ChannelAvatarMapEntity> ChannelAvatarMaps => Set<ChannelAvatarMapEntity>();
+    public DbSet<CacheChannelAvatarMapEntity> ChannelAvatarMaps => Set<CacheChannelAvatarMapEntity>();
 
-    public DbSet<ChannelBannerMapEntity> ChannelBannerMaps => Set<ChannelBannerMapEntity>();
+    public DbSet<CacheChannelBannerMapEntity> ChannelBannerMaps => Set<CacheChannelBannerMapEntity>();
 
-    public DbSet<VideoThumbnailMapEntity> VideoThumbnailMaps => Set<VideoThumbnailMapEntity>();
+    public DbSet<CacheVideoThumbnailMapEntity> VideoThumbnailMaps => Set<CacheVideoThumbnailMapEntity>();
 
-    public DbSet<StreamEntity> Streams => Set<StreamEntity>();
+    public DbSet<CacheStreamEntity> Streams => Set<CacheStreamEntity>();
 
     // User table
     public DbSet<UserEntity> Users => Set<UserEntity>();
@@ -56,8 +58,6 @@ public class DataBaseContext : DbContext
 
     public DbSet<EnumAudioCodecEntity> EnumAudioCodecs => Set<EnumAudioCodecEntity>();
 
-    public DbSet<EnumAudioQualityEntity> EnumAudioQualities => Set<EnumAudioQualityEntity>();
-
     public DbSet<EnumProjectionTypeEntity> EnumProjectionTypes => Set<EnumProjectionTypeEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -69,7 +69,6 @@ public class DataBaseContext : DbContext
         ConfigureEnumVideoContainer(modelBuilder);
         ConfigureEnumVideoCodec(modelBuilder);
         ConfigureEnumAudioCodec(modelBuilder);
-        ConfigureEnumAudioQuality(modelBuilder);
         ConfigureEnumProjectionType(modelBuilder);
 
         // Shared tables
@@ -115,9 +114,9 @@ public class DataBaseContext : DbContext
 
     private static void ConfigureChannel(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<ChannelEntity>(entity =>
+        modelBuilder.Entity<CacheChannelEntity>(entity =>
         {
-            entity.ToTable("channel");
+            entity.ToTable("cache_channel");
 
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
@@ -128,7 +127,7 @@ public class DataBaseContext : DbContext
 
             entity.Property(e => e.LastSyncedAt).HasColumnName("last_synced_at");
             entity.Property(e => e.Hash).HasColumnName("hash").IsRequired();
-            entity.Property(e => e.AbsoluteRemoteUrl).HasColumnName("absolute_remote_url").HasMaxLength(500).IsRequired();
+            entity.Property(e => e.RemoteIdentity).HasColumnName("remote_identity").HasMaxLength(500).IsRequired();
             entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(255).IsRequired();
             entity.Property(e => e.Alias).HasColumnName("alias").HasMaxLength(255);
             entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(5000);
@@ -148,9 +147,9 @@ public class DataBaseContext : DbContext
 
     private static void ConfigureVideo(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<VideoEntity>(entity =>
+        modelBuilder.Entity<CacheVideoEntity>(entity =>
         {
-            entity.ToTable("video");
+            entity.ToTable("cache_video");
 
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
@@ -161,7 +160,7 @@ public class DataBaseContext : DbContext
 
             entity.Property(e => e.LastSyncedAt).HasColumnName("last_synced_at");
             entity.Property(e => e.Hash).HasColumnName("hash").IsRequired();
-            entity.Property(e => e.AbsoluteRemoteUrl).HasColumnName("absolute_remote_url").HasMaxLength(500).IsRequired();
+            entity.Property(e => e.RemoteIdentity).HasColumnName("remote_identity").HasMaxLength(500).IsRequired();
             entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(255).IsRequired();
             entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(5000);
             entity.Property(e => e.DescriptionHtml).HasColumnName("description_html");
@@ -191,9 +190,9 @@ public class DataBaseContext : DbContext
 
     private static void ConfigureImage(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<ImageEntity>(entity =>
+        modelBuilder.Entity<CacheImageEntity>(entity =>
         {
-            entity.ToTable("image");
+            entity.ToTable("cache_image");
 
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
@@ -201,7 +200,7 @@ public class DataBaseContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.LastSyncedAt).HasColumnName("last_synced_at");
             entity.Property(e => e.Hash).HasColumnName("hash").IsRequired();
-            entity.Property(e => e.AbsoluteRemoteUrl).HasColumnName("absolute_remote_url").HasMaxLength(2000).IsRequired();
+            entity.Property(e => e.RemoteIdentity).HasColumnName("remote_identity").HasMaxLength(2000).IsRequired();
             entity.Property(e => e.Data).HasColumnName("data");
             entity.Property(e => e.Width).HasColumnName("width");
             entity.Property(e => e.Height).HasColumnName("height");
@@ -213,9 +212,9 @@ public class DataBaseContext : DbContext
 
     private static void ConfigureCaption(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<CaptionEntity>(entity =>
+        modelBuilder.Entity<CacheCaptionEntity>(entity =>
         {
-            entity.ToTable("caption");
+            entity.ToTable("cache_caption");
 
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
@@ -230,7 +229,7 @@ public class DataBaseContext : DbContext
             entity.Property(e => e.Label).HasColumnName("label").HasMaxLength(100).IsRequired();
             entity.Property(e => e.LanguageCode).HasColumnName("language_code").HasMaxLength(10).IsRequired();
             entity.Property(e => e.IsAutoGenerated).HasColumnName("is_auto_generated");
-            entity.Property(e => e.AbsoluteRemoteUrl).HasColumnName("absolute_remote_url").HasMaxLength(2000);
+            entity.Property(e => e.RemoteIdentity).HasColumnName("remote_identity").HasMaxLength(2000);
             entity.Property(e => e.Text).HasColumnName("text");
 
             entity.HasIndex(e => e.Hash);
@@ -246,9 +245,9 @@ public class DataBaseContext : DbContext
 
     private static void ConfigureChannelAvatarMap(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<ChannelAvatarMapEntity>(entity =>
+        modelBuilder.Entity<CacheChannelAvatarMapEntity>(entity =>
         {
-            entity.ToTable("channel_avatar_map");
+            entity.ToTable("cache_channel_avatar_map");
 
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
@@ -271,9 +270,9 @@ public class DataBaseContext : DbContext
 
     private static void ConfigureChannelBannerMap(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<ChannelBannerMapEntity>(entity =>
+        modelBuilder.Entity<CacheChannelBannerMapEntity>(entity =>
         {
-            entity.ToTable("channel_banner_map");
+            entity.ToTable("cache_channel_banner_map");
 
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
@@ -296,9 +295,9 @@ public class DataBaseContext : DbContext
 
     private static void ConfigureVideoThumbnailMap(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<VideoThumbnailMapEntity>(entity =>
+        modelBuilder.Entity<CacheVideoThumbnailMapEntity>(entity =>
         {
-            entity.ToTable("video_thumbnail_map");
+            entity.ToTable("cache_video_thumbnail_map");
 
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
@@ -341,7 +340,6 @@ public class DataBaseContext : DbContext
             entity.Property(e => e.ChannelId).HasColumnName("channel_id");
             entity.Property(e => e.Alias).HasColumnName("alias").HasMaxLength(255);
             entity.Property(e => e.NotificationsEnabled).HasColumnName("notifications_enabled");
-            entity.Property(e => e.NotificationSettings).HasColumnName("notification_settings");
             entity.Property(e => e.DefaultPlaybackSpeed).HasColumnName("default_playback_speed");
             entity.Property(e => e.DefaultSyncInterval).HasColumnName("default_sync_interval");
 
@@ -621,28 +619,6 @@ public class DataBaseContext : DbContext
         });
     }
 
-    private static void ConfigureEnumAudioQuality(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<EnumAudioQualityEntity>(entity =>
-        {
-            entity.ToTable("enum_audio_quality");
-
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedNever();
-            entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(50).IsRequired();
-
-            entity.HasIndex(e => e.Name).IsUnique();
-
-            // Seed data from AudioQuality enum
-            entity.HasData(
-                new EnumAudioQualityEntity { Id = 0, Name = "Unknown" },
-                new EnumAudioQualityEntity { Id = 1, Name = "Low" },
-                new EnumAudioQualityEntity { Id = 2, Name = "Medium" },
-                new EnumAudioQualityEntity { Id = 3, Name = "High" }
-            );
-        });
-    }
-
     private static void ConfigureEnumProjectionType(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<EnumProjectionTypeEntity>(entity =>
@@ -668,9 +644,9 @@ public class DataBaseContext : DbContext
 
     private static void ConfigureStream(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<StreamEntity>(entity =>
+        modelBuilder.Entity<CacheStreamEntity>(entity =>
         {
-            entity.ToTable("stream");
+            entity.ToTable("cache_stream");
 
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
@@ -682,7 +658,7 @@ public class DataBaseContext : DbContext
             entity.Property(e => e.LastSyncedAt).HasColumnName("last_synced_at");
             entity.Property(e => e.Hash).HasColumnName("hash").IsRequired();
             entity.Property(e => e.VideoId).HasColumnName("video_id");
-            entity.Property(e => e.AbsoluteRemoteUrl).HasColumnName("absolute_remote_url").HasMaxLength(2000).IsRequired();
+            entity.Property(e => e.RemoteIdentity).HasColumnName("remote_identity").HasMaxLength(2000).IsRequired();
             entity.Property(e => e.StreamTypeId).HasColumnName("stream_type_id");
             entity.Property(e => e.ContainerId).HasColumnName("container_id");
             entity.Property(e => e.VideoCodecId).HasColumnName("video_codec_id");
@@ -727,11 +703,6 @@ public class DataBaseContext : DbContext
             entity.HasOne(e => e.AudioCodec)
                 .WithMany()
                 .HasForeignKey(e => e.AudioCodecId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(e => e.AudioQuality)
-                .WithMany()
-                .HasForeignKey(e => e.AudioQualityId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.ProjectionType)

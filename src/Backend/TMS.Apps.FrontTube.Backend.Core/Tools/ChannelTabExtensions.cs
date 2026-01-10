@@ -51,20 +51,20 @@ public static class ChannelTabExtensions
     /// <summary>
     /// Converts a Core ChannelTab enum to Domain ChannelTab enum.
     /// </summary>
-    public static DomainEnums.ChannelTab ToDomainChannelTab(this CoreEnums.ChannelTab coreTab)
+    public static DomainEnums.ChannelTabType ToDomainChannelTab(this CoreEnums.ChannelTab coreTab)
     {
         return coreTab switch
         {
-            CoreEnums.ChannelTab.Videos => DomainEnums.ChannelTab.Videos,
-            CoreEnums.ChannelTab.Shorts => DomainEnums.ChannelTab.Shorts,
-            CoreEnums.ChannelTab.Streams => DomainEnums.ChannelTab.Streams,
-            CoreEnums.ChannelTab.Playlists => DomainEnums.ChannelTab.Playlists,
-            CoreEnums.ChannelTab.Community => DomainEnums.ChannelTab.Community,
-            CoreEnums.ChannelTab.Channels => DomainEnums.ChannelTab.Channels,
-            CoreEnums.ChannelTab.Latest => DomainEnums.ChannelTab.Latest,
-            CoreEnums.ChannelTab.Podcasts => DomainEnums.ChannelTab.Podcasts,
-            CoreEnums.ChannelTab.Releases => DomainEnums.ChannelTab.Releases,
-            _ => DomainEnums.ChannelTab.Videos
+            CoreEnums.ChannelTab.Videos => DomainEnums.ChannelTabType.Videos,
+            CoreEnums.ChannelTab.Shorts => DomainEnums.ChannelTabType.Shorts,
+            CoreEnums.ChannelTab.Streams => DomainEnums.ChannelTabType.Streams,
+            CoreEnums.ChannelTab.Playlists => DomainEnums.ChannelTabType.Playlists,
+            CoreEnums.ChannelTab.Community => DomainEnums.ChannelTabType.Community,
+            CoreEnums.ChannelTab.Channels => DomainEnums.ChannelTabType.Channels,
+            CoreEnums.ChannelTab.Latest => DomainEnums.ChannelTabType.Latest,
+            CoreEnums.ChannelTab.Podcasts => DomainEnums.ChannelTabType.Podcasts,
+            CoreEnums.ChannelTab.Releases => DomainEnums.ChannelTabType.Releases,
+            _ => DomainEnums.ChannelTabType.Videos
         };
     }
 }

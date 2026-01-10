@@ -8,8 +8,6 @@ using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Interfaces;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Mappers;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Tools;
-using TMS.Apps.FrontTube.Backend.Repository.DataBase;
-using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Tools;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
@@ -17,6 +15,7 @@ using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools.YouTube;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Enums;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
 using TMS.Apps.FrontTube.Backend.Repository.Tools;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Cache;
 
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data;
@@ -24,13 +23,18 @@ namespace TMS.Apps.FrontTube.Backend.Repository.Data;
 public sealed class RepositoryManager
 {
     private readonly DataBaseContextPool _pool;
+
     private readonly ILogger<RepositoryManager> _logger;
+
     private readonly ILoggerFactory _loggerFactory;
+
     private readonly Data.Contracts.Configuration.DatabaseConfig _databaseConfig;
     //private readonly Data.Contracts.Configuration.CacheConfig _cacheConfig;
     //private readonly ICacheManager _cacheManager;
     private readonly HttpClient _httpClient;
-    private readonly CacheHelper _cacheHelper;
+
+    private readonly CacheInvalidator _cacheInvalidator;
+
     private readonly IProvider _provider;
 
     private readonly DatabaseSynchronizer _dbSynchronizer;
@@ -87,22 +91,22 @@ public sealed class RepositoryManager
         _httpClient.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip, deflate, br");
 
         //_cacheManager = new Repository.Cache.CacheManager(commonCacheConfig, _pool, _provider, _httpClient, loggerFactory);
-        _cacheHelper = new CacheHelper(  IsStale, loggerFactory);
+        _cacheInvalidator = new CacheInvalidator(IsStale, loggerFactory);
 
-        _dbSynchronizer = new DatabaseSynchronizer(_pool, _cacheHelper, loggerFactory);
-        _imageDataSynchronizer = new ImageDataSynchronizer(_pool,  loggerFactory);
+        _dbSynchronizer = new DatabaseSynchronizer(_pool, _cacheInvalidator, loggerFactory);
+        _imageDataSynchronizer = new ImageDataSynchronizer(_pool, loggerFactory);
 
         _dbSyncWorker = new PeriodicBackgroundWorker(
             TimeSpan.FromSeconds(3),
             _dbSynchronizer.SynchronizeAsync,
             (ex) => _logger.LogError(ex, "Database synchronization worker encountered an error."));
-    
+
         _imageDataSyncWorker = new PeriodicBackgroundWorker(
             TimeSpan.FromSeconds(5),
             _imageDataSynchronizer.SynchronizeAsync,
             (ex) => _logger.LogError(ex, "Image data synchronization worker encountered an error."));
 
-        }
+    }
 
     public async Task InitAsync(CancellationToken initCancellationToken, CancellationToken workerCancellationToken)
     {
@@ -123,9 +127,9 @@ public sealed class RepositoryManager
     }
 
     public bool TryCreateRemoteIdentity(
-        string remoteIdentity, 
-        RemoteIdentityTypeDomain? expectedIdentityType, 
-        [NotNullWhen(true)] out RemoteIdentityDomain? identity, 
+        string remoteIdentity,
+        RemoteIdentityTypeDomain? expectedIdentityType,
+        [NotNullWhen(true)] out RemoteIdentityDomain? identity,
         out string? errorMessage)
     {
         if (expectedIdentityType is not null)
@@ -259,7 +263,7 @@ public sealed class RepositoryManager
             {
                 _logger.LogWarning("Failed to download image data, status: {StatusCode}, originalUrl: {OriginalUrl}, fetchUrl: {FetchUrl}",
                     statusCode, imageIdentity.AbsoluteRemoteUrl, providerRedirectedUrl ?? imageIdentity.AbsoluteRemoteUrl);
-                
+
                 return new ImageDomain
                 {
                     RemoteIdentity = imageIdentity,
@@ -279,13 +283,13 @@ public sealed class RepositoryManager
                 Data = data,
                 Width = width,
                 Height = height,
-                LastSyncedAt = DateTime.UtcNow                
+                LastSyncedAt = DateTime.UtcNow
             };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error in {MethodName} for identity: {@ImageIdentity}", nameof(GetImageContentsAsync), imageIdentity);
-            
+
             return new ImageDomain
             {
                 RemoteIdentity = imageIdentity,
@@ -335,8 +339,8 @@ public sealed class RepositoryManager
         await using var db = await _pool.GetContextAsync(cancellationToken);
 
         var videoEntity = await db
-            .BuildVideosQuery( true, true)
-            .SingleOrDefaultAsync( v => v.Hash == videoIdentity.Hash, cancellationToken);
+            .BuildVideosQuery(true, true)
+            .SingleOrDefaultAsync(v => v.Hash == videoIdentity.Hash, cancellationToken);
 
         if (videoEntity != null)
         {
@@ -398,7 +402,7 @@ public sealed class RepositoryManager
 
     private async Task<VideosPageDomain?> GetChannelPageFromProviderAsync(
         RemoteIdentityDomain channelIdentity,
-        ChannelTab tab,
+        ChannelTabType tab,
         string? continuationToken,
         CancellationToken cancellationToken)
     {
@@ -441,7 +445,7 @@ public sealed class RepositoryManager
 
     private async Task<VideosPageDomain?> GetChannelPageFromDataBaseAsync(
         RemoteIdentityDomain channelIdentity,
-        ChannelTab tab,
+        ChannelTabType tab,
         string? continuationToken,
         CancellationToken cancellationToken)
     {
@@ -477,7 +481,7 @@ public sealed class RepositoryManager
         bool autoSave = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(videoIdentity.AbsoluteRemoteUrl);
-        
+
         // try to get it from synchronization queue
         if (_dbSynchronizer.TryGetQueued<VideoCommon>(videoIdentity.Hash, false, out var queuedCommon))
         {
@@ -496,7 +500,7 @@ public sealed class RepositoryManager
 
                 return await GetVideoFromProviderAsync(videoIdentity, cancellationToken);
             }
-            
+
             return videoDomain;
         }
 
@@ -514,7 +518,7 @@ public sealed class RepositoryManager
         ArgumentException.ThrowIfNullOrWhiteSpace(channelIdentity.AbsoluteRemoteUrl);
 
         // try to get it from synchronization queue
-        if (_dbSynchronizer.TryGetQueued<ChannelCommon>(channelIdentity.Hash, false, out var queuedCommon))        
+        if (_dbSynchronizer.TryGetQueued<ChannelCommon>(channelIdentity.Hash, false, out var queuedCommon))
         {
             _logger.LogDebug("Channel found in synchronization queue: {@ChannelIdentity}", channelIdentity);
             return CommonDomainMapper.ToDomain((ChannelCommon)queuedCommon!);
@@ -522,7 +526,7 @@ public sealed class RepositoryManager
 
         // try to get it from DB
         var channelDomain = await GetChannelFromDataBaseAsync(channelIdentity, cancellationToken);
-        
+
         if (channelDomain != null)
         {
             if (IsStale(channelDomain))
@@ -543,17 +547,16 @@ public sealed class RepositoryManager
 
     public async Task<VideosPageDomain?> GetChannelsPageAsync(
         RemoteIdentityDomain channelIdentity,
-        ChannelTab tab,
+        ChannelTabType tab,
         string? continuationToken,
-        CancellationToken cancellationToken,
-        bool autoSave = true)
+        CancellationToken cancellationToken)
     {
         // try to get it from synchronization queue
         if (_dbSynchronizer.TryGetQueued<VideosPageCommon>(channelIdentity.Hash, true, out var queuedCommon))
         {
             _logger.LogDebug("Channel videos page found in synchronization queue: {@ChannelIdentity}, Tab: {Tab}, Continuation: {HasContinuation}",
-                channelIdentity, tab, continuationToken is not null);  
- 
+                channelIdentity, tab, continuationToken is not null);
+
             return CommonDomainMapper.ToDomain((VideosPageCommon)queuedCommon!);
         }
 
@@ -569,8 +572,8 @@ public sealed class RepositoryManager
             if (pageDomain.Videos.Any(v => IsStale(v) || IsStale(v.Channel!)))
             {
                 _logger.LogDebug("Channel videos page found in database but is stale, refetching: {@ChannelIdentity}, Tab: {Tab}, Continuation: {HasContinuation}",
-                    channelIdentity, tab, continuationToken is not null);  
-                
+                    channelIdentity, tab, continuationToken is not null);
+
                 return await GetChannelPageFromProviderAsync(
                     channelIdentity,
                     tab,
@@ -583,7 +586,7 @@ public sealed class RepositoryManager
 
         // nowhere found, fetch from provider
         _logger.LogDebug("Channel videos page not found locally, fetching from provider: {@ChannelIdentity}, Tab: {Tab}, Continuation: {HasContinuation}",
-            channelIdentity, tab, continuationToken is not null);  
+            channelIdentity, tab, continuationToken is not null);
         return await GetChannelPageFromProviderAsync(
             channelIdentity,
             tab,
@@ -601,10 +604,12 @@ public sealed class RepositoryManager
 
         var threshold = entity switch
         {
-            VideoEntity => _cacheConfig.StalenessConfigs.VideoStalenessThreshold,
-            ChannelEntity => _cacheConfig.StalenessConfigs.ChannelStalenessThreshold,
-            ImageEntity => _cacheConfig.StalenessConfigs.ImageStalenessThreshold,
-            _ => throw new InvalidOperationException("Unknown cacheable domain type.")
+            CacheVideoEntity => _cacheConfig.StalenessConfigs.VideoStalenessThreshold,
+            CacheChannelEntity => _cacheConfig.StalenessConfigs.ChannelStalenessThreshold,
+            CacheImageEntity => _cacheConfig.StalenessConfigs.ImageStalenessThreshold,
+            CacheStreamEntity => _cacheConfig.StalenessConfigs.ImageStalenessThreshold, // TODO: separate stream threshold
+            CacheCaptionEntity => _cacheConfig.StalenessConfigs.ImageStalenessThreshold, // TODO: separate caption threshold
+            _ => throw new InvalidOperationException($"Unknown cacheable domain type {entity.GetType()}.")
 
         };
 
@@ -620,10 +625,12 @@ public sealed class RepositoryManager
 
         var threshold = domain switch
         {
-            VideoEntity => _cacheConfig.StalenessConfigs.VideoStalenessThreshold,
-            ChannelEntity => _cacheConfig.StalenessConfigs.ChannelStalenessThreshold,
-            ImageEntity => _cacheConfig.StalenessConfigs.ImageStalenessThreshold,
-            _ => throw new InvalidOperationException("Unknown cacheable domain type.")
+            VideoDomain => _cacheConfig.StalenessConfigs.VideoStalenessThreshold,
+            ChannelDomain => _cacheConfig.StalenessConfigs.ChannelStalenessThreshold,
+            ImageDomain => _cacheConfig.StalenessConfigs.ImageStalenessThreshold,
+            StreamDomain => _cacheConfig.StalenessConfigs.ImageStalenessThreshold, // TODO: separate stream threshold
+            //CaptionDomain => _cacheConfig.StalenessConfigs.ImageStalenessThreshold, // TODO: separate caption threshold
+            _ => throw new InvalidOperationException($"Unknown cacheable domain type {domain.GetType()}.")
         };
 
         return DateTime.UtcNow - domain.LastSyncedAt.Value > threshold;

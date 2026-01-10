@@ -1,14 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase;
-using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Cache;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.CacheManager.Tools
 {
     internal static class DatabaseContextExtensions
     {
-        public static IQueryable<VideoEntity> BuildVideosQuery(this DataBaseContext dbContext, bool full, bool noTracking)
+        public static IQueryable<CacheVideoEntity> BuildVideosQuery(this DataBaseContext dbContext, bool full, bool noTracking)
         {
-            IQueryable<VideoEntity> query = dbContext
+            IQueryable<CacheVideoEntity> query = dbContext
             .Videos
             .Include(v => v.Channel)
                 .ThenInclude(c => c.Avatars)
@@ -32,9 +32,9 @@ namespace TMS.Apps.FrontTube.Backend.Repository.CacheManager.Tools
             return query;
         }
 
-        public static IQueryable<ChannelEntity> BuildChannelsQuery(this DataBaseContext dbContext, bool full, bool noTracking)
+        public static IQueryable<CacheChannelEntity> BuildChannelsQuery(this DataBaseContext dbContext, bool full, bool noTracking)
         {
-            IQueryable<ChannelEntity> query = dbContext
+            IQueryable<CacheChannelEntity> query = dbContext
             .Channels
             .Include(c => c.Avatars)
                 .ThenInclude(ca => ca.Image)

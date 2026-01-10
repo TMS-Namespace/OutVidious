@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using TMS.Apps.FrontTube.Backend.Common.DataEnums.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.DTOs;
@@ -35,7 +36,7 @@ internal static partial class StreamMapper
             ContentLength = TryParseLong(dto.Clen),
             AudioSampleRate = TryParseInt(dto.AudioSampleRate),
             AudioChannels = TryParseInt(dto.AudioChannels),
-            AudioQualityLevel = ParseAudioQuality(dto.AudioQuality),
+            //AudioQualityLevel = ParseAudioQuality(dto.AudioQuality),
             Projection = ParseProjectionType(dto.ProjectionType),
             MimeType = dto.Type,
             Itag = TryParseInt(dto.Itag)
@@ -57,7 +58,7 @@ internal static partial class StreamMapper
                 new Uri(dto.Url, UriKind.RelativeOrAbsolute).ToString()),
             Container = ParseContainer(dto.Container),
             VideoCodec = ParseVideoCodec(dto.Encoding),
-            AudioCodec = AudioCodec.Aac, // Combined formats typically use AAC
+            AudioCodec = AudioCodecType.Aac, // Combined formats typically use AAC
             QualityLabel = dto.QualityLabel,
             Width = width,
             Height = height,
@@ -144,7 +145,7 @@ internal static partial class StreamMapper
         return null;
     }
 
-    private static AudioCodec? ParseAudioCodec(string? encoding)
+    private static AudioCodecType? ParseAudioCodec(string? encoding)
     {
         if (string.IsNullOrWhiteSpace(encoding))
         {
@@ -155,42 +156,42 @@ internal static partial class StreamMapper
         
         if (lowerEncoding.Contains("mp4a") || lowerEncoding.Contains("aac"))
         {
-            return AudioCodec.Aac;
+            return AudioCodecType.Aac;
         }
         
         if (lowerEncoding.Contains("opus"))
         {
-            return AudioCodec.Opus;
+            return AudioCodecType.Opus;
         }
         
         if (lowerEncoding.Contains("vorbis"))
         {
-            return AudioCodec.Vorbis;
+            return AudioCodecType.Vorbis;
         }
         
         if (lowerEncoding.Contains("mp3"))
         {
-            return AudioCodec.Mp3;
+            return AudioCodecType.Mp3;
         }
 
         return null;
     }
 
-    private static AudioQuality? ParseAudioQuality(string? quality)
-    {
-        if (string.IsNullOrWhiteSpace(quality))
-        {
-            return null;
-        }
+    // private static AudioQuality? ParseAudioQuality(string? quality)
+    // {
+    //     if (string.IsNullOrWhiteSpace(quality))
+    //     {
+    //         return null;
+    //     }
 
-        return quality.ToLowerInvariant() switch
-        {
-            "audio_quality_low" or "low" => AudioQuality.Low,
-            "audio_quality_medium" or "medium" => AudioQuality.Medium,
-            "audio_quality_high" or "high" => AudioQuality.High,
-            _ => AudioQuality.Unknown
-        };
-    }
+    //     return quality.ToLowerInvariant() switch
+    //     {
+    //         "audio_quality_low" or "low" => AudioQuality.Low,
+    //         "audio_quality_medium" or "medium" => AudioQuality.Medium,
+    //         "audio_quality_high" or "high" => AudioQuality.High,
+    //         _ => AudioQuality.Unknown
+    //     };
+    // }
 
     private static ProjectionType ParseProjectionType(string? projectionType)
     {

@@ -1,3 +1,4 @@
+using TMS.Apps.FrontTube.Backend.Common.DataEnums.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 
 namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.Tools;
@@ -8,42 +9,42 @@ namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.Tools;
 internal static class EnumConversionExtensions
 {
     /// <summary>
-    /// Converts a <see cref="ChannelTab"/> enum to the corresponding API string.
+    /// Converts a <see cref="ChannelTabType"/> enum to the corresponding API string.
     /// </summary>
-    internal static string ToApiString(this ChannelTab tab)
+    internal static string ToApiString(this ChannelTabType tab)
     {
         return tab switch
         {
-            ChannelTab.Videos => ApiConstants.ChannelTabVideos,
-            ChannelTab.Shorts => ApiConstants.ChannelTabShorts,
-            ChannelTab.Streams => ApiConstants.ChannelTabStreams,
-            ChannelTab.Playlists => ApiConstants.ChannelTabPlaylists,
-            ChannelTab.Community => ApiConstants.ChannelTabCommunity,
-            ChannelTab.Channels => ApiConstants.ChannelTabChannels,
-            ChannelTab.Latest => ApiConstants.ChannelTabLatest,
-            ChannelTab.Podcasts => ApiConstants.ChannelTabPodcasts,
-            ChannelTab.Releases => ApiConstants.ChannelTabReleases,
+            ChannelTabType.Videos => ApiConstants.ChannelTabVideos,
+            ChannelTabType.Shorts => ApiConstants.ChannelTabShorts,
+            ChannelTabType.Streams => ApiConstants.ChannelTabStreams,
+            ChannelTabType.Playlists => ApiConstants.ChannelTabPlaylists,
+            ChannelTabType.Community => ApiConstants.ChannelTabCommunity,
+            ChannelTabType.Channels => ApiConstants.ChannelTabChannels,
+            ChannelTabType.Latest => ApiConstants.ChannelTabLatest,
+            ChannelTabType.Podcasts => ApiConstants.ChannelTabPodcasts,
+            ChannelTabType.Releases => ApiConstants.ChannelTabReleases,
             _ => throw new ArgumentOutOfRangeException(nameof(tab), tab, "Unknown channel tab type.")
         };
     }
 
     /// <summary>
-    /// Converts an API string to a <see cref="ChannelTab"/> enum.
+    /// Converts an API string to a <see cref="ChannelTabType"/> enum.
     /// </summary>
-    internal static ChannelTab ToChannelTabEnum(this string tabString)
+    internal static ChannelTabType ToChannelTabEnum(this string tabString)
     {
         return tabString.ToLowerInvariant().Trim() switch
         {
-            ApiConstants.ChannelTabVideos or "video" => ChannelTab.Videos,
-            ApiConstants.ChannelTabShorts or "short" => ChannelTab.Shorts,
-            ApiConstants.ChannelTabStreams or "stream" or "live" => ChannelTab.Streams,
-            ApiConstants.ChannelTabPlaylists or "playlist" => ChannelTab.Playlists,
-            ApiConstants.ChannelTabCommunity => ChannelTab.Community,
-            ApiConstants.ChannelTabChannels or "channel" => ChannelTab.Channels,
-            ApiConstants.ChannelTabLatest => ChannelTab.Latest,
-            ApiConstants.ChannelTabPodcasts or "podcast" => ChannelTab.Podcasts,
-            ApiConstants.ChannelTabReleases or "release" => ChannelTab.Releases,
-            _ => ChannelTab.Videos // Default to videos tab
+            ApiConstants.ChannelTabVideos or "video" => ChannelTabType.Videos,
+            ApiConstants.ChannelTabShorts or "short" => ChannelTabType.Shorts,
+            ApiConstants.ChannelTabStreams or "stream" or "live" => ChannelTabType.Streams,
+            ApiConstants.ChannelTabPlaylists or "playlist" => ChannelTabType.Playlists,
+            ApiConstants.ChannelTabCommunity => ChannelTabType.Community,
+            ApiConstants.ChannelTabChannels or "channel" => ChannelTabType.Channels,
+            ApiConstants.ChannelTabLatest => ChannelTabType.Latest,
+            ApiConstants.ChannelTabPodcasts or "podcast" => ChannelTabType.Podcasts,
+            ApiConstants.ChannelTabReleases or "release" => ChannelTabType.Releases,
+            _ => ChannelTabType.Videos // Default to videos tab
         };
     }
 
