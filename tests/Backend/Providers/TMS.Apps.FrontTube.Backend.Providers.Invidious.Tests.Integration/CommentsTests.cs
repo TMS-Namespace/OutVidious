@@ -35,7 +35,7 @@ public sealed class CommentsTests : IntegrationTestBase
 
         foreach (var comment in commentsPage.Comments)
         {
-            comment.Author.Should().NotBeNullOrWhiteSpace();
+            comment.AuthorName.Should().NotBeNullOrWhiteSpace();
             comment.Content.Should().NotBeNullOrWhiteSpace();
             comment.LikeCount.Should().BeGreaterThanOrEqualTo(0);
             comment.PublishedAt.Should().BeGreaterThan(0);

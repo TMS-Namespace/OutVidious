@@ -37,7 +37,7 @@ internal static class CommentsMapper
         return new CommentCommon
         {
             CommentId = dto.CommentId,
-            Author = dto.Author,
+            AuthorName = dto.Author,
             AuthorId = dto.AuthorId,
             AuthorUrl = dto.AuthorUrl,
             AuthorThumbnails = dto.AuthorThumbnails.Select(ThumbnailMapper.ToChannelThumbnailInfo).ToList(),

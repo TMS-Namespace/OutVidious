@@ -35,6 +35,8 @@
     <PackageVersion Include="Polly.Extensions" Version="8.5.0" />
     <!-- Text -->
     <PackageVersion Include="UTF.Unknown" Version="2.6.0" />
+    <!-- RSS -->
+    <PackageVersion Include="System.ServiceModel.Syndication" Version="10.0.1" />
     <!-- HTTP -->
     <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="8.0.0" />

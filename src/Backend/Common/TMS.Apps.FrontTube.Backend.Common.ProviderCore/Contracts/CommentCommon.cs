@@ -15,7 +15,7 @@ public sealed record CommentCommon : ICommonContract
     /// <summary>
     /// Author of the comment.
     /// </summary>
-    public required string Author { get; init; }
+    public required string AuthorName { get; init; }
 
     /// <summary>
     /// Author's channel ID.
