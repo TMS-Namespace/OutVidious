@@ -1,11 +1,11 @@
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Models;
+using TMS.Apps.FrontTube.Backend.Repository.Models;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 using DomainContracts = TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data.Mappers;
 
-public static class CacheDomainMapper
+internal static class CacheDomainMapper
 {
     public static DomainContracts.ChannelDomain ToDomain(CacheResult<ChannelEntity> cacheResult, DomainContracts.ChannelDomain? target = null)
     {

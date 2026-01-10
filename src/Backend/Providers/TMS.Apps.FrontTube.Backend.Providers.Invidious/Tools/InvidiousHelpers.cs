@@ -160,4 +160,14 @@ internal static class InvidiousHelpers
 
         return items;
     }
+
+    public static string ResolveAuthorChannelUrl(string authorId)
+    {
+        return $"https://www.youtube.com/channel/{authorId}";
+    }
+
+    public static string ResolveVideoUrl(string videoId)
+    {
+        return $"https://www.youtube.com/watch?v={videoId}";
+    }
 }

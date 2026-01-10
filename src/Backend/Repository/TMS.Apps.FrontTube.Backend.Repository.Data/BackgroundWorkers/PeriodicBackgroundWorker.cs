@@ -7,18 +7,21 @@ namespace TMS.Apps.FrontTube.Backend.Repository.Data.Tools;
     public class PeriodicBackgroundWorker  : IAsyncDisposable, IDisposable
     {
         private readonly TimeSpan _period;
-    private readonly Func<CancellationToken, Task> _tickAsync;
-    private readonly Action<Exception>? _onError;
+    private readonly Func<CancellationToken, Task> _tickCallBackAsync;
+    private readonly Action<Exception>? _onErrorCallBack;
 
     private CancellationTokenSource? _cts;
     private Task? _task;
     private int _started;
 
-    public PeriodicBackgroundWorker(TimeSpan period, Func<CancellationToken, Task> tickAsync, Action<Exception>? onError = null)
+    public PeriodicBackgroundWorker(
+        TimeSpan period, 
+        Func<CancellationToken, Task> tickCallBackAsync, 
+        Action<Exception>? onErrorCallBack = null)
     {
         _period = period;
-        _tickAsync = tickAsync;
-        _onError = onError;
+        _tickCallBackAsync = tickCallBackAsync;
+        _onErrorCallBack = onErrorCallBack;
     }
 
     public void Start(CancellationToken cancellationToken = default)
@@ -35,14 +38,14 @@ namespace TMS.Apps.FrontTube.Backend.Repository.Data.Tools;
             try
             {
                 while (await timer.WaitForNextTickAsync(_cts.Token).ConfigureAwait(false))
-                    await _tickAsync(_cts.Token).ConfigureAwait(false);
+                    await _tickCallBackAsync(_cts.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (_cts.Token.IsCancellationRequested)
             {
             }
             catch (Exception ex)
             {
-                _onError?.Invoke(ex);
+                _onErrorCallBack?.Invoke(ex);
                 throw;
             }
         }, _cts.Token);

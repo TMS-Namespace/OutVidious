@@ -1,11 +1,11 @@
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Enums;
+using TMS.Apps.FrontTube.Backend.Repository.Enums;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
 
-namespace TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
+namespace TMS.Apps.FrontTube.Backend.Repository.Interfaces;
 
-public interface ICacheResult
+internal interface ICacheResult
 {
     EntityStatus ResultType { get;  }
     RemoteIdentityCommon Identity { get;  }

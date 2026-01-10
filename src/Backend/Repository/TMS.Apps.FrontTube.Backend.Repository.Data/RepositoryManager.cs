@@ -4,8 +4,6 @@ using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious;
-using TMS.Apps.FrontTube.Backend.Repository.Cache;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Interfaces;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Mappers;
@@ -17,6 +15,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools.YouTube;
 using TMS.Apps.FrontTube.Backend.Repository.Data.Enums;
+using TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.Tools;
 
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data;
@@ -27,8 +27,8 @@ public sealed class RepositoryManager
     private readonly ILogger<RepositoryManager> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly Data.Contracts.Configuration.DatabaseConfig _databaseConfig;
-    private readonly Data.Contracts.Configuration.CacheConfig _cacheConfig;
-    private readonly ICacheManager _cacheManager;
+    //private readonly Data.Contracts.Configuration.CacheConfig _cacheConfig;
+    //private readonly ICacheManager _cacheManager;
     private readonly HttpClient _httpClient;
     private readonly CacheHelper _cacheHelper;
     private readonly IProvider _provider;
@@ -40,6 +40,8 @@ public sealed class RepositoryManager
     private PeriodicBackgroundWorker _dbSyncWorker;
 
     private PeriodicBackgroundWorker _imageDataSyncWorker;
+
+    private readonly Data.Contracts.Configuration.CacheConfig _cacheConfig;
 
     public RepositoryManager(
         Data.Contracts.Configuration.DatabaseConfig databaseConfig,
@@ -84,22 +86,21 @@ public sealed class RepositoryManager
         _httpClient.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
         _httpClient.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip, deflate, br");
 
-        _cacheManager = new Repository.Cache.CacheManager(commonCacheConfig, _pool, _provider, _httpClient, loggerFactory);
-        _cacheHelper = new CacheHelper(_pool, _cacheManager, loggerFactory);
+        //_cacheManager = new Repository.Cache.CacheManager(commonCacheConfig, _pool, _provider, _httpClient, loggerFactory);
+        _cacheHelper = new CacheHelper(  IsStale, loggerFactory);
 
-        _dbSynchronizer = new DatabaseSynchronizer(_pool, _cacheManager, loggerFactory);
-        _imageDataSynchronizer = new ImageDataSynchronizer(_pool, _cacheManager, loggerFactory);
+        _dbSynchronizer = new DatabaseSynchronizer(_pool, _cacheHelper, loggerFactory);
+        _imageDataSynchronizer = new ImageDataSynchronizer(_pool,  loggerFactory);
 
         _dbSyncWorker = new PeriodicBackgroundWorker(
             TimeSpan.FromSeconds(3),
-            async (cancellationToken) => await _dbSynchronizer.SynchronizeAsync(cancellationToken),
+            _dbSynchronizer.SynchronizeAsync,
             (ex) => _logger.LogError(ex, "Database synchronization worker encountered an error."));
     
         _imageDataSyncWorker = new PeriodicBackgroundWorker(
             TimeSpan.FromSeconds(5),
-            async (cancellationToken) => await _imageDataSynchronizer.SynchronizeAsync(cancellationToken),
+            _imageDataSynchronizer.SynchronizeAsync,
             (ex) => _logger.LogError(ex, "Image data synchronization worker encountered an error."));
-
 
         }
 
@@ -121,7 +122,11 @@ public sealed class RepositoryManager
 
     }
 
-    public bool TryCreateRemoteIdentity(string remoteIdentity, RemoteIdentityTypeDomain? expectedIdentityType, [NotNullWhen(true)] out RemoteIdentityDomain? identity, out string? errorMessage)
+    public bool TryCreateRemoteIdentity(
+        string remoteIdentity, 
+        RemoteIdentityTypeDomain? expectedIdentityType, 
+        [NotNullWhen(true)] out RemoteIdentityDomain? identity, 
+        out string? errorMessage)
     {
         if (expectedIdentityType is not null)
         {
@@ -133,6 +138,7 @@ public sealed class RepositoryManager
                 Hash = HashHelper.ComputeHash(remoteIdentity),
                 RemoteId = null
             };
+
             errorMessage = null;
             return true;
         }
@@ -178,8 +184,6 @@ public sealed class RepositoryManager
             identity = null;
             return false;
         }
-
-        var hash = HashHelper.ComputeHash(canonicalUrl.ToString());
 
         var remoteId = parts.PrimaryRemoteId;
         if (string.IsNullOrWhiteSpace(remoteId))
@@ -281,6 +285,7 @@ public sealed class RepositoryManager
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error in {MethodName} for identity: {@ImageIdentity}", nameof(GetImageContentsAsync), imageIdentity);
+            
             return new ImageDomain
             {
                 RemoteIdentity = imageIdentity,
@@ -289,24 +294,6 @@ public sealed class RepositoryManager
                 FetchingError = $"Unexpected error: {ex.Message}"
             };
         }
-    }
-
-    private bool IsStale(ICacheableDomain domain)
-    {
-        if (domain.LastSyncedAt is null)
-        {
-            return true;
-        }
-
-        var threshold = domain switch
-        {
-            VideoEntity => _cacheConfig.StalenessConfigs.VideoStalenessThreshold,
-            ChannelEntity => _cacheConfig.StalenessConfigs.ChannelStalenessThreshold,
-            ImageEntity => _cacheConfig.StalenessConfigs.ImageStalenessThreshold,
-            _ => _cacheConfig.StalenessConfigs.VideoStalenessThreshold
-        };
-
-        return DateTime.UtcNow - domain.LastSyncedAt.Value > threshold;
     }
 
     private async Task<VideoDomain?> GetVideoFromProviderAsync(
@@ -603,5 +590,42 @@ public sealed class RepositoryManager
             continuationToken,
             cancellationToken);
 
+    }
+
+    private bool IsStale(ICacheableEntity entity)
+    {
+        if (entity.LastSyncedAt is null)
+        {
+            return true;
+        }
+
+        var threshold = entity switch
+        {
+            VideoEntity => _cacheConfig.StalenessConfigs.VideoStalenessThreshold,
+            ChannelEntity => _cacheConfig.StalenessConfigs.ChannelStalenessThreshold,
+            ImageEntity => _cacheConfig.StalenessConfigs.ImageStalenessThreshold,
+            _ => throw new InvalidOperationException("Unknown cacheable domain type.")
+
+        };
+
+        return DateTime.UtcNow - entity.LastSyncedAt.Value > threshold;
+    }
+
+    private bool IsStale(ICacheableDomain domain)
+    {
+        if (domain.LastSyncedAt is null)
+        {
+            return true;
+        }
+
+        var threshold = domain switch
+        {
+            VideoEntity => _cacheConfig.StalenessConfigs.VideoStalenessThreshold,
+            ChannelEntity => _cacheConfig.StalenessConfigs.ChannelStalenessThreshold,
+            ImageEntity => _cacheConfig.StalenessConfigs.ImageStalenessThreshold,
+            _ => throw new InvalidOperationException("Unknown cacheable domain type.")
+        };
+
+        return DateTime.UtcNow - domain.LastSyncedAt.Value > threshold;
     }
 }

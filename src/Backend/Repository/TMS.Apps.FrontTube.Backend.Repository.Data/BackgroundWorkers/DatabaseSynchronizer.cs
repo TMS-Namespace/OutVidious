@@ -2,21 +2,20 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
-using TMS.Apps.FrontTube.Backend.Repository.Cache;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Models;
+using TMS.Apps.FrontTube.Backend.Repository.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.Models;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data.Tools;
 
-public class DatabaseSynchronizer
+internal class DatabaseSynchronizer
 {
     private readonly DataBaseContextPool _pool;
 
     private readonly ILogger<DatabaseSynchronizer> _logger;
 
-    private readonly ICacheManager _cacheManager;
+    private readonly CacheHelper _cacheManager;
 
     private readonly CacheHelper _cacheHelper;
 
@@ -26,13 +25,13 @@ public class DatabaseSynchronizer
 
     public DatabaseSynchronizer(
         DataBaseContextPool pool,
-        ICacheManager cacheManager,
+        CacheHelper cacheHelper,
         ILoggerFactory loggerFactory)
     {
         _pool = pool;
-        _cacheManager = cacheManager;
+        _cacheHelper = cacheHelper;
         _logger = loggerFactory.CreateLogger<DatabaseSynchronizer>();
-        _cacheHelper = new CacheHelper(_pool, _cacheManager, loggerFactory);
+        //_cacheHelper = new CacheHelper(_pool, _cacheManager, loggerFactory);
 
     }
 

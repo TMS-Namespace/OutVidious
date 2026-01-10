@@ -1,32 +1,29 @@
 using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Enums;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Models;
+using TMS.Apps.FrontTube.Backend.Repository.Enums;
+using TMS.Apps.FrontTube.Backend.Repository.Models;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
+using TMS.Apps.FrontTube.Backend.Repository.Mappers;
+using TMS.Apps.FrontTube.Backend.Repository.CacheManager.Tools;
+using TMS.Apps.FrontTube.Backend.Repository.Tools;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data.Tools;
 
-public class CacheHelper
+internal class CacheHelper
 {
-    private readonly DataBaseContextPool _pool;
     private readonly ILogger<CacheHelper> _logger;
 
-    private readonly ICacheManager _cacheManager;
-
-    private readonly ThreadSafeContainer<(IEntity Entity, EntityStatus Status)> _entitiesContainer = new();
+    private readonly Func<ICacheableEntity, bool> _isStaleFunc;
 
     public CacheHelper(
-        DataBaseContextPool pool,
-        ICacheManager cacheManager,
+        Func<ICacheableEntity, bool> isStaleCallBack,
         ILoggerFactory loggerFactory)
     {
-        _pool = pool;
-        _cacheManager = cacheManager;
+        _isStaleFunc = isStaleCallBack;
         _logger = loggerFactory.CreateLogger<CacheHelper>();
     }
 
@@ -146,7 +143,7 @@ public class CacheHelper
         Action<CacheResult<T>>? parentSetter)
         where T : class, ICacheableEntity
     {
-        var cacheResults = await _cacheManager.GetLocallyAsync<T>(
+        var cacheResults = await GetLocallyAsync<T>(
             commons,
             dataBaseContext,
             cancellationToken);
@@ -197,7 +194,7 @@ public class CacheHelper
             cancellationToken.ThrowIfCancellationRequested();
         }
 
-        _entitiesContainer.AddRange(videoImagesMaps.Select(m => (Entity: (IEntity)m, Status: EntityStatus.New)).ToList());
+        //_entitiesContainer.AddRange(videoImagesMaps.Select(m => (Entity: (IEntity)m, Status: EntityStatus.New)).ToList());
 
         return videoImagesMaps;
     }
@@ -304,6 +301,251 @@ public class CacheHelper
         }
 
         _logger.LogDebug("========= Duplicate Check passed: {Caption} =======", caption);
+    }
+
+    private (
+        List<(RemoteIdentityCommon Identity, ICacheableEntity Entity, ICacheableCommon Common)> UpdatedEntitiesWithCommonAndIdentity,
+        List<(RemoteIdentityCommon Identity, ICacheableEntity Entity, ICacheableCommon Common)> CreatedEntitiesWithCommonAndIdentity)
+    MapCommonToEntities(
+        IReadOnlyList<(RemoteIdentityCommon Identity, ICacheableCommon Common)> commonsWithIdentity,
+        IReadOnlyList<ICacheableEntity> existingEntities)
+    {
+        var updatedEntities = new List<(RemoteIdentityCommon Identity, ICacheableEntity Entity, ICacheableCommon Common)>();
+        var createdEntities = new List<(RemoteIdentityCommon Identity, ICacheableEntity Entity, ICacheableCommon Common)>();
+        ICacheableEntity? result = null;
+
+        for (int i = 0; i < commonsWithIdentity.Count; i++)
+        {
+            var commonWithIdentity = commonsWithIdentity[i];
+            var existingEntity = existingEntities.SingleOrDefault(fe => fe.Hash == commonWithIdentity.Identity.Hash);
+
+            switch (commonWithIdentity.Common)
+            {
+                case VideoCommon common:
+                    result = CommonToEntityMapper.ToEntity(common, (VideoEntity?)existingEntity);
+                    break;
+                case VideoMetadataCommon common:
+                    result = CommonToEntityMapper.ToEntity(common, (VideoEntity?)existingEntity);
+                    break;
+                case ChannelCommon common:
+                    result = CommonToEntityMapper.ToEntity(common, (ChannelEntity?)existingEntity);
+                    break;
+                case ChannelMetadataCommon common:
+                    result = CommonToEntityMapper.ToEntity(common, (ChannelEntity?)existingEntity);
+                    break;
+                case ImageMetadataCommon common:
+                    result = CommonToEntityMapper.ToEntity(common, (ImageEntity?)existingEntity);
+                    break;
+                case CaptionMetadataCommon common:
+                    result = CommonToEntityMapper.ToEntity(common, (CaptionEntity?)existingEntity);
+                    break;
+                case StreamMetadataCommon common:
+                    result = CommonToEntityMapper.ToEntity(common, (StreamEntity?)existingEntity);
+                    break;
+                // Add cases for other entity types as needed
+                default:
+                    throw new NotSupportedException($"Entity type {commonWithIdentity.Common.GetType().Name} is not supported common to entity mapping.");
+            }
+
+            if (existingEntity is not null)
+            {
+                updatedEntities.Add((commonWithIdentity.Identity, result, commonWithIdentity.Common));
+            }
+            else
+            {
+                createdEntities.Add((commonWithIdentity.Identity, result, commonWithIdentity.Common));
+                //_entityCache.AddOrUpdate(result.Hash, result);
+            }
+        }
+
+        _logger.LogDebug("Updated {Count} entities from common.", updatedEntities.Count);
+        _logger.LogDebug("Created {Count} new entities from common.", createdEntities.Count);
+
+        return (UpdatedEntitiesWithCommonAndIdentity: updatedEntities, CreatedEntitiesWithCommonAndIdentity: createdEntities);
+    }
+
+    private async Task<List<T>> FetchFromDataBaseAsync<T>(
+        IReadOnlyList<RemoteIdentityCommon> identities,
+        DataBaseContext dbContext,
+        CancellationToken cancellationToken)
+        where T : class, ICacheableEntity
+    {
+        var hashes = identities.Select(id => id.Hash).ToList();
+
+        if (typeof(T) == typeof(VideoEntity))
+        {
+            var entities = await dbContext
+                .BuildVideosQuery(full: false, noTracking: false)
+                .Where(v => hashes.Contains(v.Hash)) // TODO: add watching history?
+                .ToListAsync(cancellationToken);
+
+            return entities.Cast<T>().ToList();
+        }
+
+        if (typeof(T) == typeof(ChannelEntity))
+        {
+            var entities = await dbContext
+                .BuildChannelsQuery(full: false, noTracking: false)
+                .Where(c => hashes.Contains(c.Hash)) // TODO: add videos?
+                .ToListAsync(cancellationToken);
+
+            return entities.Cast<T>().ToList();
+        }
+
+        if (typeof(T) == typeof(ImageEntity))
+        {
+            var entities = await dbContext.Images
+                .Where(i => hashes.Contains(i.Hash))
+                .ToListAsync(cancellationToken);
+
+            return entities.Cast<T>().ToList();
+        }
+
+        if (typeof(T) == typeof(CaptionEntity))
+        {
+            var entities = await dbContext.Captions
+                .Where(i => hashes.Contains(i.Hash))
+                .ToListAsync(cancellationToken);
+
+            return entities.Cast<T>().ToList();
+        }
+
+        if (typeof(T) == typeof(StreamEntity))
+        {
+            var entities = await dbContext.Streams
+                .Where(i => hashes.Contains(i.Hash))
+                .ToListAsync(cancellationToken);
+
+            return entities.Cast<T>().ToList();
+        }
+
+        throw new NotSupportedException($"Entity type {typeof(T).Name} is not supported.");
+    }
+
+    /// <summary>
+    /// Fetches entities from local database/cache and splits them into fresh, stale, and not saved. Does not modify DB.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="identities"></param>
+    /// <param name="dbContext"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    private async Task<(
+        List<T> FreshEntities,
+        List<T> StaleEntities,
+        List<RemoteIdentityCommon> NotSavedIdentities)>
+        GetLocallyAsync<T>(
+        IReadOnlyList<RemoteIdentityCommon> identities,
+        DataBaseContext dbContext,
+        CancellationToken cancellationToken)
+        where T : class, ICacheableEntity
+    {
+        var entities = await FetchFromDataBaseAsync<T>(identities, dbContext, cancellationToken);
+
+        var notSavedHashes = identities
+            .Select(id => id.Hash)
+            .Where(h => !entities.Any(e => e.Hash == h))
+            .ToList();
+
+        var staleEntities = entities
+            .Where(e =>  _isStaleFunc(e))
+            .ToList();
+
+        var freshEntities = entities
+            .Except(staleEntities)
+            .ToList();
+
+        var NotSavedIdentities = identities
+            .Where(id => notSavedHashes.Contains(id.Hash))
+            .ToList();
+
+        return (
+            FreshEntities: freshEntities.Cast<T>().ToList(),
+            StaleEntities: staleEntities.Cast<T>().ToList(),
+            NotSavedIdentities: NotSavedIdentities);
+    }
+
+    // /// <summary>
+    // /// Used to sync Db with a list of commons that fetched externally, and return the corresponding entities.
+    // /// </summary>
+    // /// <typeparam name="T"></typeparam>
+    // /// <param name="commons"></param>
+    // /// <param name="cancellationToken"></param>
+    // /// <returns></returns>
+    // private async Task<CacheResult<T>>
+    //     GetLocallyAsync<T>(
+    //     ICacheableCommon common,
+    //     DataBaseContext dataBaseContext,
+    //     CancellationToken cancellationToken)
+    //     where T : class, ICacheableEntity
+    // {
+    //     var results = await GetLocallyAsync<T>([common], dataBaseContext, cancellationToken);
+    //     return results.Single();
+    // }
+
+    /// <summary>
+    /// Used to sync Db with a list of commons that fetched externally, and return the corresponding entities.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="commons"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    private async Task<List<CacheResult<T>>>
+        GetLocallyAsync<T>(
+        IReadOnlyList<ICacheableCommon> commons,
+        DataBaseContext dataBaseContext,
+        CancellationToken cancellationToken)
+        where T : class, ICacheableEntity
+    {
+        var commonsWithIdentities = commons
+            .Select(c => (Identity: c.ToIdentity(), Common: c))
+            .ToList();
+
+        var identities = commonsWithIdentities
+            .Select(ci => ci.Identity)
+            .ToList();
+
+        var (freshEntities, staleEntities, notSavedIdentities) = await GetLocallyAsync<T>(identities, dataBaseContext, cancellationToken);
+
+        // isolate commons that has stale entities, or are not saved
+        var staleOrNotSavedCommonsWithIdentities = commonsWithIdentities
+            .Where(ci => staleEntities.Any(se => se.Hash == ci.Identity.Hash) || notSavedIdentities.Any(nsi => nsi.Hash == ci.Identity.Hash))
+            .ToList();
+
+        // update stale entities
+        var (updatedEntitiesWithCommonAndIdentity, createdEntitiesWithCommonAndIdentity) = MapCommonToEntities(staleOrNotSavedCommonsWithIdentities, staleEntities);
+
+        // construct results
+        var results = new List<CacheResult<T>>();
+
+        // add fresh entities
+        results.AddRange(freshEntities.Select(fe => new CacheResult<T>
+        (
+            Repository.Enums.EntityStatus.Existed,
+            identities.Single(id => id.Hash == fe.Hash),
+            fe,
+            commonsWithIdentities.SingleOrDefault(ci => ci.Identity.Hash == fe.Hash).Common,
+            null)));
+
+        // add updated entities
+        results.AddRange(updatedEntitiesWithCommonAndIdentity.Select(ue => new CacheResult<T>
+        (
+            Repository.Enums.EntityStatus.Updated,
+            ue.Identity,
+            (T)ue.Entity,
+            ue.Common,
+            null)));
+
+        // add created entities
+        results.AddRange(createdEntitiesWithCommonAndIdentity.Select(ce => new CacheResult<T>
+        (
+            Repository.Enums.EntityStatus.New,
+            ce.Identity,
+            (T)ce.Entity,
+            ce.Common,
+            null)));
+
+        return results;
     }
 
 }

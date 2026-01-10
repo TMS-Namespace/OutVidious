@@ -10,7 +10,10 @@ public sealed record CommentsPageCommon : ICommonContract
     /// <summary>
     /// The video ID these comments belong to.
     /// </summary>
+    [Obsolete("Use VideoIdentity instead.")]
     public required string VideoId { get; init; }
+
+    public required RemoteIdentityCommon VideoIdentity { get; init; }
 
     /// <summary>
     /// List of comments in this page.
@@ -24,11 +27,6 @@ public sealed record CommentsPageCommon : ICommonContract
     public string? ContinuationToken { get; init; }
 
     /// <summary>
-    /// Whether there are more comments to load.
-    /// </summary>
-    public bool HasMore => !string.IsNullOrEmpty(ContinuationToken);
-
-    /// <summary>
     /// Total number of comments (if known).
     /// </summary>
     public int? TotalCommentCount { get; init; }
@@ -36,5 +34,6 @@ public sealed record CommentsPageCommon : ICommonContract
     /// <summary>
     /// The source of the comments (e.g., "youtube", "reddit").
     /// </summary>
+    [Obsolete]
     public string Source { get; init; } = "youtube";
 }

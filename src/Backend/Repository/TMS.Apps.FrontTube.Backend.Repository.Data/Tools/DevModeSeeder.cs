@@ -3,12 +3,12 @@ using Microsoft.Extensions.Logging;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
-namespace TMS.Apps.FrontTube.Backend.Repository.Cache;
+namespace TMS.Apps.FrontTube.Backend.Repository.Tools;
 
 /// <summary>
 /// Seeds development data when IsDevMode is enabled.
 /// </summary>
-public sealed class DevModeSeeder
+internal sealed class DevModeSeeder
 {
     /// <summary>
     /// The ID of the development user.

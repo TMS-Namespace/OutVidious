@@ -6,7 +6,7 @@ using DomainContracts = TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data.Mappers;
 
-public static class EntityDomainMapper
+internal static class EntityDomainMapper
 {
     public static DomainContracts.ChannelDomain ToDomain(ChannelEntity entity, DomainContracts.ChannelDomain? target = null)
     {

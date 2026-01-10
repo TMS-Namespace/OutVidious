@@ -7,7 +7,6 @@ using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Models;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Tools.YouTube;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.DTOs;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.Mappers;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.Tools;
@@ -247,6 +246,9 @@ public sealed class InvidiousVideoProvider : ProviderBase
             return response.MapOrNull<CommentsPageCommon>(_ => new CommentsPageCommon
             {
                 VideoId = videoId,
+                VideoIdentity = new RemoteIdentityCommon(
+                    RemoteIdentityTypeCommon.Video,
+                    InvidiousHelpers.ResolveVideoUrl(videoId)),
                 Comments = [],
                 ContinuationToken = null
             });

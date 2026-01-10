@@ -1,9 +1,9 @@
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
-namespace TMS.Apps.FrontTube.Backend.Repository.Cache.Mappers;
+namespace TMS.Apps.FrontTube.Backend.Repository.Mappers;
 
-public static class CommonToEntityMapper
+internal static class CommonToEntityMapper
 {
     private static string? JoinKeywords(IEnumerable<string>? keywords)
     {

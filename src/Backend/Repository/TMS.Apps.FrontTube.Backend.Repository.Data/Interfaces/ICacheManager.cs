@@ -1,17 +1,17 @@
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Models;
+using TMS.Apps.FrontTube.Backend.Repository.Models;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
 
-namespace TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
+namespace TMS.Apps.FrontTube.Backend.Repository.Interfaces;
 
 /// <summary>
 /// Repository interface for managing cached entities.
 /// Implements a multi-tier caching strategy: Second level caching → Database → Provider.
 /// All lookups are performed using hash keys computed from absolute remote URLs.
 /// </summary>
-public interface ICacheManager : IDisposable
+internal interface ICacheManager : IDisposable
 {
     IProvider Provider { get; set; }
     //Task<CacheResult<T>> GetGloballyAsync<T>(CacheableIdentity identity, CancellationToken cancellationToken, bool autoSave = true) where T : class, ICacheableEntity;

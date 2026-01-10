@@ -1,21 +1,21 @@
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using TMS.Apps.FrontTube.Backend.Repository.Cache.Interfaces;
+using TMS.Apps.FrontTube.Backend.Repository.Interfaces;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data.Tools;
 
-public class ImageDataSynchronizer
+internal class ImageDataSynchronizer
 {
     private readonly DataBaseContextPool _pool;
 
     private readonly ILogger<ImageDataSynchronizer> _logger;
 
-    private readonly ICacheManager _cacheManager;
+    //private readonly ICacheManager _cacheManager;
 
-    private readonly CacheHelper _cacheHelper;
+    //private readonly CacheHelper _cacheHelper;
 
     private ConcurrentDictionary<long, (byte[] Data, int Width, int Height, DateTime SyncedAt)> _imagesToSync = new();
 
@@ -25,13 +25,13 @@ public class ImageDataSynchronizer
 
     public ImageDataSynchronizer(
         DataBaseContextPool pool,
-        ICacheManager cacheManager,
+        //CacheHelper cacheHelper,
         ILoggerFactory loggerFactory)
     {
         _pool = pool;
-        _cacheManager = cacheManager;
+        //_cacheManager = cacheManager;
         _logger = loggerFactory.CreateLogger<ImageDataSynchronizer>();
-        _cacheHelper = new CacheHelper(_pool, _cacheManager, loggerFactory);
+        //_cacheHelper = cacheHelper;
 
     }
 

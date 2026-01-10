@@ -10,7 +10,7 @@ public sealed record CommentCommon : ICommonContract
     /// <summary>
     /// Comment ID.
     /// </summary>
-    public required string CommentId { get; init; }
+    public required string RemoteCommentId { get; init; }
 
     /// <summary>
     /// Author of the comment.
@@ -20,17 +20,21 @@ public sealed record CommentCommon : ICommonContract
     /// <summary>
     /// Author's channel ID.
     /// </summary>
+    [Obsolete("Use AuthorChannelIdentity instead.")]
     public required string AuthorId { get; init; }
 
     /// <summary>
     /// Author's channel URL.
     /// </summary>
+    [Obsolete("Use AuthorChannelIdentity instead.")]
     public string? AuthorUrl { get; init; }
+
+    public required RemoteIdentityCommon AuthorChannelIdentity { get; init; }
 
     /// <summary>
     /// Author's thumbnail images.
     /// </summary>
-    public IReadOnlyList<ImageMetadataCommon> AuthorThumbnails { get; init; } = [];
+    public IReadOnlyList<ImageMetadataCommon> Avatars { get; init; } = [];
 
     /// <summary>
     /// Whether the author is verified.

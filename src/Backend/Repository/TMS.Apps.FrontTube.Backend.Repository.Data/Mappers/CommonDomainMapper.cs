@@ -9,7 +9,7 @@ using DomainEnums = TMS.Apps.FrontTube.Backend.Repository.Data.Enums;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data.Mappers;
 
-public static class CommonDomainMapper
+internal static class CommonDomainMapper
 {
     private static string? JoinKeywords(IEnumerable<string>? keywords)
     {

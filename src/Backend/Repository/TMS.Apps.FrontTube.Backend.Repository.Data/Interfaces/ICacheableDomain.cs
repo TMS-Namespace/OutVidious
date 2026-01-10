@@ -2,7 +2,7 @@ using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data.Interfaces;
 
-public interface ICacheableDomain
+internal interface ICacheableDomain
 {
     RemoteIdentityDomain RemoteIdentity { get; }
 

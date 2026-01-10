@@ -1,14 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.CacheManager.Tools
 {
-    public static class DatabaseContextExtensions
+    internal static class DatabaseContextExtensions
     {
         public static IQueryable<VideoEntity> BuildVideosQuery(this DataBaseContext dbContext, bool full, bool noTracking)
         {

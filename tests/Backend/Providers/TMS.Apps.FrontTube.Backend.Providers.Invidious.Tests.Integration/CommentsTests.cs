@@ -77,8 +77,8 @@ public sealed class CommentsTests : IntegrationTestBase
         secondPageResponse.IsSuccess.Should().BeTrue();
         var secondPage = secondPageResponse.Data!;
         secondPage.Comments.Should().NotBeEmpty();
-        var firstIds = firstPage.Comments.Select(c => c.CommentId).ToHashSet();
-        var secondIds = secondPage.Comments.Select(c => c.CommentId).ToHashSet();
+        var firstIds = firstPage.Comments.Select(c => c.RemoteCommentId).ToHashSet();
+        var secondIds = secondPage.Comments.Select(c => c.RemoteCommentId).ToHashSet();
         firstIds.Should().NotIntersectWith(secondIds, "Second page should contain different comments than first page");
     }
 

@@ -38,5 +38,7 @@ public enum RemoteIdentityTypeCommon
     /// <summary>
     /// A mix resource (auto-generated playlist).
     /// </summary>
-    Mix
+    Mix,
+
+    Comment,
 }

@@ -1,6 +1,7 @@
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Contracts;
 using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Enums;
 using TMS.Apps.FrontTube.Backend.Providers.Invidious.DTOs;
+using TMS.Apps.FrontTube.Backend.Providers.Invidious.Tools;
 
 namespace TMS.Apps.FrontTube.Backend.Providers.Invidious.Mappers;
 
@@ -23,7 +24,10 @@ internal static class CommentsMapper
             Comments = dto.Comments.Select(ToComment).ToList(),
             ContinuationToken = dto.Continuation,
             TotalCommentCount = dto.CommentCount,
-            Source = "youtube"
+            Source = "youtube",
+            VideoIdentity = new RemoteIdentityCommon(
+                RemoteIdentityTypeCommon.Video,
+                InvidiousHelpers.ResolveVideoUrl(videoId))
         };
     }
 
@@ -36,11 +40,14 @@ internal static class CommentsMapper
 
         return new CommentCommon
         {
-            CommentId = dto.CommentId,
+            RemoteCommentId = dto.CommentId,
             AuthorName = dto.Author,
             AuthorId = dto.AuthorId,
             AuthorUrl = dto.AuthorUrl,
-            AuthorThumbnails = dto.AuthorThumbnails.Select(ThumbnailMapper.ToChannelThumbnailInfo).ToList(),
+            AuthorChannelIdentity = new RemoteIdentityCommon(
+                RemoteIdentityTypeCommon.Channel,
+                InvidiousHelpers.ResolveAuthorChannelUrl(dto.AuthorId)),
+            Avatars = dto.AuthorThumbnails.Select(ThumbnailMapper.ToChannelThumbnailInfo).ToList(),
             IsAuthorVerified = dto.AuthorIsChannelOwner,
             IsVideoAuthor = dto.AuthorIsChannelOwner,
             IsCreatorHearted = dto.CreatorHeart is not null,

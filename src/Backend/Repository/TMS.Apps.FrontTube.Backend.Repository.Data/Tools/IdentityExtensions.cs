@@ -4,9 +4,9 @@ using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Interfaces;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase.Interfaces;
 
-namespace TMS.Apps.FrontTube.Backend.Repository.Cache.Tools;
+namespace TMS.Apps.FrontTube.Backend.Repository.Tools;
 
-public static class IdentityExtensions
+internal static class IdentityExtensions
 {
     public static RemoteIdentityCommon ToIdentity(this ICacheableCommon common)
     {

@@ -5,7 +5,7 @@ namespace TMS.Apps.FrontTube.Backend.Repository.Data.Tools;
 /// <summary>
 /// Extension methods for ChannelTab enum conversions in the domain layer.
 /// </summary>
-public static class ChannelTabExtensions
+internal static class ChannelTabExtensions
 {
     /// <summary>
     /// Converts a channel tab string to its corresponding domain enum value.

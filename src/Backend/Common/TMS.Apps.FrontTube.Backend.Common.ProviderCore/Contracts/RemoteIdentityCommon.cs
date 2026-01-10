@@ -61,6 +61,14 @@ public record RemoteIdentityCommon
         }
         else
         {
+            if (identityType == RemoteIdentityTypeCommon.Comment)
+            {
+                // For comments, we expect just the comment ID as remoteIdentity
+                RemoteId = remoteIdentity;
+                Hash = HashHelper.ComputeHash(remoteIdentity);
+                return;
+            }
+
             if (!Uri.TryCreate(remoteIdentity, UriKind.RelativeOrAbsolute, out var uri))
             {
                 throw new ArgumentException($"The provided URL '{remoteIdentity}' is not a valid URL.", nameof(remoteIdentity));
@@ -73,7 +81,7 @@ public record RemoteIdentityCommon
         Hash = HashHelper.ComputeHash(AbsoluteRemoteUrl);
     }
 
-    public required string AbsoluteRemoteUrl { get; init; }
+    public string? AbsoluteRemoteUrl { get; init; }
 
     public RemoteIdentityTypeCommon IdentityType { get; init; }
 
@@ -81,6 +89,6 @@ public record RemoteIdentityCommon
 
     public string? RemoteId { get; init; }
 
-    public Uri AbsoluteRemoteUri { get; init; }
+    public Uri? AbsoluteRemoteUri { get; init; }
 
 }

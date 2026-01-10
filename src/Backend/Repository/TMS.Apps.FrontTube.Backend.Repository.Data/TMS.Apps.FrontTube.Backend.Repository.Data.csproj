@@ -20,7 +20,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Common\TMS.Apps.FrontTube.Backend.Common.ProviderCore\TMS.Apps.FrontTube.Backend.Common.ProviderCore.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\..\Providers\TMS.Apps.FrontTube.Backend.Providers.Invidious\TMS.Apps.FrontTube.Backend.Providers.Invidious.csproj" PrivateAssets="all" />
-    <ProjectReference Include="..\TMS.Apps.FrontTube.Backend.Repository.Cache\TMS.Apps.FrontTube.Backend.Repository.Cache.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\TMS.Apps.FrontTube.Backend.Repository.DataBase\TMS.Apps.FrontTube.Backend.Repository.DataBase.csproj" PrivateAssets="all" />
   </ItemGroup>
 
