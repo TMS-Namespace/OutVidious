@@ -758,152 +758,152 @@ internal static class CommonDomainMapper
         };
     }
 
-    public static DomainConfig.CacheConfig ToDomain(CommonConfig.CacheConfig config, DomainConfig.CacheConfig? target = null)
-    {
-        ArgumentNullException.ThrowIfNull(config);
+    // public static DomainConfig.CacheConfig ToDomain(CommonConfig.CacheConfig config, DomainConfig.CacheConfig? target = null)
+    // {
+    //     ArgumentNullException.ThrowIfNull(config);
 
-        target ??= new DomainConfig.CacheConfig();
+    //     target ??= new DomainConfig.CacheConfig();
 
-        return target with
-        {
-            StalenessConfigs = ToDomain(config.StalenessConfigs),
-            SecondLevelCache = ToDomain(config.SecondLevelCache)
-        };
-    }
+    //     return target with
+    //     {
+    //         StalenessConfigs = ToDomain(config.StalenessConfigs),
+    //         SecondLevelCache = ToDomain(config.SecondLevelCache)
+    //     };
+    // }
 
-    public static CommonConfig.CacheConfig FromDomain(DomainConfig.CacheConfig config, CommonConfig.CacheConfig? target = null)
-    {
-        ArgumentNullException.ThrowIfNull(config);
+    // public static CommonConfig.CacheConfig FromDomain(DomainConfig.CacheConfig config, CommonConfig.CacheConfig? target = null)
+    // {
+    //     ArgumentNullException.ThrowIfNull(config);
 
-        if (target is null)
-        {
-            return new CommonConfig.CacheConfig
-            {
-                StalenessConfigs = FromDomain(config.StalenessConfigs),
-                SecondLevelCache = FromDomain(config.SecondLevelCache)
-            };
-        }
+    //     if (target is null)
+    //     {
+    //         return new CommonConfig.CacheConfig
+    //         {
+    //             StalenessConfigs = FromDomain(config.StalenessConfigs),
+    //             SecondLevelCache = FromDomain(config.SecondLevelCache)
+    //         };
+    //     }
 
-        return target with
-        {
-            StalenessConfigs = FromDomain(config.StalenessConfigs),
-            SecondLevelCache = FromDomain(config.SecondLevelCache)
-        };
-    }
+    //     return target with
+    //     {
+    //         StalenessConfigs = FromDomain(config.StalenessConfigs),
+    //         SecondLevelCache = FromDomain(config.SecondLevelCache)
+    //     };
+    // }
 
-    public static DomainConfig.DatabaseConnectionPoolConfig ToDomain(CommonConfig.DatabaseConnectionPoolConfig config, DomainConfig.DatabaseConnectionPoolConfig? target = null)
-    {
-        ArgumentNullException.ThrowIfNull(config);
+    // public static DomainConfig.DatabaseConnectionPoolConfig ToDomain(CommonConfig.DatabaseConnectionPoolConfig config, DomainConfig.DatabaseConnectionPoolConfig? target = null)
+    // {
+    //     ArgumentNullException.ThrowIfNull(config);
 
-        target ??= new DomainConfig.DatabaseConnectionPoolConfig();
+    //     target ??= new DomainConfig.DatabaseConnectionPoolConfig();
 
-        return target with
-        {
-            Enabled = config.Enabled,
-            MinPoolSize = config.MinPoolSize,
-            MaxPoolSize = config.MaxPoolSize,
-            TimeoutSeconds = config.TimeoutSeconds,
-            ConnectionIdleLifetimeSeconds = config.ConnectionIdleLifetimeSeconds,
-            ConnectionPruningIntervalSeconds = config.ConnectionPruningIntervalSeconds
-        };
-    }
+    //     return target with
+    //     {
+    //         Enabled = config.Enabled,
+    //         MinPoolSize = config.MinPoolSize,
+    //         MaxPoolSize = config.MaxPoolSize,
+    //         TimeoutSeconds = config.TimeoutSeconds,
+    //         ConnectionIdleLifetimeSeconds = config.ConnectionIdleLifetimeSeconds,
+    //         ConnectionPruningIntervalSeconds = config.ConnectionPruningIntervalSeconds
+    //     };
+    // }
 
-    public static CommonConfig.DatabaseConnectionPoolConfig FromDomain(DomainConfig.DatabaseConnectionPoolConfig config, CommonConfig.DatabaseConnectionPoolConfig? target = null)
-    {
-        ArgumentNullException.ThrowIfNull(config);
+    // public static CommonConfig.DatabaseConnectionPoolConfig FromDomain(DomainConfig.DatabaseConnectionPoolConfig config, CommonConfig.DatabaseConnectionPoolConfig? target = null)
+    // {
+    //     ArgumentNullException.ThrowIfNull(config);
 
-        if (target is null)
-        {
-            return new CommonConfig.DatabaseConnectionPoolConfig
-            {
-                Enabled = config.Enabled,
-                MinPoolSize = config.MinPoolSize,
-                MaxPoolSize = config.MaxPoolSize,
-                TimeoutSeconds = config.TimeoutSeconds,
-                ConnectionIdleLifetimeSeconds = config.ConnectionIdleLifetimeSeconds,
-                ConnectionPruningIntervalSeconds = config.ConnectionPruningIntervalSeconds
-            };
-        }
+    //     if (target is null)
+    //     {
+    //         return new CommonConfig.DatabaseConnectionPoolConfig
+    //         {
+    //             Enabled = config.Enabled,
+    //             MinPoolSize = config.MinPoolSize,
+    //             MaxPoolSize = config.MaxPoolSize,
+    //             TimeoutSeconds = config.TimeoutSeconds,
+    //             ConnectionIdleLifetimeSeconds = config.ConnectionIdleLifetimeSeconds,
+    //             ConnectionPruningIntervalSeconds = config.ConnectionPruningIntervalSeconds
+    //         };
+    //     }
 
-        return target with
-        {
-            Enabled = config.Enabled,
-            MinPoolSize = config.MinPoolSize,
-            MaxPoolSize = config.MaxPoolSize,
-            TimeoutSeconds = config.TimeoutSeconds,
-            ConnectionIdleLifetimeSeconds = config.ConnectionIdleLifetimeSeconds,
-            ConnectionPruningIntervalSeconds = config.ConnectionPruningIntervalSeconds
-        };
-    }
+    //     return target with
+    //     {
+    //         Enabled = config.Enabled,
+    //         MinPoolSize = config.MinPoolSize,
+    //         MaxPoolSize = config.MaxPoolSize,
+    //         TimeoutSeconds = config.TimeoutSeconds,
+    //         ConnectionIdleLifetimeSeconds = config.ConnectionIdleLifetimeSeconds,
+    //         ConnectionPruningIntervalSeconds = config.ConnectionPruningIntervalSeconds
+    //     };
+    // }
 
-    public static DomainConfig.DatabaseConfig ToDomain(CommonConfig.DatabaseConfig config, DomainConfig.DatabaseConfig? target = null)
-    {
-        ArgumentNullException.ThrowIfNull(config);
+    // public static DomainConfig.DatabaseConfig ToDomain(CommonConfig.DatabaseConfig config, DomainConfig.DatabaseConfig? target = null)
+    // {
+    //     ArgumentNullException.ThrowIfNull(config);
 
-        target ??= new DomainConfig.DatabaseConfig();
+    //     target ??= new DomainConfig.DatabaseConfig();
 
-        return target with
-        {
-            Host = config.Host,
-            Port = config.Port,
-            DatabaseName = config.DatabaseName,
-            Username = config.Username,
-            Password = config.Password,
-            IsDevMode = config.IsDevMode,
-            LogAllQueries = config.LogAllQueries,
-            ConnectionPoolConfig = ToDomain(config.ConnectionPoolConfig),
-            SensitiveDataLogging = config.SensitiveDataLogging,
-            DbContextPoolSize = config.DbContextPoolSize,
-            CommandTimeoutSeconds = config.CommandTimeoutSeconds,
-            EnableRetryOnFailure = config.EnableRetryOnFailure,
-            MaxRetryCount = config.MaxRetryCount,
-            MaxRetryDelay = config.MaxRetryDelay
-        };
-    }
+    //     return target with
+    //     {
+    //         Host = config.Host,
+    //         Port = config.Port,
+    //         DatabaseName = config.DatabaseName,
+    //         Username = config.Username,
+    //         Password = config.Password,
+    //         IsDevMode = config.IsDevMode,
+    //         LogAllQueries = config.LogAllQueries,
+    //         ConnectionPoolConfig = ToDomain(config.ConnectionPoolConfig),
+    //         SensitiveDataLogging = config.SensitiveDataLogging,
+    //         DbContextPoolSize = config.DbContextPoolSize,
+    //         CommandTimeoutSeconds = config.CommandTimeoutSeconds,
+    //         EnableRetryOnFailure = config.EnableRetryOnFailure,
+    //         MaxRetryCount = config.MaxRetryCount,
+    //         MaxRetryDelay = config.MaxRetryDelay
+    //     };
+    // }
 
-    public static CommonConfig.DatabaseConfig FromDomain(DomainConfig.DatabaseConfig config, CommonConfig.DatabaseConfig? target = null)
-    {
-        ArgumentNullException.ThrowIfNull(config);
+    // public static CommonConfig.DatabaseConfig FromDomain(DomainConfig.DatabaseConfig config, CommonConfig.DatabaseConfig? target = null)
+    // {
+    //     ArgumentNullException.ThrowIfNull(config);
 
-        if (target is null)
-        {
-            return new CommonConfig.DatabaseConfig
-            {
-                Host = config.Host,
-                Port = config.Port,
-                DatabaseName = config.DatabaseName,
-                Username = config.Username,
-                Password = config.Password,
-                IsDevMode = config.IsDevMode,
-                LogAllQueries = config.LogAllQueries,
-                ConnectionPoolConfig = FromDomain(config.ConnectionPoolConfig),
-                SensitiveDataLogging = config.SensitiveDataLogging,
-                DbContextPoolSize = config.DbContextPoolSize,
-                CommandTimeoutSeconds = config.CommandTimeoutSeconds,
-                EnableRetryOnFailure = config.EnableRetryOnFailure,
-                MaxRetryCount = config.MaxRetryCount,
-                MaxRetryDelay = config.MaxRetryDelay
-            };
-        }
+    //     if (target is null)
+    //     {
+    //         return new CommonConfig.DatabaseConfig
+    //         {
+    //             Host = config.Host,
+    //             Port = config.Port,
+    //             DatabaseName = config.DatabaseName,
+    //             Username = config.Username,
+    //             Password = config.Password,
+    //             IsDevMode = config.IsDevMode,
+    //             LogAllQueries = config.LogAllQueries,
+    //             ConnectionPoolConfig = FromDomain(config.ConnectionPoolConfig),
+    //             SensitiveDataLogging = config.SensitiveDataLogging,
+    //             DbContextPoolSize = config.DbContextPoolSize,
+    //             CommandTimeoutSeconds = config.CommandTimeoutSeconds,
+    //             EnableRetryOnFailure = config.EnableRetryOnFailure,
+    //             MaxRetryCount = config.MaxRetryCount,
+    //             MaxRetryDelay = config.MaxRetryDelay
+    //         };
+    //     }
 
-        return target with
-        {
-            Host = config.Host,
-            Port = config.Port,
-            DatabaseName = config.DatabaseName,
-            Username = config.Username,
-            Password = config.Password,
-            IsDevMode = config.IsDevMode,
-            LogAllQueries = config.LogAllQueries,
-            ConnectionPoolConfig = FromDomain(config.ConnectionPoolConfig),
-            SensitiveDataLogging = config.SensitiveDataLogging,
-            DbContextPoolSize = config.DbContextPoolSize,
-            CommandTimeoutSeconds = config.CommandTimeoutSeconds,
-            EnableRetryOnFailure = config.EnableRetryOnFailure,
-            MaxRetryCount = config.MaxRetryCount,
-            MaxRetryDelay = config.MaxRetryDelay
-        };
-    }
+    //     return target with
+    //     {
+    //         Host = config.Host,
+    //         Port = config.Port,
+    //         DatabaseName = config.DatabaseName,
+    //         Username = config.Username,
+    //         Password = config.Password,
+    //         IsDevMode = config.IsDevMode,
+    //         LogAllQueries = config.LogAllQueries,
+    //         ConnectionPoolConfig = FromDomain(config.ConnectionPoolConfig),
+    //         SensitiveDataLogging = config.SensitiveDataLogging,
+    //         DbContextPoolSize = config.DbContextPoolSize,
+    //         CommandTimeoutSeconds = config.CommandTimeoutSeconds,
+    //         EnableRetryOnFailure = config.EnableRetryOnFailure,
+    //         MaxRetryCount = config.MaxRetryCount,
+    //         MaxRetryDelay = config.MaxRetryDelay
+    //     };
+    // }
 
     public static DomainConfig.ProviderConfig ToDomain(CommonConfig.ProviderConfig config, DomainConfig.ProviderConfig? target = null)
     {
@@ -941,108 +941,108 @@ internal static class CommonDomainMapper
         };
     }
 
-    public static DomainConfig.SecondLevelCacheConfig ToDomain(CommonConfig.SecondLevelCacheConfig config, DomainConfig.SecondLevelCacheConfig? target = null)
-    {
-        ArgumentNullException.ThrowIfNull(config);
+    // public static DomainConfig.SecondLevelCacheConfig ToDomain(CommonConfig.SecondLevelCacheConfig config, DomainConfig.SecondLevelCacheConfig? target = null)
+    // {
+    //     ArgumentNullException.ThrowIfNull(config);
 
-        target ??= new DomainConfig.SecondLevelCacheConfig();
+    //     target ??= new DomainConfig.SecondLevelCacheConfig();
 
-        return target with
-        {
-            Enable = config.Enable,
-            CacheKeyPrefix = config.CacheKeyPrefix,
-            EnableLogging = config.EnableLogging,
-            CacheAllQueries = config.CacheAllQueries,
-            CacheAllQueriesExpirationMode = config.CacheAllQueriesExpirationMode,
-            CacheAllQueriesTimeout = config.CacheAllQueriesTimeout,
-            UseDbCallsIfCachingProviderIsDown = config.UseDbCallsIfCachingProviderIsDown,
-            EnableSensitiveDataLogging = config.EnableSensitiveDataLogging,
-            EnableDetailedErrors = config.EnableDetailedErrors,
-            DbCallsIfCachingProviderIsDownTimeout = config.DbCallsIfCachingProviderIsDownTimeout
-        };
-    }
+    //     return target with
+    //     {
+    //         Enable = config.Enable,
+    //         CacheKeyPrefix = config.CacheKeyPrefix,
+    //         EnableLogging = config.EnableLogging,
+    //         CacheAllQueries = config.CacheAllQueries,
+    //         CacheAllQueriesExpirationMode = config.CacheAllQueriesExpirationMode,
+    //         CacheAllQueriesTimeout = config.CacheAllQueriesTimeout,
+    //         UseDbCallsIfCachingProviderIsDown = config.UseDbCallsIfCachingProviderIsDown,
+    //         EnableSensitiveDataLogging = config.EnableSensitiveDataLogging,
+    //         EnableDetailedErrors = config.EnableDetailedErrors,
+    //         DbCallsIfCachingProviderIsDownTimeout = config.DbCallsIfCachingProviderIsDownTimeout
+    //     };
+    // }
 
-    public static CommonConfig.SecondLevelCacheConfig FromDomain(DomainConfig.SecondLevelCacheConfig config, CommonConfig.SecondLevelCacheConfig? target = null)
-    {
-        ArgumentNullException.ThrowIfNull(config);
+    // public static CommonConfig.SecondLevelCacheConfig FromDomain(DomainConfig.SecondLevelCacheConfig config, CommonConfig.SecondLevelCacheConfig? target = null)
+    // {
+    //     ArgumentNullException.ThrowIfNull(config);
 
-        if (target is null)
-        {
-            return new CommonConfig.SecondLevelCacheConfig
-            {
-                Enable = config.Enable,
-                CacheKeyPrefix = config.CacheKeyPrefix,
-                EnableLogging = config.EnableLogging,
-                CacheAllQueries = config.CacheAllQueries,
-                CacheAllQueriesExpirationMode = config.CacheAllQueriesExpirationMode,
-                CacheAllQueriesTimeout = config.CacheAllQueriesTimeout,
-                UseDbCallsIfCachingProviderIsDown = config.UseDbCallsIfCachingProviderIsDown,
-                EnableSensitiveDataLogging = config.EnableSensitiveDataLogging,
-                EnableDetailedErrors = config.EnableDetailedErrors,
-                DbCallsIfCachingProviderIsDownTimeout = config.DbCallsIfCachingProviderIsDownTimeout
-            };
-        }
+    //     if (target is null)
+    //     {
+    //         return new CommonConfig.SecondLevelCacheConfig
+    //         {
+    //             Enable = config.Enable,
+    //             CacheKeyPrefix = config.CacheKeyPrefix,
+    //             EnableLogging = config.EnableLogging,
+    //             CacheAllQueries = config.CacheAllQueries,
+    //             CacheAllQueriesExpirationMode = config.CacheAllQueriesExpirationMode,
+    //             CacheAllQueriesTimeout = config.CacheAllQueriesTimeout,
+    //             UseDbCallsIfCachingProviderIsDown = config.UseDbCallsIfCachingProviderIsDown,
+    //             EnableSensitiveDataLogging = config.EnableSensitiveDataLogging,
+    //             EnableDetailedErrors = config.EnableDetailedErrors,
+    //             DbCallsIfCachingProviderIsDownTimeout = config.DbCallsIfCachingProviderIsDownTimeout
+    //         };
+    //     }
 
-        return target with
-        {
-            Enable = config.Enable,
-            CacheKeyPrefix = config.CacheKeyPrefix,
-            EnableLogging = config.EnableLogging,
-            CacheAllQueries = config.CacheAllQueries,
-            CacheAllQueriesExpirationMode = config.CacheAllQueriesExpirationMode,
-            CacheAllQueriesTimeout = config.CacheAllQueriesTimeout,
-            UseDbCallsIfCachingProviderIsDown = config.UseDbCallsIfCachingProviderIsDown,
-            EnableSensitiveDataLogging = config.EnableSensitiveDataLogging,
-            EnableDetailedErrors = config.EnableDetailedErrors,
-            DbCallsIfCachingProviderIsDownTimeout = config.DbCallsIfCachingProviderIsDownTimeout
-        };
-    }
+    //     return target with
+    //     {
+    //         Enable = config.Enable,
+    //         CacheKeyPrefix = config.CacheKeyPrefix,
+    //         EnableLogging = config.EnableLogging,
+    //         CacheAllQueries = config.CacheAllQueries,
+    //         CacheAllQueriesExpirationMode = config.CacheAllQueriesExpirationMode,
+    //         CacheAllQueriesTimeout = config.CacheAllQueriesTimeout,
+    //         UseDbCallsIfCachingProviderIsDown = config.UseDbCallsIfCachingProviderIsDown,
+    //         EnableSensitiveDataLogging = config.EnableSensitiveDataLogging,
+    //         EnableDetailedErrors = config.EnableDetailedErrors,
+    //         DbCallsIfCachingProviderIsDownTimeout = config.DbCallsIfCachingProviderIsDownTimeout
+    //     };
+    // }
 
-    public static DomainConfig.StalenessConfig ToDomain(CommonConfig.StalenessConfig config, DomainConfig.StalenessConfig? target = null)
-    {
-        ArgumentNullException.ThrowIfNull(config);
+    // public static DomainConfig.StalenessConfig ToDomain(CommonConfig.StalenessConfig config, DomainConfig.StalenessConfig? target = null)
+    // {
+    //     ArgumentNullException.ThrowIfNull(config);
 
-        target ??= new DomainConfig.StalenessConfig();
+    //     target ??= new DomainConfig.StalenessConfig();
 
-        return target with
-        {
-            VideoStalenessThreshold = config.VideoStalenessThreshold,
-            ChannelStalenessThreshold = config.ChannelStalenessThreshold,
-            ImageStalenessThreshold = config.ImageStalenessThreshold,
-            CaptionStalenessThreshold = config.CaptionStalenessThreshold,
-            VideoMemoryCacheCapacity = config.VideoMemoryCacheCapacity,
-            ChannelMemoryCacheCapacity = config.ChannelMemoryCacheCapacity,
-            ImageMemoryCacheCapacity = config.ImageMemoryCacheCapacity
-        };
-    }
+    //     return target with
+    //     {
+    //         VideoStalenessThreshold = config.VideoStalenessThreshold,
+    //         ChannelStalenessThreshold = config.ChannelStalenessThreshold,
+    //         ImageStalenessThreshold = config.ImageStalenessThreshold,
+    //         CaptionStalenessThreshold = config.CaptionStalenessThreshold,
+    //         VideoMemoryCacheCapacity = config.VideoMemoryCacheCapacity,
+    //         ChannelMemoryCacheCapacity = config.ChannelMemoryCacheCapacity,
+    //         ImageMemoryCacheCapacity = config.ImageMemoryCacheCapacity
+    //     };
+    // }
 
-    public static CommonConfig.StalenessConfig FromDomain(DomainConfig.StalenessConfig config, CommonConfig.StalenessConfig? target = null)
-    {
-        ArgumentNullException.ThrowIfNull(config);
+    // public static CommonConfig.StalenessConfig FromDomain(DomainConfig.StalenessConfig config, CommonConfig.StalenessConfig? target = null)
+    // {
+    //     ArgumentNullException.ThrowIfNull(config);
 
-        if (target is null)
-        {
-            return new CommonConfig.StalenessConfig
-            {
-                VideoStalenessThreshold = config.VideoStalenessThreshold,
-                ChannelStalenessThreshold = config.ChannelStalenessThreshold,
-                ImageStalenessThreshold = config.ImageStalenessThreshold,
-                CaptionStalenessThreshold = config.CaptionStalenessThreshold,
-                VideoMemoryCacheCapacity = config.VideoMemoryCacheCapacity,
-                ChannelMemoryCacheCapacity = config.ChannelMemoryCacheCapacity,
-                ImageMemoryCacheCapacity = config.ImageMemoryCacheCapacity
-            };
-        }
+    //     if (target is null)
+    //     {
+    //         return new CommonConfig.StalenessConfig
+    //         {
+    //             VideoStalenessThreshold = config.VideoStalenessThreshold,
+    //             ChannelStalenessThreshold = config.ChannelStalenessThreshold,
+    //             ImageStalenessThreshold = config.ImageStalenessThreshold,
+    //             CaptionStalenessThreshold = config.CaptionStalenessThreshold,
+    //             VideoMemoryCacheCapacity = config.VideoMemoryCacheCapacity,
+    //             ChannelMemoryCacheCapacity = config.ChannelMemoryCacheCapacity,
+    //             ImageMemoryCacheCapacity = config.ImageMemoryCacheCapacity
+    //         };
+    //     }
 
-        return target with
-        {
-            VideoStalenessThreshold = config.VideoStalenessThreshold,
-            ChannelStalenessThreshold = config.ChannelStalenessThreshold,
-            ImageStalenessThreshold = config.ImageStalenessThreshold,
-            CaptionStalenessThreshold = config.CaptionStalenessThreshold,
-            VideoMemoryCacheCapacity = config.VideoMemoryCacheCapacity,
-            ChannelMemoryCacheCapacity = config.ChannelMemoryCacheCapacity,
-            ImageMemoryCacheCapacity = config.ImageMemoryCacheCapacity
-        };
-    }
+    //     return target with
+    //     {
+    //         VideoStalenessThreshold = config.VideoStalenessThreshold,
+    //         ChannelStalenessThreshold = config.ChannelStalenessThreshold,
+    //         ImageStalenessThreshold = config.ImageStalenessThreshold,
+    //         CaptionStalenessThreshold = config.CaptionStalenessThreshold,
+    //         VideoMemoryCacheCapacity = config.VideoMemoryCacheCapacity,
+    //         ChannelMemoryCacheCapacity = config.ChannelMemoryCacheCapacity,
+    //         ImageMemoryCacheCapacity = config.ImageMemoryCacheCapacity
+    //     };
+    // }
 }

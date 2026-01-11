@@ -34,7 +34,7 @@ public sealed class Super : IDisposable
     /// </summary>
     public Configurations Configurations { get; }
 
-    internal RepositoryManager RepositoryManager { get; }
+    internal Orchestrator RepositoryManager { get; }
 
     /// <summary>
     /// Creates a Super instance with default configurations.
@@ -50,7 +50,7 @@ public sealed class Super : IDisposable
 
         Configurations = new Configurations();
 
-        RepositoryManager = new RepositoryManager(
+        RepositoryManager = new Orchestrator(
             Configurations.DataBase,
             Configurations.Cache,
             Configurations.Provider,

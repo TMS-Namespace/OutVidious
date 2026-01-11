@@ -20,11 +20,11 @@ using TMS.Apps.FrontTube.Backend.Repository.DataBase.Entities.Cache;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.Data;
 
-public sealed class RepositoryManager
+public sealed class Orchestrator
 {
     private readonly DataBaseContextPool _pool;
 
-    private readonly ILogger<RepositoryManager> _logger;
+    private readonly ILogger<Orchestrator> _logger;
 
     private readonly ILoggerFactory _loggerFactory;
 
@@ -47,7 +47,7 @@ public sealed class RepositoryManager
 
     private readonly Data.Contracts.Configuration.CacheConfig _cacheConfig;
 
-    public RepositoryManager(
+    public Orchestrator(
         Data.Contracts.Configuration.DatabaseConfig databaseConfig,
         Data.Contracts.Configuration.CacheConfig cacheConfig,
         Data.Contracts.Configuration.ProviderConfig providerConfig,
@@ -63,13 +63,13 @@ public sealed class RepositoryManager
         _databaseConfig = databaseConfig;
         _loggerFactory = loggerFactory;
         _cacheConfig = cacheConfig;
-        _logger = loggerFactory.CreateLogger<RepositoryManager>();
+        _logger = loggerFactory.CreateLogger<Orchestrator>();
 
-        var commonDbConfig = CommonDomainMapper.FromDomain(databaseConfig);
-        var commonCacheConfig = CommonDomainMapper.FromDomain(cacheConfig);
+        // var commonDbConfig = CommonDomainMapper.FromDomain(databaseConfig);
+        // var commonCacheConfig = CommonDomainMapper.FromDomain(cacheConfig);
         var commonProviderConfig = CommonDomainMapper.FromDomain(providerConfig);
 
-        _pool = new DataBaseContextPool(commonDbConfig, commonCacheConfig, loggerFactory);
+        _pool = new DataBaseContextPool(databaseConfig, cacheConfig, loggerFactory);
 
         _provider = new InvidiousVideoProvider(loggerFactory, httpClientFactory, commonProviderConfig);
 

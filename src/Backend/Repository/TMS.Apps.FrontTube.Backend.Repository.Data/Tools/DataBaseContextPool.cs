@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using TMS.Apps.FrontTube.Backend.Common.ProviderCore.Configuration;
+using TMS.Apps.FrontTube.Backend.Repository.Data.Contracts.Configuration;
 using TMS.Apps.FrontTube.Backend.Repository.DataBase;
 
 namespace TMS.Apps.FrontTube.Backend.Repository.CacheManager.Tools;
